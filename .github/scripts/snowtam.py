@@ -4,6 +4,7 @@
 Sources (public, refreshed by their publishers every 30 min or every hour):
   - LFV (Sweden) AROWeb "NOTAM Sweden" / "NOTAM Other" PDF bulletins
   - Fintraffic ANS (Finland) www.ais.fi bulletins: Finland, Sweden, Norway and the Baltic states
+  - Naviair (Denmark) AIS Briefing, briefing.naviair.dk: the only public source with EKCH and EKBI (live, per airport)
 Every SNOWTAM keeps its own observation time (item B) and the issue time of the bulletin it came from, so the
 app can show how old it is and whether it is still within the 8-hour SNOWTAM validity.
 Usage: snowtam.py OUTDIR
@@ -34,11 +35,16 @@ AISFI = [  # (id, page, label, ICAO prefixes)
     ('aisfi-eyvl', 'eyvlvfr', 'Fintraffic AIS Vilnius FIR', ['EY']),
 ]
 
-def get(url, binary=False):
+NAVIAIR_API = 'https://api.naviair-utm.dk/aftn/search/'
+NAVIAIR_KEY = 'a397b655ae4f4d078fd6151b4df4d28c'   # public key of the briefing.naviair.dk web app
+NAVIAIR_AD = {'EKCH': 'KOEBENHAVN/KASTRUP', 'EKBI': 'BILLUND', 'EKYT': 'AALBORG', 'EKAH': 'AARHUS', 'EKRN': 'BORNHOLM/ROENNE',
+              'EKSB': 'SOENDERBORG', 'EKEB': 'ESBJERG', 'EKKA': 'KARUP', 'EKOD': 'ODENSE', 'EKVG': 'VAGAR'}
+
+def get(url, binary=False, headers=None):
     last = None
     for attempt in range(3):
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': UA})
+            req = urllib.request.Request(url, headers={'User-Agent': UA, **(headers or {})})
             with urllib.request.urlopen(req, timeout=40) as r:
                 data = r.read()
                 if binary: return data
@@ -74,6 +80,12 @@ def pdf_text(data):
 HEAD = re.compile(r'^([A-Z]{4}) - (\S.*)$')
 RCR = re.compile(r'\b(\d{8})\s+(?:RWY\s*)?(\d{2}[LRC]?)\s+[0-6]\s*/\s*[0-6]\s*/\s*[0-6]\b')
 STOP = re.compile(r'^(?:\+|\*|-)(?:\s|$)|^SNOWTAM\b|^FROM:.*\bTO:|^END OF PIB|^EN-ROUTE|^NAV WARNINGS|^AERODROMES$|^Page \d+ of \d+|^[A-Z]{4} - \S')
+
+LABELS = re.compile(r'(^|[\s(])[A-T]\)\s*')
+def rcr_groups(text):
+    """(B, runway, RWYCC x3) of each runway line, with SNOWTAM field letters such as 'B)' 'C)' 'D)' removed"""
+    t = LABELS.sub(r'\1 ', text)
+    return [(m.group(1), m.group(2), re.sub(r'\s+', '', m.group(0).split(m.group(2), 1)[1])) for m in RCR.finditer(t)]
 
 def observed(b, ref):
     """item B (MMDDhhmm) as a UTC time, year taken from the bulletin time"""
@@ -115,12 +127,12 @@ def extract(text, ref):
             body.append(l); j += 1
         i = j
         txt = '\n'.join(body).strip()
-        m = RCR.search(txt)
-        if not icao or not m: continue
+        groups = rcr_groups(txt)
+        if not icao or not groups: continue
         issued = None
         fm = re.fullmatch(r'(\d{2}) ([A-Z]{3}) (\d{4}) (\d{2}):(\d{2})', frm or '')
         if fm and fm.group(2) in MON: issued = datetime(int(fm.group(3)), MON[fm.group(2)], int(fm.group(1)), int(fm.group(4)), int(fm.group(5)), tzinfo=timezone.utc)
-        out.append({'icao': icao, 'observed': iso(observed(m.group(1), ref)), 'issued': iso(issued), 'text': txt})
+        out.append({'icao': icao, 'observed': iso(observed(groups[0][0], ref)), 'issued': iso(issued), 'text': txt})
     return names, out
 
 def lfv_sources():
@@ -156,6 +168,55 @@ def aisfi_sources():
             src['error'] = str(e)[:200]; res.append((src, '', None))
     return res
 
+def naviair_source():
+    """Naviair AIS Briefing (Denmark): one request per aerodrome; each SNOWTAM comes with its full text and validity"""
+    now = datetime.now(timezone.utc)
+    src = {'id': 'naviair', 'name': 'Naviair AIS Briefing', 'host': 'briefing.naviair.dk', 'url': 'https://briefing.naviair.dk/',
+           'prefixes': ['EK'], 'ok': False, 'live': True, 'issued': iso(now)}
+    names, found, errors = {}, [], []
+    for icao, name in NAVIAIR_AD.items():
+        try:
+            data = json.loads(get(NAVIAIR_API + icao, headers={'Accept': 'application/json', 'Ocp-Apim-Subscription-Key': NAVIAIR_KEY}))
+            names[icao] = name
+            for sec in data:
+                if sec.get('type') != 'snowtam': continue
+                for it in sec.get('data') or []:
+                    pm = it.get('parsedMessage') or {}
+                    if pm.get('replaced'): continue
+                    raw = (it.get('rawInput') or '').replace('\r', '')
+                    txt = raw[raw.find('SNOWTAM'):] if 'SNOWTAM' in raw else raw
+                    groups = rcr_groups(txt)
+                    if not groups: continue
+                    v = it.get('validity') or {}
+                    start = v.get('start')
+                    ref = datetime.fromisoformat(start.replace('Z', '+00:00')) if start else now
+                    found.append({'icao': it.get('icao') or icao, 'observed': iso(observed(groups[0][0], ref)),
+                                  'issued': iso(ref) if start else None, 'text': txt.strip()})
+        except Exception as e:
+            errors.append(f'{icao}: {str(e)[:80]}')
+    src['ok'] = bool(names)
+    src['aerodromes'] = sorted(names)
+    if errors: src['error'] = '; '.join(errors)[:300]
+    return src, names, found
+
+def add(airports, src, names, found):
+    src['aerodromes'] = sorted(names)
+    src['snowtams'] = len(found)
+    for icao, nm in names.items():
+        a = airports.setdefault(icao, {'name': nm, 'snowtams': []})
+        if not a['name']: a['name'] = nm
+    for s in found:
+        a = airports.setdefault(s['icao'], {'name': names.get(s['icao'], ''), 'snowtams': []})
+        key = (s['observed'], rcr_groups(s['text']))      # the same report, whichever format the bulletin prints it in
+        same = next((x for x in a['snowtams'] if (x['observed'], rcr_groups(x['text'])) == key), None)
+        if same:
+            if src['id'] not in same['sources']: same['sources'].append(src['id'])
+            same['issued'] = same['issued'] or s['issued']
+            if (src.get('issued') or '') > (same['bulletin'] or ''): same['bulletin'] = src.get('issued'); same['source'] = src['id']
+        else:
+            a['snowtams'].append({'observed': s['observed'], 'issued': s['issued'], 'text': s['text'], 'source': src['id'],
+                                  'sources': [src['id']], 'bulletin': src.get('issued')})
+
 def main(outdir):
     now = datetime.now(timezone.utc)
     os.makedirs(outdir, exist_ok=True)
@@ -165,21 +226,11 @@ def main(outdir):
         if src['ok']:
             open(os.path.join(debug, src['id'] + '.txt'), 'w').write(text)
             names, found = extract(text, issued or now)
-            src['aerodromes'] = sorted(names)
-            src['snowtams'] = len(found)
-            for icao, nm in names.items():
-                airports.setdefault(icao, {'name': nm, 'snowtams': []})
-            for s in found:
-                a = airports.setdefault(s['icao'], {'name': names.get(s['icao'], ''), 'snowtams': []})
-                key = re.sub(r'\s+', ' ', s['text'])
-                same = next((x for x in a['snowtams'] if re.sub(r'\s+', ' ', x['text']) == key), None)
-                if same:
-                    if src['id'] not in same['sources']: same['sources'].append(src['id'])
-                    same['issued'] = same['issued'] or s['issued']
-                    if (src.get('issued') or '') > (same['bulletin'] or ''): same['bulletin'] = src.get('issued'); same['source'] = src['id']
-                else:
-                    a['snowtams'].append({'observed': s['observed'], 'issued': s['issued'], 'text': s['text'], 'source': src['id'], 'sources': [src['id']], 'bulletin': src.get('issued')})
+            add(airports, src, names, found)
         sources.append(src)
+    src, names, found = naviair_source()
+    add(airports, src, names, found)
+    sources.append(src)
     for a in airports.values():
         a['snowtams'].sort(key=lambda x: x['observed'] or '', reverse=True)
     data = {'v': 1, 'generated': iso(now), 'validity_hours': 8, 'sources': sources,

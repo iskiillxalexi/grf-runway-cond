@@ -208,6 +208,31 @@ details.how li::marker { color:var(--muted); }
   .right { position:sticky; top:16px; }
   .bar { display:none; }
 }
+/* runway picture */
+.rv { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px 14px; display:grid; gap:8px; --rv-asph:#4A5059; --rv-mark:#F2F4F6; }
+@media (prefers-color-scheme:dark) { :root:not([data-theme="light"]) .rv { --rv-asph:#353B43; } }
+:root[data-theme="dark"] .rv { --rv-asph:#353B43; }
+.rv-top { display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-family:var(--f-mono); font-size:12.5px; color:var(--muted); padding:0 1%; }
+.rv-rwy { font-weight:600; color:var(--ink); letter-spacing:.04em; }
+.rv-dir { font-family:var(--f-head); font-weight:600; font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; }
+.rv-pic svg { display:block; width:100%; height:auto; }
+.rv-asph { fill:var(--rv-asph); }
+.rv-mark { fill:var(--rv-mark); opacity:.92; }
+.rv-cl { stroke:var(--rv-mark); stroke-width:1.4; stroke-dasharray:9 7; opacity:.75; }
+.rv-div { stroke:#fff; stroke-width:1; stroke-dasharray:3 3; opacity:.55; }
+.rv-hl { fill:none; stroke:var(--brand); stroke-width:2.2; }
+.rv-base { stroke:var(--muted); stroke-width:1; opacity:.6; }
+.rv-prof { stroke:var(--muted); stroke-opacity:.45; stroke-width:.6; }
+.rv-legend { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; padding:0 6.1%; }
+.rv-col { display:grid; gap:3px; align-content:start; min-width:0; }
+.rv-name { display:flex; align-items:flex-start; gap:6px; min-width:0; }
+.rv-name > span { display:grid; min-width:0; padding-top:2px; }
+.rv-name small { font-size:11.5px; color:var(--muted); line-height:1.2; }
+.rv-name .chip { min-width:22px; width:22px; height:22px; padding:0; font-size:13px; border-radius:5px; flex:none; }
+.rv-name b { font-size:13.5px; font-weight:600; line-height:1.2; overflow-wrap:break-word; hyphens:auto; }
+.rv-val { font-family:var(--f-mono); font-size:12px; color:var(--muted); }
+.rv-spans { margin-top:-4px; }
+.rv-span { border-top:2px solid var(--brand); padding-top:3px; text-align:center; font-family:var(--f-head); font-weight:600; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--brand); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 @media (prefers-reduced-motion:no-preference) { .big, .chip, .btn { transition:color .15s, background .15s; } }
 
 /* installed app: keep clear of the iPhone status bar and home indicator */
@@ -806,7 +831,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '61554e778a', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'f60ae04e44', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

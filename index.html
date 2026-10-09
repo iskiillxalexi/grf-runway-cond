@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
+<script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -227,6 +228,22 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
 .devbox .row { gap:12px; }
 .devbox b { font-family:var(--f-mono); font-size:22px; letter-spacing:.06em; }
 .updbar { position:fixed; left:12px; right:12px; top:calc(10px + env(safe-area-inset-top, 0px)); z-index:50; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:520px; margin-inline:auto; padding:10px 12px 10px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); box-shadow:0 6px 24px rgba(0,0,0,.18); font-size:15px; }
+/* light/dark switch */
+.themesw { position:relative; display:inline-flex; align-items:center; justify-content:space-between; width:62px; height:32px; padding:0 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface2); color:var(--muted); cursor:pointer; flex:none; }
+.themesw svg { position:relative; z-index:1; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; transition:color .2s; }
+.themesw .knob { position:absolute; top:3px; left:3px; width:26px; height:24px; border-radius:12px; background:var(--surface); box-shadow:0 1px 3px rgba(0,0,0,.22); transition:transform .2s; }
+.themesw .sun { color:var(--ink); }
+.themesw[aria-checked="true"] .knob { transform:translateX(28px); }
+.themesw[aria-checked="true"] .sun { color:var(--muted); } .themesw[aria-checked="true"] .moon { color:var(--ink); }
+@media (prefers-reduced-motion:reduce) { .themesw .knob, .themesw svg { transition:none; } }
+.top { position:relative; }
+.top .themesw { position:absolute; top:calc(10px + env(safe-area-inset-top, 0px)); right:calc(14px + env(safe-area-inset-right, 0px)); }
+@media (min-width:860px) { .top .themesw { top:18px; right:max(24px, calc(50% - 550px)); } .top .seg.modes { align-self:flex-end; } }
+.lock .brandrow .themesw { margin-left:auto; }
+.status { align-items:center; }
+.vbtn { margin-top:6px; min-height:26px; padding:0 10px; border:1px solid var(--line); border-radius:13px; background:transparent; color:var(--muted); font-family:var(--f-mono); font-size:11.5px; cursor:pointer; }
+.vbtn:hover { color:var(--ink); border-color:var(--muted); }
+.vbtn:disabled { cursor:default; opacity:.8; }
 /* legal: notice under results, footer, terms dialog */
 .legalnote { border-left:3px solid var(--brand); background:var(--surface); border-radius:0 10px 10px 0; padding:10px 14px; font-size:13.5px; color:var(--muted); line-height:1.45; }
 .legalnote b { color:var(--ink); font-weight:600; }
@@ -269,7 +286,7 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
 <body>
 <div class="lock" id="lock">
   <div class="lock-in">
-    <div class="brandrow"><span class="logo" aria-hidden="true">GRF</span><h1>Runway Cond</h1></div>
+    <div class="brandrow"><span class="logo" aria-hidden="true">GRF</span><h1>Runway Cond</h1><button class="themesw" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="knob"></span><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button></div>
     <p class="lead" id="licBusy">Checking the license…</p>
     <div id="licForm" hidden style="display:grid;gap:14px">
       <p class="lead">Enter your license key to open the app.</p>
@@ -776,7 +793,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '6b64893d50', stored = false, latest = null, reg = null, timer = null, ready = false;
+  var VER = '4a49e0d263', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;
@@ -801,7 +818,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (!had) { had = true; return; }
     ready = true; clearTimeout(timer);
-    if (document.hidden || !document.querySelector('.hero')) { location.reload(); return; }
+    if (force || document.hidden || !document.querySelector('.hero')) { location.reload(); return; }
     bar('Version ' + (latest ? 'v' + latest + ' ' : '') + 'is ready.', 'Reload', function () { location.reload(); });
   });
   function download() {
@@ -822,6 +839,23 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (latest !== VER && was !== latest) download();
     }).catch(function () {});
   }
+  /* the Check version button: compare with GitHub now, and switch to the new version straight away if they differ */
+  function checkNow(btn) {
+    function say(t, back) {
+      btn.textContent = t;
+      if (back) setTimeout(function () { btn.textContent = 'Check version'; btn.disabled = false; }, 2500);
+    }
+    if (ready) { location.reload(); return; }
+    if (navigator.onLine === false) { say('No connection', true); return; }
+    btn.disabled = true; say('Checking…');
+    fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.v) { say('Could not check', true); return; }
+      latest = j.v; render();
+      if (j.v === VER) { say('Up to date', true); return; }
+      force = true; say('Updating to v' + j.v + '…'); download();
+    }).catch(function () { say('Could not check', true); });
+  }
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-check-version]'); if (b && !b.disabled) checkNow(b); });
   navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(function (r) {
     reg = r;
     function poll() { if (!ready) reg.update().catch(function () {}); checkLatest(); }
@@ -836,6 +870,27 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     }
     check();
   }).catch(function () { var el = document.getElementById('offl'); if (el) el.textContent = 'Offline use could not be set up'; });
+})();
+</script><script>
+/* light/dark: follows the device until the switch is used, then remembered on this device */
+(function () {
+  var root = document.documentElement, mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  function cur() { return root.getAttribute('data-theme') || (mq && mq.matches ? 'dark' : 'light'); }
+  function sync() {
+    var dark = cur() === 'dark';
+    document.querySelectorAll('[data-theme-toggle]').forEach(function (b) { b.setAttribute('aria-checked', String(dark)); });
+    if (root.getAttribute('data-theme')) document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.setAttribute('content', dark ? '#1A1E23' : '#FFFFFF'); });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-theme-toggle]'); if (!b) return;
+    var t = cur() === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', t); try { localStorage.setItem('grf-theme', t); } catch (x) {}
+    sync();
+  });
+  if (mq && mq.addEventListener) mq.addEventListener('change', sync);
+  window.GRFTheme = sync;
+  new MutationObserver(function () { if (document.querySelector('[data-theme-toggle][aria-checked="false"]') && cur() === 'dark') sync(); }).observe(document.body, {childList: true, subtree: true});
+  sync();
 })();
 </script>
 </body>

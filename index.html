@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en" class="locked">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GRF">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>GRF Runway Cond</title>
+<style>
+@font-face{font-family:'Barlow';font-weight:400;font-style:normal;font-display:swap;src:url(fonts/Barlow-Regular.woff) format('woff')}
+@font-face{font-family:'Barlow';font-weight:500;font-style:normal;font-display:swap;src:url(fonts/Barlow-Medium.woff) format('woff')}
+@font-face{font-family:'Barlow';font-weight:600;font-style:normal;font-display:swap;src:url(fonts/Barlow-SemiBold.woff) format('woff')}
+@font-face{font-family:'Barlow Condensed';font-weight:600;font-style:normal;font-display:swap;src:url(fonts/BarlowCondensed-SemiBold.woff) format('woff')}
+@font-face{font-family:'Barlow Condensed';font-weight:700;font-style:normal;font-display:swap;src:url(fonts/BarlowCondensed-Bold.woff) format('woff')}
+@font-face{font-family:'IBM Plex Mono';font-weight:500;font-style:normal;font-display:swap;src:url(fonts/IBMPlexMono-Medium.woff) format('woff')}
+@font-face{font-family:'IBM Plex Mono';font-weight:600;font-style:normal;font-display:swap;src:url(fonts/IBMPlexMono-SemiBold.woff) format('woff')}
+@font-face{font-family:'Monoton';font-weight:400;font-style:normal;font-display:swap;src:url(fonts/Monoton-Regular.woff) format('woff')}
+
+/* Layout: clean white header with a hairline (as on the logo sheet), inputs left and a bright orange result card right on iPad;
+   one column plus a dark result bar on iPhone. --brand is the one value to swap. */
+:root {
+  --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#E9ECF0; --ink:#1E2329; --muted:#626B77; --line:#DADEE4;
+  --brand:#E99435; --brand-ink:#2A1703; --brand-soft:#FCEBD6; --link:#1E2329; --focus:#1E2329;
+  --head:#FFFFFF; --seg-on:#1E2329; --seg-on-ink:#FFFFFF;
+  --dock:#1E2329; --dock-ink:#FFFFFF; --dock-mute:#AEB5BF;
+  --bad:#C62828; --badbg:#FBE4E4; --warn:#7A4E00; --warnbg:#FFF1CF; --okbg:#E9ECF0;
+  --c6:#1E8A4A; --c6t:#FFFFFF; --c5:#52A33F; --c5t:#FFFFFF; --c4:#A9C93C; --c4t:#1A2406;
+  --c3:#F2D321; --c3t:#2A2300; --c2:#F2A21E; --c2t:#2A1A00; --c1:#E8691F; --c1t:#FFFFFF; --c0:#C62828; --c0t:#FFFFFF;
+  --f-ui:'Barlow',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --f-head:'Barlow Condensed','Arial Narrow',-apple-system,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --f-logo:'Monoton','Barlow Condensed',Impact,sans-serif;
+  background:var(--head);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#111418; --surface:#1A1E23; --surface2:#262B32; --ink:#ECEFF3; --muted:#A0A8B3; --line:#2E343C;
+  --brand-soft:#3A2A14; --link:#F4B466; --focus:#F4B466; --head:#1A1E23; --seg-on:#E99435; --seg-on-ink:#2A1703;
+  --dock:#0B0D10; --dock-mute:#A0A8B3;
+  --bad:#FF8A8A; --badbg:#3B1A1E; --warn:#FFD27A; --warnbg:#3A2C0C; --okbg:#262B32; color-scheme:dark; } }
+:root[data-theme="dark"] {
+  --bg:#111418; --surface:#1A1E23; --surface2:#262B32; --ink:#ECEFF3; --muted:#A0A8B3; --line:#2E343C;
+  --brand-soft:#3A2A14; --link:#F4B466; --focus:#F4B466; --head:#1A1E23; --seg-on:#E99435; --seg-on-ink:#2A1703;
+  --dock:#0B0D10; --dock-mute:#A0A8B3;
+  --bad:#FF8A8A; --badbg:#3B1A1E; --warn:#FFD27A; --warnbg:#3A2C0C; --okbg:#262B32; color-scheme:dark; }
+
+* { box-sizing:border-box; }
+[hidden] { display:none !important; }
+html, body { margin:0; }
+body { background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:16px; line-height:1.4;
+  padding:0 0 110px; -webkit-text-size-adjust:100%; }
+h1,h2,h3,h4 { font-family:var(--f-head); font-weight:700; margin:0; letter-spacing:.02em; text-wrap:balance; }
+h2 { font-size:15px; text-transform:uppercase; color:var(--muted); letter-spacing:.1em; }
+button, select, input, textarea { font:inherit; color:inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+
+/* header */
+.top { background:var(--head); border-bottom:1px solid var(--line); padding:14px 16px 16px; }
+.top-in { max-width:1100px; margin-inline:auto; display:flex; align-items:center; justify-content:space-between; gap:14px 20px; flex-wrap:wrap; }
+.brand { display:flex; align-items:center; gap:14px; min-width:0; }
+.logo { font-family:var(--f-logo); font-size:34px; line-height:1; color:var(--brand); letter-spacing:.02em; }
+.brand h1 { font-size:22px; text-transform:uppercase; line-height:1; }
+.brand p { margin:4px 0 0; font-family:var(--f-mono); font-size:12px; color:var(--muted); }
+.top .seg { min-width:min(100%,300px); flex:1 1 300px; max-width:440px; }
+.modes button { display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; min-height:52px; padding:0 6px; }
+.modes button small { font-family:var(--f-head); font-weight:600; font-size:11px; letter-spacing:.12em; text-transform:uppercase; opacity:.7; }
+.modes button b { font-weight:600; font-size:16px; }
+.top .seg button[aria-pressed="true"] { background:var(--brand); color:var(--brand-ink); }
+
+.wrap { max-width:1100px; margin-inline:auto; padding:16px 16px 0; display:grid; gap:14px; }
+.left, .right { display:grid; gap:14px; min-width:0; align-content:start; }
+
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:14px; min-width:0; }
+.row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; min-width:0; }
+.field { display:grid; gap:5px; min-width:0; flex:1 1 150px; }
+.field > label, .lbl { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+.seg { display:flex; background:var(--surface2); border-radius:10px; padding:3px; gap:3px; }
+.seg button { flex:1; min-height:44px; border:0; background:transparent; border-radius:8px; font-weight:600; cursor:pointer; padding:0 10px; }
+.seg button[aria-pressed="true"] { background:var(--seg-on); color:var(--seg-on-ink); }
+.seg.small button { min-height:40px; padding:0 2px; font-family:var(--f-mono); font-size:15px; }
+
+select, input[type="number"] { width:100%; min-height:46px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:0 12px; }
+.btn { min-height:44px; border:1.5px solid var(--ink); background:transparent; color:var(--ink); border-radius:9px; padding:0 16px; font-weight:600; cursor:pointer; }
+.btn.fill { background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+.btn:disabled { opacity:.5; cursor:default; }
+.check { display:flex; align-items:center; gap:10px; min-height:44px; cursor:pointer; flex:1 1 170px; }
+.check input { width:22px; height:22px; accent-color:var(--brand); }
+
+.third { display:grid; gap:12px; border-top:1px solid var(--line); padding-top:14px; }
+.third:first-of-type { border-top:0; padding-top:0; }
+.third h3 { font-size:19px; display:flex; align-items:center; gap:10px; }
+.third h3 .n { flex:none; width:28px; height:28px; border-radius:50%; background:var(--brand); color:var(--brand-ink); display:inline-flex; align-items:center; justify-content:center; font-size:16px; }
+.third h3 small { margin-left:auto; font-family:var(--f-ui); font-weight:400; font-size:13px; color:var(--muted); letter-spacing:0; text-align:right; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
+
+.scan p { margin:0; color:var(--muted); font-size:14px; }
+.scan textarea { width:100%; min-height:120px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px; font-family:var(--f-mono); font-size:14px; resize:vertical; }
+.thumb { max-height:120px; border-radius:9px; border:1px solid var(--line); }
+.note { border-radius:9px; padding:10px 12px; font-size:14px; background:var(--warnbg); color:var(--warn); }
+.note.bad { background:var(--badbg); color:var(--bad); }
+.note.ok { background:var(--okbg); color:var(--ink); }
+
+.chip { display:inline-flex; align-items:center; justify-content:center; min-width:34px; height:30px; padding:0 9px; border-radius:7px; font-family:var(--f-mono); font-weight:600; font-size:15px; white-space:nowrap; }
+.chip.c6 { background:var(--c6); color:var(--c6t); } .chip.c5 { background:var(--c5); color:var(--c5t); }
+.chip.c4 { background:var(--c4); color:var(--c4t); } .chip.c3 { background:var(--c3); color:var(--c3t); }
+.chip.c2 { background:var(--c2); color:var(--c2t); } .chip.c1 { background:var(--c1); color:var(--c1t); }
+.chip.c0 { background:var(--c0); color:var(--c0t); }
+.tag { font-family:var(--f-head); font-weight:700; font-size:13px; letter-spacing:.07em; text-transform:uppercase; padding:3px 9px; border-radius:6px; background:var(--surface2); }
+.tag.bad { background:var(--bad); color:var(--surface); }
+
+
+/* input section */
+.phead { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:40px; }
+.stepn { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:var(--brand); color:var(--brand-ink); font-size:14px; letter-spacing:0; margin-right:9px; vertical-align:1px; }
+.ghost { border:0; background:transparent; color:var(--muted); font-weight:600; font-size:15px; min-height:40px; padding:0 4px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.ghost:hover { color:var(--ink); }
+.ghost svg, .btn svg, .srcs svg, .empty svg { fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.ghost svg { width:18px; height:18px; }
+.srcs { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:8px; }
+.srcs button { display:grid; justify-items:center; align-content:center; gap:3px; min-height:92px; padding:12px 6px; border:1.5px solid var(--line); border-radius:12px; background:var(--bg); color:var(--ink); cursor:pointer; }
+.srcs button svg { width:28px; height:28px; margin-bottom:2px; }
+.srcs button b { font-weight:600; font-size:16px; }
+.srcs button small { font-size:12px; color:var(--muted); line-height:1.2; text-align:center; }
+.srcs button[aria-selected="true"] { border-color:var(--brand); background:var(--brand-soft); box-shadow:inset 0 0 0 1px var(--brand); }
+.srcs button[aria-selected="true"] svg { color:var(--brand); }
+.pane { display:grid; gap:10px; }
+.btn.lg { min-height:56px; font-size:17px; display:inline-flex; align-items:center; justify-content:center; gap:10px; }
+.btn.lg svg { width:24px; height:24px; }
+.shot { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+.shot details { flex:1 1 200px; min-width:0; }
+#photoText { white-space:pre-wrap; overflow-wrap:anywhere; font-family:var(--f-mono); font-size:13px; margin:8px 0 0; }
+.link { justify-self:start; border:0; background:none; padding:0; min-height:36px; color:var(--ink); font-weight:600; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+
+/* result header and empty state */
+.reshead { display:flex; align-items:baseline; justify-content:space-between; gap:4px 12px; flex-wrap:wrap; }
+.reshead .ctx { font-family:var(--f-mono); font-size:12.5px; color:var(--muted); }
+.empty { border:1.5px dashed var(--line); border-radius:14px; background:var(--surface); padding:30px 22px; display:grid; justify-items:center; gap:8px; text-align:center; color:var(--muted); }
+.empty svg { width:40px; height:40px; color:var(--brand); }
+.empty h3 { font-size:21px; color:var(--ink); }
+.empty p { margin:0; max-width:34ch; font-size:14.5px; }
+
+/* result */
+.res { display:grid; gap:14px; min-width:0; }
+.hero { background:var(--brand); color:var(--brand-ink); border-radius:14px; padding:18px 18px 16px; display:grid; gap:12px; min-width:0; }
+.hero .top-row { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.hero .lbl { color:var(--brand-ink); opacity:.78; }
+.pill { font-family:var(--f-head); font-weight:700; font-size:13px; letter-spacing:.09em; text-transform:uppercase; background:var(--brand-ink); color:var(--brand); padding:3px 10px; border-radius:99px; }
+.condtxt { font-family:var(--f-head); font-weight:700; font-size:34px; line-height:1.08; letter-spacing:.02em; overflow-wrap:anywhere; }
+.flds { display:flex; flex-wrap:wrap; gap:10px; }
+.fld { background:rgba(255,255,255,.28); border-radius:10px; padding:10px 12px 12px; display:grid; gap:4px; align-content:start; min-width:0; }
+.fld.wide { flex:1 1 200px; } .fld.narrowf { flex:0 0 auto; min-width:96px; }
+.fld .val { font-family:var(--f-head); font-weight:700; font-size:32px; line-height:1.05; letter-spacing:.02em; overflow-wrap:anywhere; }
+.hero .sub { margin:0; font-size:14px; }
+.hero .foot { margin:0; font-size:13px; border-top:1px solid rgba(42,23,3,.25); padding-top:10px; opacity:.85; }
+.hero.nogo { background:var(--c0); color:var(--c0t); }
+.hero.nogo .lbl { color:var(--c0t); } .hero.nogo .pill { background:var(--c0t); color:var(--c0); }
+.hero.nogo .foot { border-top-color:rgba(255,255,255,.35); }
+.rwys { display:flex; flex-wrap:wrap; gap:8px; }
+.seg.rwy { flex:0 1 auto; } .seg.rwy button { min-width:64px; font-family:var(--f-mono); font-size:16px; }
+.rnotes { margin:0; padding:10px 12px 10px 28px; background:var(--surface2); border-radius:9px; font-family:var(--f-mono); font-size:13px; display:grid; gap:4px; overflow-wrap:anywhere; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.stat { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; display:grid; gap:6px; align-content:start; min-width:0; }
+.big { font-family:var(--f-mono); font-weight:600; font-size:44px; line-height:1; font-variant-numeric:tabular-nums; }
+.big small { font-size:18px; margin-left:5px; color:var(--muted); }
+.big.bad { color:var(--bad); font-size:28px; }
+.stat .rw { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.stat .rw .chip { height:40px; min-width:44px; font-size:22px; }
+.stat .rw span.nm { font-family:var(--f-head); font-weight:700; font-size:17px; letter-spacing:.03em; }
+.disc { color:var(--muted); font-size:12.5px; margin:0; }
+.tlist { display:grid; gap:8px; }
+.tl { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:start; padding:12px; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+.tl .num { font-family:var(--f-head); font-weight:700; font-size:20px; color:var(--muted); }
+.tl .what { display:grid; gap:4px; min-width:0; overflow-wrap:anywhere; }
+.tl .what b { font-weight:600; }
+.tl .tags { display:flex; flex-wrap:wrap; gap:6px; }
+.warnline { font-size:13px; color:var(--warn); background:var(--warnbg); padding:5px 9px; border-radius:7px; }
+details { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; }
+summary { cursor:pointer; font-weight:600; min-height:32px; display:flex; align-items:center; }
+details ol { margin:8px 0 0; padding-left:20px; color:var(--muted); font-size:14px; display:grid; gap:2px; }
+details h4 { margin:12px 0 0; font-size:15px; letter-spacing:.06em; text-transform:uppercase; }
+details.how { display:grid; gap:4px; padding:12px 16px 16px; }
+details.how .hstep { border-left:3px solid var(--brand); padding:2px 0 2px 12px; margin-top:10px; }
+details.how .hstep h4 { margin:0; text-transform:none; letter-spacing:.02em; font-size:17px; }
+details.how ol { color:var(--ink); font-size:14px; gap:5px; margin-top:6px; }
+details.how li::marker { color:var(--muted); }
+
+.bar { position:fixed; left:0; right:0; bottom:0; z-index:5; background:var(--dock); color:var(--dock-ink); border-top:3px solid var(--brand);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display:flex; align-items:center; justify-content:space-between; gap:14px; cursor:pointer; }
+.bar .lbl { display:block; color:var(--dock-mute); }
+.bar .condtxt { font-size:22px; color:var(--brand); }
+.bar .big { font-size:30px; color:var(--dock-ink); } .bar .big small { font-size:15px; color:var(--dock-mute); } .bar .big.bad { font-size:20px; color:#FF9C9C; }
+
+@media (min-width:860px) {
+  body { padding-bottom:40px; }
+  .top { padding:20px 24px 22px; }
+  .logo { font-size:42px; }
+  .brand h1 { font-size:26px; }
+  .wrap { padding:20px 24px 0; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); column-gap:20px; align-items:start; }
+  .right { position:sticky; top:16px; }
+  .bar { display:none; }
+}
+@media (prefers-reduced-motion:no-preference) { .big, .chip, .btn { transition:color .15s, background .15s; } }
+
+/* installed app: keep clear of the iPhone status bar and home indicator */
+.top { padding-top:calc(14px + env(safe-area-inset-top, 0px)); padding-left:calc(16px + env(safe-area-inset-left, 0px)); padding-right:calc(16px + env(safe-area-inset-right, 0px)); }
+.offl { display:inline-flex; align-items:center; gap:6px; margin-top:6px; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); }
+.offl::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--line); }
+.offl.ok::before { background:var(--c5); } .offl.busy::before { background:var(--c3); }
+/* license gate */
+html.locked .top, html.locked .wrap, html.locked .bar { display:none !important; }
+.lock { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); background:var(--bg); }
+.lock-in { width:min(100%, 440px); background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:26px 22px; display:grid; gap:14px; }
+.lock .brandrow { display:flex; align-items:center; gap:12px; }
+.lock .logo { font-size:38px; }
+.lock h1 { font-size:24px; text-transform:uppercase; line-height:1; }
+.lock .lead { margin:0; color:var(--muted); }
+.lock textarea { width:100%; min-height:96px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px; font-family:var(--f-mono); font-size:13px; resize:vertical; overflow-wrap:anywhere; }
+.devbox { border-top:1px solid var(--line); padding-top:14px; display:grid; gap:4px; }
+.devbox .row { gap:12px; }
+.devbox b { font-family:var(--f-mono); font-size:22px; letter-spacing:.06em; }
+.lic { display:flex; flex-wrap:wrap; align-items:center; gap:2px 10px; margin-top:4px; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); }
+.lic.soon { color:var(--warn); }
+.lic .lnk { border:0; background:none; padding:0; color:inherit; font:inherit; text-decoration:underline; text-underline-offset:2px; cursor:pointer; min-height:24px; }
+</style>
+</head>
+<body>
+<div class="lock" id="lock">
+  <div class="lock-in">
+    <div class="brandrow"><span class="logo" aria-hidden="true">GRF</span><h1>Runway Cond</h1></div>
+    <p class="lead" id="licBusy">Checking the license…</p>
+    <div id="licForm" hidden style="display:grid;gap:14px">
+      <p class="lead">Enter your license key to open the app.</p>
+      <textarea id="licKey" aria-label="License key" placeholder="GRF-…" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+      <div id="licMsg" class="note bad" hidden></div>
+      <div class="row"><button class="btn fill lg" type="button" id="licSync" hidden>Sync now</button><button class="btn fill lg" type="button" id="licGo">Activate</button><button class="btn" type="button" id="licCancel" hidden>Cancel</button></div>
+      <div class="devbox">
+        <span class="lbl">This device's code</span>
+        <div class="row"><b id="devCode">…</b><button class="ghost" type="button" id="devCopy">Copy</button></div>
+        <p class="disc">Some keys only work on one device. Then send this code to the person who issues your key.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app"></div>
+
+<script>
+/* GRF license keys: ECDSA P-256 signed, checked on the device with no network.
+   Key = "GRF-" + base64url(payload + 64-byte signature)
+   payload v2: v(1)=2 | issued day(2) | expiry day(2) | id(4) | flags(1) | [device id(5)] | app content key(32) | name length(1) | name (UTF-8)
+   The content key decrypts the app itself, so the app cannot be read or run without a key. */
+const GRFLicense = (() => {
+  const EPOCH = Date.UTC(2024, 0, 1), DAY = 86400000;
+  const subtle = (typeof crypto !== 'undefined' && crypto.subtle) || null;
+  const dayOf = ms => Math.floor((ms - EPOCH) / DAY);
+  const dateOfDay = d => new Date(EPOCH + d * DAY).toISOString().slice(0, 10);
+  const b64u = {
+    enc(bytes) { let s = ''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
+    dec(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; const s = atob(str); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+  };
+  /* device code: 5 bytes as 8 Crockford base32 characters, shown as XXXX-XXXX */
+  const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  function codeOf(bytes) {
+    let bits = 0, val = 0, out = '';
+    for (const b of bytes) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } }
+    return out.slice(0, 4) + '-' + out.slice(4, 8);
+  }
+  function bytesOfCode(code) {
+    const s = String(code || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+    if (s.length !== 8) return null;
+    let bits = 0, val = 0; const out = [];
+    for (const ch of s) { const v = B32.indexOf(ch); if (v < 0) return null; val = (val << 5) | v; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } }
+    return Uint8Array.from(out.slice(0, 5));
+  }
+  function encodePayload({issued, expires, id, device, ck, name}) {
+    const nm = new TextEncoder().encode(String(name || '').trim()).slice(0, 60);
+    const out = [2, issued >> 8 & 255, issued & 255, expires >> 8 & 255, expires & 255,
+      id >>> 24 & 255, id >>> 16 & 255, id >>> 8 & 255, id & 255, device ? 1 : 0];
+    if (device) out.push(...device);
+    out.push(...ck, nm.length, ...nm);
+    return Uint8Array.from(out);
+  }
+  function decode(key) {
+    const s = String(key || '').replace(/\s+/g, '');
+    if (!/^GRF-[A-Za-z0-9_-]+$/.test(s)) return null;
+    let all; try { all = b64u.dec(s.slice(4)); } catch (e) { return null; }
+    if (all.length < 11 + 64) return null;
+    if (all[0] === 1) return {old:true};
+    if (all[0] !== 2 || all.length < 43 + 64) return null;
+    const p = all.slice(0, all.length - 64), sig = all.slice(all.length - 64);
+    let i = 0; const u8 = () => p[i++], u16 = () => (p[i++] << 8) | p[i++];
+    i = 1;
+    const issued = u16(), expires = u16(), id = ((u8() << 24) | (u8() << 16) | (u8() << 8) | u8()) >>> 0, flags = u8();
+    let device = null;
+    if (flags & 1) { device = p.slice(i, i + 5); i += 5; }
+    const ck = p.slice(i, i + 32); i += 32;
+    const n = u8(); if (i + n !== p.length) return null;
+    const name = new TextDecoder().decode(p.slice(i, i + n));
+    return {payload: p, sig, issued, expires, id, device, ck, name,
+      issuedDate: dateOfDay(issued), expiresDate: dateOfDay(expires), deviceCode: device ? codeOf(device) : null};
+  }
+  const importPub = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['verify']);
+  const importPriv = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['sign']);
+  /* now = trusted time in ms; returns {ok, reason, info} */
+  async function verify(key, pubJwk, now, deviceBytes) {
+    const k = decode(key);
+    if (!k) return {ok:false, reason:'format'};
+    if (k.old) return {ok:false, reason:'old'};
+    const good = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), k.sig, k.payload);
+    if (!good) return {ok:false, reason:'signature'};
+    const today = dayOf(now);
+    if (today > k.expires) return {ok:false, reason:'expired', info:k};
+    if (today < k.issued - 1) return {ok:false, reason:'clock', info:k};
+    if (k.device && (!deviceBytes || k.device.some((b, j) => b !== deviceBytes[j]))) return {ok:false, reason:'device', info:k};
+    return {ok:true, info:k, daysLeft: k.expires - today};
+  }
+  async function sign({name, issuedMs, expiresDate, deviceCode, contentKey}, privJwk) {
+    const ck = typeof contentKey === 'string' ? Uint8Array.from(atob(contentKey), c => c.charCodeAt(0)) : contentKey;
+    if (!ck || ck.length !== 32) throw new Error('The signing key file has no app key. Load GRF-signing-key-v2.json.');
+    const issued = dayOf(issuedMs);
+    const expires = dayOf(Date.parse(expiresDate + 'T00:00:00Z'));
+    if (!(expires >= issued)) throw new Error('The end date is before today.');
+    let device = null;
+    if (deviceCode && String(deviceCode).trim()) { device = bytesOfCode(deviceCode); if (!device) throw new Error('The device code should be 8 characters, like 7K3M-Q9TB.'); }
+    const idb = new Uint8Array(4); crypto.getRandomValues(idb);
+    const id = ((idb[0] << 24) | (idb[1] << 16) | (idb[2] << 8) | idb[3]) >>> 0;
+    const payload = encodePayload({issued, expires, id, device, ck, name});
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), payload));
+    const all = new Uint8Array(payload.length + 64); all.set(payload); all.set(sig, payload.length);
+    return {key: 'GRF-' + b64u.enc(all), id, issued: dateOfDay(issued), expires: dateOfDay(expires), device: device ? codeOf(device) : null};
+  }
+  /* Revocation list (revoked.json): license ids withdrawn by the issuer, signed with the same key */
+  const revMsg = (issued, ids) => new TextEncoder().encode(`GRF-REVOKED-1|${issued}|${ids.join(',')}`);
+  const normIds = ids => Array.from(new Set((ids || []).map(n => Number(n) >>> 0))).sort((a, b) => a - b);
+  async function signRevoked(ids, privJwk, issuedMs) {
+    const list = normIds(ids), issued = Math.floor(issuedMs ?? Date.now());
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), revMsg(issued, list)));
+    return {v:1, issued, ids:list, sig: b64u.enc(sig)};
+  }
+  async function verifyRevoked(obj, pubJwk) {
+    if (!obj || obj.v !== 1 || !Number.isFinite(obj.issued) || !Array.isArray(obj.ids) || typeof obj.sig !== 'string') return null;
+    const list = normIds(obj.ids);
+    if (list.length !== obj.ids.length || list.some((v, i) => v !== obj.ids[i])) return null;
+    let sig; try { sig = b64u.dec(obj.sig); } catch (e) { return null; }
+    const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, revMsg(obj.issued, list));
+    return ok ? {issued: obj.issued, ids: list} : null;
+  }
+  return {decode, verify, sign, signRevoked, verifyRevoked, codeOf, bytesOfCode, dayOf, dateOfDay};
+})();
+if (typeof module !== 'undefined') module.exports = GRFLicense;
+
+/* License gate. The app itself is stored encrypted (app.bin); a valid license key carries the key that decrypts it.
+   Everything is checked and decrypted on the device, no network needed. */
+(function () {
+  const PUB = {"kty":"EC","x":"r3YvGRUXkcvbh-k-D5hoQLXtYifnXYC0G864tGYvwaE","y":"wbxScIibcmHJ4H59naDk4IN71bPT7-NMWpCdRC4NLE8","crv":"P-256"};
+  const K_KEY = 'grf-license', K_DEV = 'grf-device', K_SEEN = 'grf-last-seen';
+  const K_SYNC = 'grf-last-sync', K_REV = 'grf-revoked', K_REVI = 'grf-revoked-issued';
+  const SYNC_DAYS = 7, DAY = 86400000;
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  let dev = store.get(K_DEV) && GRFLicense.bytesOfCode(store.get(K_DEV));
+  if (!dev) { dev = crypto.getRandomValues(new Uint8Array(5)); store.set(K_DEV, GRFLicense.codeOf(dev)); }
+  const devCode = GRFLicense.codeOf(dev);
+  /* time that cannot be wound back by setting the clock earlier */
+  function trustedNow() {
+    const now = Date.now(), seen = Number(store.get(K_SEEN)) || 0;
+    const t = Math.max(now, seen);
+    store.set(K_SEEN, String(t));
+    return t;
+  }
+  const fmt = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric', timeZone:'UTC'});
+  const WHY = {
+    format: 'That is not a license key. It starts with GRF- and is one long line. Paste it in full.',
+    signature: 'This key is not valid. Check that it was copied in full.',
+    device: 'This key belongs to another device. Send the device code below to get a key for this one.',
+    clock: 'This key starts later than the date on this device. Check the date and time settings.',
+    old: 'This key is for an earlier version of the app. Ask for a new key.',
+    app: 'This key does not open this version of the app. Ask for a new key.',
+    load: 'The app could not be loaded. Open it once with a connection, then try again.',
+    revoked: 'This license has been withdrawn. Contact the person who issued it.',
+    sync: 'The app needs an internet connection once a week to stay unlocked. Connect, then tap Sync now.'
+  };
+  /* ---- weekly sync: fetch the signed list of withdrawn licenses (revoked.json) ---- */
+  const revoked = () => { try { return JSON.parse(store.get(K_REV) || '[]'); } catch (e) { return []; } };
+  async function sync() {
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 10000);
+    try {
+      const res = await fetch('revoked.json?t=' + Date.now(), {cache:'no-store', signal: ctl.signal});
+      if (!res.ok) return false;
+      const list = await GRFLicense.verifyRevoked(await res.json(), PUB);
+      if (!list) return false;                         /* not signed by the issuer: ignore */
+      if (list.issued >= (Number(store.get(K_REVI)) || 0)) store.set(K_REVI, String(list.issued));
+      /* withdrawn licenses stay withdrawn on this device, even if an older list turns up */
+      store.set(K_REV, JSON.stringify(Array.from(new Set(revoked().concat(list.ids)))));
+      store.set(K_SYNC, String(trustedNow()));
+      showSync();
+      return true;
+    } catch (e) { return false; } finally { clearTimeout(timer); }
+  }
+  function daysSinceSync() { const t = Number(store.get(K_SYNC)) || 0; return t ? (trustedNow() - t) / DAY : null; }
+  function showSync() {
+    const el = document.getElementById('syncLine'); if (!el) return;
+    const d = daysSinceSync();
+    if (d === null) { el.textContent = 'Not synced yet'; el.className = 'offl busy'; return; }
+    const left = Math.max(0, Math.ceil(SYNC_DAYS - d));
+    el.textContent = d < 1 ? 'Synced today' : `Synced ${Math.floor(d)} day${Math.floor(d) === 1 ? '' : 's'} ago` + (left <= 2 ? ` · connect within ${left} day${left === 1 ? '' : 's'}` : '');
+    el.className = 'offl ' + (left <= 2 ? 'busy' : 'ok');
+  }
+  function lock(msg, canCancel) {
+    document.documentElement.classList.add('locked');
+    $('lock').hidden = false;
+    $('licBusy').hidden = true; $('licForm').hidden = false;
+    $('licMsg').hidden = !msg; $('licMsg').textContent = msg || '';
+    $('licCancel').hidden = !canCancel;
+    $('licSync').hidden = msg !== WHY.sync;
+    $('devCode').textContent = devCode;
+  }
+  /* decrypt and start the app once */
+  let started = false;
+  async function start(ck) {
+    if (started) return true;
+    let buf;
+    try { buf = new Uint8Array(await (await fetch('app.bin')).arrayBuffer()); } catch (e) { throw 'load'; }
+    if (buf.length < 30) throw 'load';
+    let plain;
+    try {
+      const key = await crypto.subtle.importKey('raw', ck, 'AES-GCM', false, ['decrypt']);
+      plain = await crypto.subtle.decrypt({name:'AES-GCM', iv: buf.slice(0, 12)}, key, buf.slice(12));
+    } catch (e) { throw 'app'; }
+    const app = JSON.parse(new TextDecoder().decode(plain));
+    $('app').innerHTML = app.html;
+    const s = document.createElement('script'); s.textContent = app.js; document.body.appendChild(s);
+    started = true;
+    const ch = $('licChange');
+    if (ch) ch.addEventListener('click', () => { $('licKey').value = ''; lock('', true); });
+    if (window.GRFOffline) window.GRFOffline();
+    showSync();
+    return true;
+  }
+  function showLicense(r) {
+    const el = $('licLine'); if (!el) return;
+    const soon = r.daysLeft <= 14;
+    el.className = 'lic' + (soon ? ' soon' : '');
+    el.firstChild.textContent = (r.info.name ? `Licensed to ${r.info.name} · ` : '') +
+      (soon ? `expires in ${r.daysLeft} day${r.daysLeft === 1 ? '' : 's'} (${fmt(r.info.expiresDate)})` : `valid until ${fmt(r.info.expiresDate)}`);
+  }
+  async function check(key, fromForm) {
+    let r;
+    try { r = await GRFLicense.verify(key, PUB, trustedNow(), dev); }
+    catch (e) { r = {ok:false, reason:'signature'}; }
+    if (r.ok && revoked().includes(r.info.id)) {
+      store.del(K_KEY); lock(WHY.revoked); return false;
+    }
+    if (r.ok) {
+      if (!store.get(K_SYNC)) store.set(K_SYNC, String(trustedNow()));   /* the first week counts from activation */
+      if (daysSinceSync() > SYNC_DAYS) { lock(WHY.sync, false); return false; }
+      try { await start(r.info.ck); }
+      catch (why) { if (!fromForm && why === 'app') store.del(K_KEY); lock(WHY[why] || WHY.load, false); return false; }
+      store.set(K_KEY, key.replace(/\s+/g, ''));
+      document.documentElement.classList.remove('locked');
+      $('lock').hidden = true;
+      showLicense(r); showSync();
+      return true;
+    }
+    if (r.reason === 'expired') {
+      lock(`${fromForm ? 'This key' : 'Your license'} expired on ${fmt(r.info.expiresDate)}. Enter a new key.`);
+      if (!fromForm) store.del(K_KEY);
+    } else lock(fromForm ? WHY[r.reason] : (r.reason === 'device' ? WHY.device : r.reason === 'old' ? WHY.old : 'Enter your license key.'));
+    return false;
+  }
+  window.GRFLock = {recheck() { const k = store.get(K_KEY); if (k) check(k, false); else lock(''); }};
+  /* sync whenever possible, then apply what it says */
+  async function syncAndCheck() { await sync(); const k = store.get(K_KEY); if (k) return check(k, false); }
+  document.addEventListener('DOMContentLoaded', () => {
+    $('licGo').addEventListener('click', () => {
+      const k = $('licKey').value.trim();
+      if (!k) return lock('Paste your license key first.', !$('licCancel').hidden);
+      sync().finally(() => check(k, true));
+    });
+    $('licSync').addEventListener('click', async () => {
+      $('licSync').disabled = true; $('licSync').textContent = 'Syncing…';
+      const ok = await sync();
+      $('licSync').disabled = false; $('licSync').textContent = 'Sync now';
+      if (ok) window.GRFLock.recheck(); else lock('Could not reach the app\'s web address. ' + WHY.sync, false);
+    });
+    $('licCancel').addEventListener('click', () => window.GRFLock.recheck());
+    $('devCopy').addEventListener('click', () => {
+      navigator.clipboard && navigator.clipboard.writeText(devCode).then(() => { $('devCopy').textContent = 'Copied'; }, () => {});
+    });
+    const k = store.get(K_KEY);
+    if (k) check(k, false).then(() => syncAndCheck()); else { lock(''); sync(); }
+    /* the app may stay open for days: sync and check again when it comes back */
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) syncAndCheck(); });
+    window.addEventListener('online', () => syncAndCheck());
+    setInterval(() => syncAndCheck(), 3600000);
+  });
+})();
+
+</script>
+<script src="ocr-client.js"></script>
+<script>
+(function () {
+  var last = ['Checking offline use…', ''];
+  function show(t, c) { last = [t, c || '']; var el = document.getElementById('offl'); if (el) { el.textContent = t; el.className = 'offl ' + last[1]; } }
+  window.GRFOffline = function () { show(last[0], last[1]); };
+  if (!('serviceWorker' in navigator)) { show('Offline use not supported in this browser'); return; }
+  navigator.serviceWorker.register('sw.js').then(function (reg) {
+    function check() {
+      caches.open('grf-9099b8c0df').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
+        if (r) show('Works offline · v9099b8c0df', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
+      }).catch(function () { show('Offline storage not available'); });
+    }
+    check();
+  }).catch(function () { show('Offline use could not be set up'); });
+})();
+</script>
+</body>
+</html>

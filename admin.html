@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>GRF License Keys</title>
+<link rel="icon" href="icon-192.png">
+<style>
+@font-face{font-family:'Barlow';font-weight:400;src:url(fonts/Barlow-Regular.woff) format('woff')}
+@font-face{font-family:'Barlow';font-weight:600;src:url(fonts/Barlow-SemiBold.woff) format('woff')}
+@font-face{font-family:'Barlow Condensed';font-weight:600;src:url(fonts/BarlowCondensed-SemiBold.woff) format('woff')}
+@font-face{font-family:'Barlow Condensed';font-weight:700;src:url(fonts/BarlowCondensed-Bold.woff) format('woff')}
+@font-face{font-family:'IBM Plex Mono';font-weight:500;src:url(fonts/IBMPlexMono-Medium.woff) format('woff')}
+</style>
+<style>
+/* Layout: one working column, same look as the app: white header, orange actions, mono for keys and codes */
+:root {
+  --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#E9ECF0; --ink:#1E2329; --muted:#626B77; --line:#DADEE4;
+  --brand:#E99435; --brand-ink:#2A1703; --brand-soft:#FCEBD6; --focus:#1E2329;
+  --ok:#1E7A42; --okbg:#E3F3E8; --warn:#7A4E00; --warnbg:#FFF1CF; --bad:#C62828; --badbg:#FBE4E4;
+  --f-ui:'Barlow',-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --f-head:'Barlow Condensed','Arial Narrow',-apple-system,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#111418; --surface:#1A1E23; --surface2:#262B32; --ink:#ECEFF3; --muted:#A0A8B3; --line:#2E343C; --brand-soft:#3A2A14; --focus:#F4B466;
+  --ok:#7FD69C; --okbg:#173022; --warn:#FFD27A; --warnbg:#3A2C0C; --bad:#FF8A8A; --badbg:#3B1A1E; color-scheme:dark; } }
+:root[data-theme="dark"] {
+  --bg:#111418; --surface:#1A1E23; --surface2:#262B32; --ink:#ECEFF3; --muted:#A0A8B3; --line:#2E343C; --brand-soft:#3A2A14; --focus:#F4B466;
+  --ok:#7FD69C; --okbg:#173022; --warn:#FFD27A; --warnbg:#3A2C0C; --bad:#FF8A8A; --badbg:#3B1A1E; color-scheme:dark; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:16px; line-height:1.4; }
+h1,h2 { font-family:var(--f-head); font-weight:700; margin:0; letter-spacing:.02em; text-wrap:balance; }
+h2 { font-size:15px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); }
+button, input, textarea { font:inherit; color:inherit; }
+:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+.top { background:var(--surface); border-bottom:1px solid var(--line); padding:16px; }
+.top-in, .wrap { max-width:760px; margin-inline:auto; }
+.top-in { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.top h1 { font-size:24px; text-transform:uppercase; }
+.top h1 span { color:var(--brand); }
+.top p { margin:0; color:var(--muted); font-size:14px; }
+.wrap { padding:16px; display:grid; gap:14px; }
+.panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:14px; min-width:0; }
+.row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.field { display:grid; gap:5px; flex:1 1 200px; min-width:0; }
+.lbl, label { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+input[type=text], input[type=date], textarea { width:100%; min-height:46px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px 12px; }
+textarea { font-family:var(--f-mono); font-size:13px; min-height:84px; resize:vertical; }
+/* iOS gives date fields a fixed inner width and centred text: let them shrink to the column */
+input[type=date] { -webkit-appearance:none; appearance:none; display:block; min-width:0; max-width:100%; text-align:left; line-height:24px; }
+input[type=date]::-webkit-date-and-time-value { text-align:left; margin:0; }
+input[type=date]::-webkit-calendar-picker-indicator { margin-left:auto; }
+.btn { min-height:44px; border:1.5px solid var(--ink); background:transparent; border-radius:9px; padding:0 16px; font-weight:600; cursor:pointer; }
+.btn.fill { background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+.btn:disabled { opacity:.5; cursor:default; }
+.ghost { border:0; background:none; color:var(--muted); font-weight:600; cursor:pointer; min-height:36px; padding:0 4px; text-decoration:underline; text-underline-offset:3px; }
+.seg { display:flex; flex-wrap:wrap; background:var(--surface2); border-radius:10px; padding:3px; gap:3px; }
+.seg button { flex:1 1 auto; min-height:42px; border:0; background:transparent; border-radius:8px; font-weight:600; cursor:pointer; padding:0 12px; }
+.seg button[aria-pressed="true"] { background:var(--brand); color:var(--brand-ink); }
+.disc { color:var(--muted); font-size:13px; margin:0; }
+.note { border-radius:9px; padding:10px 12px; font-size:14px; background:var(--surface2); }
+.note.ok { background:var(--okbg); color:var(--ok); } .note.warn { background:var(--warnbg); color:var(--warn); } .note.bad { background:var(--badbg); color:var(--bad); }
+.keyout { border:2px solid var(--brand); border-radius:12px; padding:14px; display:grid; gap:10px; background:var(--brand-soft); }
+.keytxt { font-family:var(--f-mono); font-size:14px; overflow-wrap:anywhere; user-select:all; background:var(--surface); border-radius:8px; padding:10px; }
+.facts { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:14px; }
+.facts b { font-weight:600; }
+.log { width:100%; border-collapse:collapse; font-size:14px; }
+.log th { text-align:left; font-family:var(--f-head); font-weight:600; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:6px 8px; border-bottom:1px solid var(--line); }
+.log td { padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+.log td.mono { font-family:var(--f-mono); font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.tbl { overflow-x:auto; }
+.st { font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:6px; white-space:nowrap; }
+.st.ok { background:var(--okbg); color:var(--ok); } .st.warn { background:var(--warnbg); color:var(--warn); } .st.bad { background:var(--badbg); color:var(--bad); }
+.empty { color:var(--muted); font-size:14px; text-align:center; padding:18px 8px; border:1.5px dashed var(--line); border-radius:10px; }
+[hidden] { display:none !important; }
+.small { font-size:13px; }
+@media (max-width:520px) { .log th:nth-child(4), .log td:nth-child(4) { display:none; } .log td, .log th { padding-left:4px; padding-right:4px; } .log td:last-child { text-align:right; } .log td:last-child .ghost { display:block; margin-left:auto; } }
+.mono { font-family:var(--f-mono); }
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in"><h1><span>GRF</span> License keys</h1><p>Issue and withdraw keys for the Runway Cond app</p></div></header>
+<main class="wrap">
+  <section class="panel">
+    <h2>Set up this device</h2>
+    <div id="setOk" class="note ok" hidden></div>
+    <div id="setNeed" style="display:grid;gap:12px">
+      <div class="field"><span class="lbl">1. Signing key file</span>
+        <div class="row"><button class="btn" type="button" id="kFile">Choose GRF-signing-key-v2.json</button><input type="file" id="kFileIn" accept=".json,application/json" hidden><span id="kState" class="disc"></span></div>
+      </div>
+      <div class="field"><label for="ghTok">2. GitHub token (Contents: read and write on this repo)</label>
+        <div class="row"><input type="text" id="ghTok" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1 1 260px"><button class="btn" type="button" id="ghGo">Connect</button></div>
+        <span id="ghState" class="disc"></span>
+      </div>
+      <p class="disc">Both stay in this browser on this device only. Nothing secret is stored in the repository: the key list there is encrypted with your signing key.</p>
+    </div>
+    <div id="setMsg" class="note bad" hidden></div>
+  </section>
+
+  <section class="panel" id="pIssue">
+    <h2>New license key</h2>
+    <div class="field"><label for="iName">Name on the license</label><input type="text" id="iName" placeholder="e.g. Erik Andersson" autocomplete="off"></div>
+    <div class="field">
+      <span class="lbl">Valid for</span>
+      <div class="seg" id="iSeg" role="group" aria-label="Valid for">
+        <button type="button" data-p="d7">1 week</button><button type="button" data-p="m1">1 month</button>
+        <button type="button" data-p="m3" aria-pressed="true">3 months</button><button type="button" data-p="m6">6 months</button>
+        <button type="button" data-p="m12">1 year</button><button type="button" data-p="date">Pick date</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="iEnd">Last valid day</label><input type="date" id="iEnd"></div>
+      <div class="field"><label for="iDev">Device code (optional)</label><input type="text" id="iDev" placeholder="Empty: works on any device" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
+    </div>
+    <p class="disc">With a device code the key only opens the app on that phone or iPad. The code is shown on the app's lock screen.</p>
+    <div class="row"><button class="btn fill" type="button" id="iGo">Create key</button></div>
+    <div id="iMsg" class="note bad" hidden></div>
+    <div id="iOut" class="keyout" hidden>
+      <div class="facts" id="iFacts"></div>
+      <div class="keytxt" id="iKey"></div>
+      <div class="row">
+        <button class="btn fill" type="button" id="iCopy">Copy key</button>
+        <button class="btn" type="button" id="iCopyMsg">Copy message with key</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="row" style="justify-content:space-between"><h2>Issued keys</h2><button class="ghost" type="button" id="logReload">Reload</button></div>
+    <div id="revState" class="note" hidden></div>
+    <div id="logBody"><div class="empty">Set up this device to see the keys.</div></div>
+    <p class="disc">Withdraw publishes the change by itself: phones pick it up the next time they are online, and the app needs a connection at least once a week. A withdrawn key cannot be restored; issue a new key instead.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Check a key</h2>
+    <textarea id="cKey" aria-label="Key to check" placeholder="Paste a key starting with GRF-"></textarea>
+    <div class="row"><button class="btn" type="button" id="cGo">Check</button><button class="btn" type="button" id="cRevoke" hidden>Withdraw this key</button></div>
+    <div id="cOut" class="note" hidden></div>
+  </section>
+</main>
+<script>
+/* GRF license keys: ECDSA P-256 signed, checked on the device with no network.
+   Key = "GRF-" + base64url(payload + 64-byte signature)
+   payload v2: v(1)=2 | issued day(2) | expiry day(2) | id(4) | flags(1) | [device id(5)] | app content key(32) | name length(1) | name (UTF-8)
+   The content key decrypts the app itself, so the app cannot be read or run without a key. */
+const GRFLicense = (() => {
+  const EPOCH = Date.UTC(2024, 0, 1), DAY = 86400000;
+  const subtle = (typeof crypto !== 'undefined' && crypto.subtle) || null;
+  const dayOf = ms => Math.floor((ms - EPOCH) / DAY);
+  const dateOfDay = d => new Date(EPOCH + d * DAY).toISOString().slice(0, 10);
+  const b64u = {
+    enc(bytes) { let s = ''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
+    dec(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; const s = atob(str); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+  };
+  /* device code: 5 bytes as 8 Crockford base32 characters, shown as XXXX-XXXX */
+  const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  function codeOf(bytes) {
+    let bits = 0, val = 0, out = '';
+    for (const b of bytes) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } }
+    return out.slice(0, 4) + '-' + out.slice(4, 8);
+  }
+  function bytesOfCode(code) {
+    const s = String(code || '').toUpperCase().replace(/[^0-9A-Z]/g, '').replace(/O/g, '0').replace(/[IL]/g, '1');
+    if (s.length !== 8) return null;
+    let bits = 0, val = 0; const out = [];
+    for (const ch of s) { const v = B32.indexOf(ch); if (v < 0) return null; val = (val << 5) | v; bits += 5; if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; } }
+    return Uint8Array.from(out.slice(0, 5));
+  }
+  function encodePayload({issued, expires, id, device, ck, name}) {
+    const nm = new TextEncoder().encode(String(name || '').trim()).slice(0, 60);
+    const out = [2, issued >> 8 & 255, issued & 255, expires >> 8 & 255, expires & 255,
+      id >>> 24 & 255, id >>> 16 & 255, id >>> 8 & 255, id & 255, device ? 1 : 0];
+    if (device) out.push(...device);
+    out.push(...ck, nm.length, ...nm);
+    return Uint8Array.from(out);
+  }
+  function decode(key) {
+    const s = String(key || '').replace(/\s+/g, '');
+    if (!/^GRF-[A-Za-z0-9_-]+$/.test(s)) return null;
+    let all; try { all = b64u.dec(s.slice(4)); } catch (e) { return null; }
+    if (all.length < 11 + 64) return null;
+    if (all[0] === 1) return {old:true};
+    if (all[0] !== 2 || all.length < 43 + 64) return null;
+    const p = all.slice(0, all.length - 64), sig = all.slice(all.length - 64);
+    let i = 0; const u8 = () => p[i++], u16 = () => (p[i++] << 8) | p[i++];
+    i = 1;
+    const issued = u16(), expires = u16(), id = ((u8() << 24) | (u8() << 16) | (u8() << 8) | u8()) >>> 0, flags = u8();
+    let device = null;
+    if (flags & 1) { device = p.slice(i, i + 5); i += 5; }
+    const ck = p.slice(i, i + 32); i += 32;
+    const n = u8(); if (i + n !== p.length) return null;
+    const name = new TextDecoder().decode(p.slice(i, i + n));
+    return {payload: p, sig, issued, expires, id, device, ck, name,
+      issuedDate: dateOfDay(issued), expiresDate: dateOfDay(expires), deviceCode: device ? codeOf(device) : null};
+  }
+  const importPub = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['verify']);
+  const importPriv = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['sign']);
+  /* now = trusted time in ms; returns {ok, reason, info} */
+  async function verify(key, pubJwk, now, deviceBytes) {
+    const k = decode(key);
+    if (!k) return {ok:false, reason:'format'};
+    if (k.old) return {ok:false, reason:'old'};
+    const good = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), k.sig, k.payload);
+    if (!good) return {ok:false, reason:'signature'};
+    const today = dayOf(now);
+    if (today > k.expires) return {ok:false, reason:'expired', info:k};
+    if (today < k.issued - 1) return {ok:false, reason:'clock', info:k};
+    if (k.device && (!deviceBytes || k.device.some((b, j) => b !== deviceBytes[j]))) return {ok:false, reason:'device', info:k};
+    return {ok:true, info:k, daysLeft: k.expires - today};
+  }
+  async function sign({name, issuedMs, expiresDate, deviceCode, contentKey}, privJwk) {
+    const ck = typeof contentKey === 'string' ? Uint8Array.from(atob(contentKey), c => c.charCodeAt(0)) : contentKey;
+    if (!ck || ck.length !== 32) throw new Error('The signing key file has no app key. Load GRF-signing-key-v2.json.');
+    const issued = dayOf(issuedMs);
+    const expires = dayOf(Date.parse(expiresDate + 'T00:00:00Z'));
+    if (!(expires >= issued)) throw new Error('The end date is before today.');
+    let device = null;
+    if (deviceCode && String(deviceCode).trim()) { device = bytesOfCode(deviceCode); if (!device) throw new Error('The device code should be 8 characters, like 7K3M-Q9TB.'); }
+    const idb = new Uint8Array(4); crypto.getRandomValues(idb);
+    const id = ((idb[0] << 24) | (idb[1] << 16) | (idb[2] << 8) | idb[3]) >>> 0;
+    const payload = encodePayload({issued, expires, id, device, ck, name});
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), payload));
+    const all = new Uint8Array(payload.length + 64); all.set(payload); all.set(sig, payload.length);
+    return {key: 'GRF-' + b64u.enc(all), id, issued: dateOfDay(issued), expires: dateOfDay(expires), device: device ? codeOf(device) : null};
+  }
+  /* Revocation list (revoked.json): license ids withdrawn by the issuer, signed with the same key */
+  const revMsg = (issued, ids) => new TextEncoder().encode(`GRF-REVOKED-1|${issued}|${ids.join(',')}`);
+  const normIds = ids => Array.from(new Set((ids || []).map(n => Number(n) >>> 0))).sort((a, b) => a - b);
+  async function signRevoked(ids, privJwk, issuedMs) {
+    const list = normIds(ids), issued = Math.floor(issuedMs ?? Date.now());
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), revMsg(issued, list)));
+    return {v:1, issued, ids:list, sig: b64u.enc(sig)};
+  }
+  async function verifyRevoked(obj, pubJwk) {
+    if (!obj || obj.v !== 1 || !Number.isFinite(obj.issued) || !Array.isArray(obj.ids) || typeof obj.sig !== 'string') return null;
+    const list = normIds(obj.ids);
+    if (list.length !== obj.ids.length || list.some((v, i) => v !== obj.ids[i])) return null;
+    let sig; try { sig = b64u.dec(obj.sig); } catch (e) { return null; }
+    const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, revMsg(obj.issued, list));
+    return ok ? {issued: obj.issued, ids: list} : null;
+  }
+  return {decode, verify, sign, signRevoked, verifyRevoked, codeOf, bytesOfCode, dayOf, dateOfDay};
+})();
+if (typeof module !== 'undefined') module.exports = GRFLicense;
+
+const PUB = {"kty":"EC","x":"r3YvGRUXkcvbh-k-D5hoQLXtYifnXYC0G864tGYvwaE","y":"wbxScIibcmHJ4H59naDk4IN71bPT7-NMWpCdRC4NLE8","crv":"P-256"};
+const APP_KEY_HASH = '66213d1caed3e423';
+const $ = id => document.getElementById(id);
+const store = { get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }, set(k,v){ try { localStorage.setItem(k,v); } catch(e){} }, del(k){ try { localStorage.removeItem(k); } catch(e){} } };
+const fmt = d => new Date(d + 'T00:00:00Z').toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric', timeZone:'UTC'});
+const iso = d => d.toISOString().slice(0, 10);
+const b64 = { enc(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); },
+              dec(s) { return Uint8Array.from(atob(s.replace(/\s+/g, '')), c => c.charCodeAt(0)); } };
+let kf = null, logKey = null, tok = store.get('grf-gh-token') || '', log = null, logSha = null, revSha = null, revPublished = null, lastIssued = null, period = 'm3', checked = null;
+
+/* ---- where the app lives: owner.github.io/repo ---- */
+const GH = (() => {
+  const host = location.hostname, m = host.match(/^([^.]+)\.github\.io$/i);
+  const repo = location.pathname.split('/').filter(Boolean)[0] || '';
+  return {owner: m ? m[1] : (window.GRF_OWNER || ''), repo: m ? repo : (window.GRF_REPO || ''), api: window.GRF_API || 'https://api.github.com'};
+})();
+async function gh(method, path, body) {
+  const res = await fetch(`${GH.api}/repos/${GH.owner}/${GH.repo}/contents/${path}`, {method,
+    headers: {'Authorization': 'Bearer ' + tok, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(body ? {'Content-Type': 'application/json'} : {})},
+    body: body ? JSON.stringify(body) : undefined, cache: 'no-store'});
+  if (res.status === 404 && method === 'GET') return null;
+  if (!res.ok) { const e = new Error(res.status === 401 || res.status === 403 ? 'GitHub refused the token. Check that it has Contents: read and write on this repository.' : res.status === 409 ? 'conflict' : `GitHub answered ${res.status}.`); e.status = res.status; throw e; }
+  return res.json();
+}
+async function getFile(path) { const r = await gh('GET', path + '?t=' + Date.now()); return r ? {sha: r.sha, bytes: b64.dec(r.content)} : null; }
+async function putFile(path, bytes, sha, message) { const r = await gh('PUT', path, {message, content: b64.enc(bytes), ...(sha ? {sha} : {})}); return r.content.sha; }
+
+/* ---- the key list, kept in the repository encrypted with a key derived from the signing key ---- */
+async function deriveLogKey(d) {
+  const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('GRF-LOG-1|' + d));
+  return crypto.subtle.importKey('raw', h, 'AES-GCM', false, ['encrypt', 'decrypt']);
+}
+async function loadLog() {
+  const f = await getFile('keys-log.bin');
+  if (!f) { log = []; logSha = null; return; }
+  const plain = await crypto.subtle.decrypt({name:'AES-GCM', iv: f.bytes.slice(0, 12)}, logKey, f.bytes.slice(12));
+  log = JSON.parse(new TextDecoder().decode(plain)); logSha = f.sha;
+}
+async function saveLog(message) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM', iv}, logKey, new TextEncoder().encode(JSON.stringify(log))));
+  const all = new Uint8Array(12 + ct.length); all.set(iv); all.set(ct, 12);
+  logSha = await putFile('keys-log.bin', all, logSha, message);
+}
+/* change the list: on a conflict (edited elsewhere), reload and apply again */
+async function changeLog(fn, message) {
+  for (let i = 0; i < 2; i++) {
+    try { fn(log); await saveLog(message); return; }
+    catch (e) { if (e.message !== 'conflict' || i) throw e; await loadLog(); }
+  }
+}
+async function loadRevoked() {
+  const f = await getFile('revoked.json');
+  revSha = f ? f.sha : null;
+  revPublished = f ? await GRFLicense.verifyRevoked(JSON.parse(new TextDecoder().decode(f.bytes)), PUB) : null;
+}
+async function publishRevoked() {
+  const ids = log.filter(e => e.revoked).map(e => e.id);
+  const list = await GRFLicense.signRevoked(ids, kf.key);
+  if (!(await GRFLicense.verifyRevoked(list, PUB))) throw new Error('The list did not pass its own check.');
+  for (let i = 0; i < 2; i++) {
+    try { revSha = await putFile('revoked.json', new TextEncoder().encode(JSON.stringify(list)), revSha, `Withdrawn licenses: ${ids.length}`); revPublished = {issued: list.issued, ids: list.ids}; return; }
+    catch (e) { if (e.message !== 'conflict' || i) throw e; await loadRevoked(); }
+  }
+}
+
+/* ---- set-up ---- */
+const setMsg = m => { $('setMsg').hidden = !m; $('setMsg').textContent = m || ''; };
+async function useKeyFile(text) {
+  let j; try { j = JSON.parse(text); } catch (e) { return 'That is not the key file.'; }
+  if (!j || !j.key || j.key.kty !== 'EC' || !j.key.d) return 'That file has no private signing key in it.';
+  if (j.key.x !== PUB.x || j.key.y !== PUB.y) return 'This signing key does not belong to this app.';
+  if (!j.contentKey) return 'This is the older key file. Choose GRF-signing-key-v2.json.';
+  const h = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', b64.dec(j.contentKey))).slice(0, 8), b => b.toString(16).padStart(2, '0')).join('');
+  if (h !== APP_KEY_HASH) return 'This key file belongs to another build of the app.';
+  kf = j; logKey = await deriveLogKey(j.key.d); store.set('grf-signing-key-v2', JSON.stringify(j)); return null;
+}
+function renderSetup() {
+  const ready = kf && tok && log;
+  $('kState').textContent = kf ? 'Loaded on this device.' : '';
+  $('ghState').textContent = tok ? (log ? `Connected to ${GH.owner}/${GH.repo}.` : 'Token saved.') : '';
+  $('setOk').hidden = !ready; $('setNeed').hidden = !!ready;
+  if (ready) $('setOk').replaceChildren(`Ready: signing key and GitHub connected (${GH.owner}/${GH.repo}). `,
+    Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Remove from this device', onclick: () => { store.del('grf-signing-key-v2'); store.del('grf-gh-token'); kf = null; tok = ''; log = null; renderSetup(); renderLog(); }}));
+  $('iGo').disabled = !ready;
+}
+async function connect() {
+  setMsg('');
+  if (!kf || !tok) { renderSetup(); return; }
+  try { await loadLog(); await loadRevoked(); }
+  catch (e) { log = null; setMsg(e.name === 'OperationError' ? 'The key list in the repository could not be opened with this signing key.' : (e.message || 'Could not reach GitHub.')); }
+  renderSetup(); renderLog();
+}
+$('kFile').onclick = () => $('kFileIn').click();
+$('kFileIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const m = await useKeyFile(await f.text()); setMsg(m); if (!m) connect(); else renderSetup(); };
+$('ghGo').onclick = () => { tok = $('ghTok').value.trim(); if (!tok) return setMsg('Paste the token first.'); store.set('grf-gh-token', tok); $('ghTok').value = ''; connect(); };
+$('logReload').onclick = () => connect();
+
+/* ---- validity ---- */
+function endFor(p) {
+  const d = new Date(); d.setUTCHours(0, 0, 0, 0);
+  if (p === 'd7') d.setUTCDate(d.getUTCDate() + 7);
+  else if (p[0] === 'm') { const m = Number(p.slice(1)); const day = d.getUTCDate(); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() + m); const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate(); d.setUTCDate(Math.min(day, last)); }
+  return iso(d);
+}
+function setPeriod(p) {
+  period = p;
+  document.querySelectorAll('#iSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === p)));
+  if (p !== 'date') $('iEnd').value = endFor(p); else $('iEnd').focus();
+}
+document.querySelectorAll('#iSeg button').forEach(b => b.onclick = () => setPeriod(b.dataset.p));
+$('iEnd').oninput = () => document.querySelectorAll('#iSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === 'date')));
+$('iEnd').min = iso(new Date());
+setPeriod('m3');
+
+/* ---- issue ---- */
+const iMsg = m => { $('iMsg').hidden = !m; $('iMsg').textContent = m || ''; };
+$('iGo').onclick = async () => {
+  iMsg('');
+  const name = $('iName').value.trim();
+  if (!name) return iMsg('Enter the name of the person the key is for.');
+  if (!$('iEnd').value) return iMsg('Pick the last valid day.');
+  $('iGo').disabled = true;
+  try {
+    const r = await GRFLicense.sign({name, issuedMs: Date.now(), expiresDate: $('iEnd').value, deviceCode: $('iDev').value, contentKey: kf.contentKey}, kf.key);
+    const chk = await GRFLicense.verify(r.key, PUB, Date.now(), r.device ? GRFLicense.bytesOfCode(r.device) : null);
+    if (!chk.ok) throw new Error('The new key did not pass its own check (' + chk.reason + ').');
+    lastIssued = {...r, name};
+    $('iKey').textContent = r.key;
+    $('iFacts').replaceChildren(...[['Name', name], ['Valid', `${fmt(r.issued)} – ${fmt(r.expires)}`], ['Device', r.device || 'any device']]
+      .map(([k, v]) => { const s = document.createElement('span'); s.append(k + ': '); const b = document.createElement('b'); b.textContent = v; s.append(b); return s; }));
+    $('iOut').hidden = false;
+    try { await changeLog(l => l.unshift({name, key: r.key, issued: r.issued, expires: r.expires, device: r.device || '', id: r.id, createdAt: Date.now()}), `Key issued`); renderLog(); }
+    catch (e) { iMsg('The key was created, but it could not be saved in the list: ' + e.message + ' Copy it now.'); }
+  } catch (e) { iMsg(e.message || 'The key could not be created.'); }
+  finally { $('iGo').disabled = false; }
+};
+async function copy(text, btn) {
+  const was = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; } catch (e) { btn.textContent = 'Copy failed'; }
+  setTimeout(() => { btn.textContent = was; }, 1800);
+}
+const appUrl = () => location.href.replace(/admin\.html.*$/, '');
+const message = k => `Your license key for GRF Runway Cond, valid until ${fmt(k.expires)}${k.device ? ` on the device with code ${k.device}` : ''}:\n\n${k.key}\n\nApp: ${appUrl()}\nOpen it in Safari, choose Share > Add to Home Screen, open it from the home screen, paste the key and tap Activate. The app works offline, but needs an internet connection at least once a week.`;
+$('iCopy').onclick = () => copy(lastIssued.key, $('iCopy'));
+$('iCopyMsg').onclick = () => copy(message(lastIssued), $('iCopyMsg'));
+
+/* ---- list, withdraw ---- */
+function status(e) {
+  if (e.revoked) return ['Withdrawn', 'bad'];
+  const left = GRFLicense.dayOf(Date.parse(e.expires + 'T00:00:00Z')) - GRFLicense.dayOf(Date.now());
+  return left < 0 ? ['Expired', 'bad'] : left <= 14 ? [`${left} d left`, 'warn'] : ['Active', 'ok'];
+}
+async function withdraw(id, entry) {
+  const el = $('revState'); el.hidden = false; el.className = 'note'; el.textContent = 'Withdrawing and publishing…';
+  try {
+    await changeLog(l => { const x = l.find(e => e.id === id); if (x) { x.revoked = true; x.revokedAt = Date.now(); } else if (entry) l.unshift({...entry, revoked: true, revokedAt: Date.now()}); }, 'Key withdrawn');
+    await publishRevoked();
+    el.className = 'note ok'; el.textContent = 'Withdrawn and published. Phones lock that key the next time they are online, at the latest within a week.';
+  } catch (e) { el.className = 'note bad'; el.textContent = 'Not finished: ' + (e.message || 'GitHub could not be reached') + ' Tap Withdraw again.'; }
+  renderLog();
+}
+function renderLog() {
+  const body = $('logBody');
+  if (!log) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent:'Set up this device to see the keys.'})); return; }
+  const pending = log.some(e => e.revoked) && (!revPublished || log.filter(e => e.revoked).some(e => !revPublished.ids.includes(e.id)));
+  if (pending) { const el = $('revState'); el.hidden = false; el.className = 'note warn'; el.replaceChildren('Some withdrawals are not published yet. ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Publish now', onclick: async () => { try { await publishRevoked(); el.className = 'note ok'; el.textContent = 'Published.'; } catch (e) { el.textContent = 'Not published: ' + e.message; } }})); }
+  if (!log.length) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent:'No keys issued yet. Keys you create above are listed here with their end dates.'})); return; }
+  const t = document.createElement('table'); t.className = 'log';
+  t.innerHTML = '<thead><tr><th>Name</th><th>Valid until</th><th>Status</th><th>Device</th><th></th></tr></thead>';
+  const tb = document.createElement('tbody');
+  for (const v of log) {
+    const [st, cls] = status(v);
+    const tr = document.createElement('tr');
+    const td = (txt, c) => { const e = document.createElement('td'); if (c) e.className = c; e.textContent = txt; return e; };
+    const stTd = document.createElement('td'); stTd.append(Object.assign(document.createElement('span'), {className:'st ' + cls, textContent: st}));
+    const act = document.createElement('td');
+    act.append(Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Copy key', onclick: e => copy(v.key, e.target)}));
+    if (!v.revoked) act.append(' ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Withdraw',
+      onclick: e => { const b = e.target; if (b.dataset.sure) { b.disabled = true; withdraw(v.id); } else { b.dataset.sure = '1'; b.textContent = 'Tap again to withdraw'; b.style.color = 'var(--bad)'; setTimeout(() => { delete b.dataset.sure; b.textContent = 'Withdraw'; b.style.color = ''; }, 4000); } }}));
+    tr.append(td(v.name), td(fmt(v.expires), 'mono'), stTd, td(v.device || 'any', 'mono'), act);
+    tb.append(tr);
+  }
+  t.append(tb);
+  const wrap = document.createElement('div'); wrap.className = 'tbl'; wrap.append(t);
+  body.replaceChildren(wrap);
+}
+
+/* ---- check ---- */
+$('cGo').onclick = async () => {
+  const out = $('cOut'); out.hidden = false; $('cRevoke').hidden = true; checked = null;
+  const k = GRFLicense.decode($('cKey').value);
+  if (k && k.old) { out.className = 'note bad'; out.textContent = 'An old-format key: it does not open the current app.'; return; }
+  if (!k) { out.className = 'note bad'; out.textContent = 'Not a license key. It starts with GRF- and is one long line.'; return; }
+  const r = await GRFLicense.verify($('cKey').value, PUB, Date.now(), k.device);
+  const facts = `${k.name || 'No name'} · issued ${fmt(k.issuedDate)} · valid until ${fmt(k.expiresDate)} · ${k.deviceCode ? 'device ' + k.deviceCode : 'any device'}`;
+  const isRev = (log && log.some(e => e.id === k.id && e.revoked)) || (revPublished && revPublished.ids.includes(k.id));
+  if (r.ok || r.reason === 'expired') checked = k;
+  $('cRevoke').hidden = !checked || isRev || !log;
+  if (isRev) { out.className = 'note bad'; out.textContent = `Withdrawn. ${facts}`; }
+  else if (r.ok) { out.className = 'note ok'; out.textContent = `Valid, ${r.daysLeft} day${r.daysLeft === 1 ? '' : 's'} left. ${facts}`; }
+  else if (r.reason === 'expired') { out.className = 'note warn'; out.textContent = `Expired. ${facts}`; }
+  else { out.className = 'note bad'; out.textContent = 'Not valid: the signature does not match. The key was changed or made with another signing key.'; }
+};
+$('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
+  withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
+
+/* ---- start ---- */
+(async () => {
+  const s = store.get('grf-signing-key-v2'); if (s) await useKeyFile(s);
+  renderSetup(); if (kf && tok) connect();
+})();
+</script>
+</body>
+</html>

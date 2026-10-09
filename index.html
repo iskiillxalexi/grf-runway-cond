@@ -603,33 +603,66 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var last = ['Checking offline use…', ''];
-  function show(t, c) { last = [t, c || '']; var el = document.getElementById('offl'); if (el) { el.textContent = t; el.className = 'offl ' + last[1]; } }
-  window.GRFOffline = function () { show(last[0], last[1]); };
-  if (!('serviceWorker' in navigator)) { show('Offline use not supported in this browser'); return; }
-  /* a new version: reload by itself, unless a result is on the screen; then offer it */
+  var VER = '2e2c56779a', stored = false, latest = null, reg = null, timer = null, ready = false;
+  /* status line: offline storage, and whether this is the version published on GitHub */
+  function render() {
+    var el = document.getElementById('offl'); if (!el) return;
+    var t, c;
+    if (!('serviceWorker' in navigator)) { t = 'Offline use not supported in this browser'; c = ''; }
+    else if (!stored) { t = 'Saving for offline use…'; c = 'busy'; }
+    else if (latest && latest !== VER) { t = 'v' + VER + ' · update to v' + latest + ' available'; c = 'busy'; }
+    else { t = 'Works offline · v' + VER + (latest === VER ? ' · latest' : ''); c = 'ok'; }
+    el.textContent = t; el.className = 'offl ' + c;
+  }
+  window.GRFOffline = render;
+  function bar(text, btn, fn) {
+    var b = document.getElementById('updBar');
+    if (!b) { b = document.createElement('div'); b.id = 'updBar'; b.className = 'updbar'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
+    b.textContent = '';
+    var s = document.createElement('span'); s.textContent = text; b.appendChild(s);
+    if (btn) { var k = document.createElement('button'); k.type = 'button'; k.className = 'btn fill'; k.textContent = btn; k.onclick = fn; b.appendChild(k); }
+  }
+  if (!('serviceWorker' in navigator)) { render(); return; }
+  /* the new version has taken over: reload by itself, unless a result is on the screen; then offer it */
   var had = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.addEventListener('controllerchange', function () {
     if (!had) { had = true; return; }
+    ready = true; clearTimeout(timer);
     if (document.hidden || !document.querySelector('.hero')) { location.reload(); return; }
-    if (document.getElementById('updBar')) return;
-    var bar = document.createElement('div'); bar.id = 'updBar'; bar.className = 'updbar';
-    bar.innerHTML = '<span>A new version of the app is ready.</span><button type="button" class="btn fill">Reload</button>';
-    bar.querySelector('button').onclick = function () { location.reload(); };
-    document.body.appendChild(bar);
+    bar('Version ' + (latest ? 'v' + latest + ' ' : '') + 'is ready.', 'Reload', function () { location.reload(); });
   });
-  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(function (reg) {
-    function upd() { reg.update().catch(function () {}); }
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) upd(); });
-    window.addEventListener('online', upd);
-    setInterval(upd, 600000);
+  function download() {
+    if (reg) reg.update().catch(function () {});
+    bar('A new version, v' + latest + ', is on GitHub (this is v' + VER + '). Downloading…');
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      if (ready) return;
+      bar('v' + latest + ' has not finished downloading. Keep the app open with a connection, or close it fully and open it again.', 'Try again', download);
+    }, 45000);
+  }
+  /* compare the running version with the one published on GitHub (version.json is never taken from the cache) */
+  function checkLatest() {
+    if (ready || navigator.onLine === false) return;
+    fetch('version.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (!j || !j.v) return;
+      var was = latest; latest = j.v; render();
+      if (latest !== VER && was !== latest) download();
+    }).catch(function () {});
+  }
+  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(function (r) {
+    reg = r;
+    function poll() { if (!ready) reg.update().catch(function () {}); checkLatest(); }
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
+    window.addEventListener('online', poll);
+    setInterval(poll, 600000);
+    checkLatest();
     function check() {
-      caches.open('grf-823b22300f').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
-        if (r) show('Works offline · v823b22300f', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
-      }).catch(function () { show('Offline storage not available'); });
+      caches.open('grf-' + VER).then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (x) {
+        stored = !!x; render(); if (!x) setTimeout(check, 1500);
+      }).catch(function () { var el = document.getElementById('offl'); if (el) el.textContent = 'Offline storage not available'; });
     }
     check();
-  }).catch(function () { show('Offline use could not be set up'); });
+  }).catch(function () { var el = document.getElementById('offl'); if (el) el.textContent = 'Offline use could not be set up'; });
 })();
 </script>
 </body>

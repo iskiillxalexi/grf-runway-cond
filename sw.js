@@ -1,8 +1,8 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-823b22300f';
+const CACHE = 'grf-2e2c56779a';
 const FILES = {
-"./": "6e8793f3c8011949",
-"app.bin": "296aca998df89da5",
+"./": "c3d75bf4d0a618f5",
+"app.bin": "dbadc9ae944bfe3f",
 "fonts/Barlow-Medium.woff": "a7ab5c7e54c3c38d",
 "fonts/Barlow-Regular.woff": "bee61e0690d27f46",
 "fonts/Barlow-SemiBold.woff": "bfe69e7af9279ad8",
@@ -15,7 +15,7 @@ const FILES = {
 "icon-192.png": "2160ef544412cde2",
 "icon-512.png": "019c91474f53a9a4",
 "icon-maskable-512.png": "00ffe0a4fa864efc",
-"index.html": "6e8793f3c8011949",
+"index.html": "c3d75bf4d0a618f5",
 "manifest.webmanifest": "59ecacf939c7aa24",
 "ocr-client.js": "e88548e52aa98db0",
 "ocr/eng.traineddata": "906538558589e563",
@@ -36,9 +36,12 @@ self.addEventListener('install', e => {
         const r = await (await caches.open(k)).match(f);
         if (r && await hashOf(r.clone()) === h) { await c.put(f, r); return; }
       }
-      const res = await fetch(new Request(f, {cache: 'reload'}));
-      if (!res.ok) throw new Error(f + ' ' + res.status);
-      await c.put(f, res);
+      /* a download must match the published hash; a stale copy from a cache gets one retry with a fresh address */
+      for (const u of [f, f + '?v=' + h]) {
+        const res = await fetch(new Request(u, {cache: 'reload'}));
+        if (res.ok && await hashOf(res.clone()) === h) { await c.put(f, res); return; }
+      }
+      throw new Error(f + ' does not match this version');
     }));
     await self.skipWaiting();
   })());
@@ -49,8 +52,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
-  /* the revocation list and the key tool always come from the network, never from the app's cache */
-  if (req.method !== 'GET' || url.origin !== self.location.origin || /\/(revoked\.json|admin\.html|keys-log\.bin)$/.test(url.pathname)) return;
+  /* the revocation list, the published version number and the key tool always come from the network, never from the cache */
+  if (req.method !== 'GET' || url.origin !== self.location.origin || /\/(revoked\.json|version\.json|admin\.html|keys-log\.bin)$/.test(url.pathname)) return;
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(req, {ignoreSearch: true});
     if (hit) return hit;

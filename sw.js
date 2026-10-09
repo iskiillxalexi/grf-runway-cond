@@ -1,8 +1,8 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-2e2c56779a';
+const CACHE = 'grf-6487a83d74';
 const FILES = {
-"./": "c3d75bf4d0a618f5",
-"app.bin": "dbadc9ae944bfe3f",
+"./": "d0e5d3d760dae341",
+"app.bin": "69f986a9a14afe61",
 "fonts/Barlow-Medium.woff": "a7ab5c7e54c3c38d",
 "fonts/Barlow-Regular.woff": "bee61e0690d27f46",
 "fonts/Barlow-SemiBold.woff": "bfe69e7af9279ad8",
@@ -15,7 +15,7 @@ const FILES = {
 "icon-192.png": "2160ef544412cde2",
 "icon-512.png": "019c91474f53a9a4",
 "icon-maskable-512.png": "00ffe0a4fa864efc",
-"index.html": "c3d75bf4d0a618f5",
+"index.html": "d0e5d3d760dae341",
 "manifest.webmanifest": "59ecacf939c7aa24",
 "ocr-client.js": "e88548e52aa98db0",
 "ocr/eng.traineddata": "906538558589e563",
@@ -53,7 +53,7 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
   /* the revocation list, the published version number and the key tool always come from the network, never from the cache */
-  if (req.method !== 'GET' || url.origin !== self.location.origin || /\/(revoked\.json|version\.json|admin\.html|keys-log\.bin)$/.test(url.pathname)) return;
+  if (req.method !== 'GET' || url.origin !== self.location.origin || /\/(revoked\.json|version\.json|act\.bin|admin\.html|keys-log\.bin)$/.test(url.pathname)) return;
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(req, {ignoreSearch: true});
     if (hit) return hit;

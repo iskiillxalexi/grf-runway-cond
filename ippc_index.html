@@ -1,0 +1,989 @@
+
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en_NO" xml:lang="en">
+
+<script>//Javascript GLOBAL vars
+var
+	CONSOLE_ACTIVE="false",
+	WMS_PREVENT_IE="true",
+	GAF_SHOW_PRODUCT="true",
+	HALO_SHOW_PRODUCT="false",
+	HALO_URL="https://halo-wms.met.no/halo/default.map?",
+	SHOW_AIRSPACE_SPN="false",
+	USE_SPN_IN_FPL="false",
+	NRL_URL="",
+	SHOW_NRLPRODUCT="false",
+	
+	//VOLCANIC_URL="https://aa025kn2jhfvzrxns.api.met.no/weatherapi",
+	ASH_SHOW_PRODUCT="true",
+	MOBILE_OPEN_METARTAF="true",
+	MOBILE_OPEN_ADPIB="true",
+	MOBILE_OPEN_PIB="true",
+	MOBILE_OPEN_NRB="true",
+	INIT_ADS_USING_FILE="false",
+	
+	NOTAMS_ACTIVATE="true",
+	NOTAMS_ACTIVATE_TIMER="false",
+	NOTAMS_ACTIVATE_TIMER_PERIOD="600000",
+	NOTAMS_LOAD_FROM_EAD="true",
+	
+	ENABLE_SIGAIRWS="true",
+	SIGMETS_AIRMETS_ENABLE="true",
+	SIGMETS_UPDATE_INTERVAL="60000",
+	SIGMETS_TIMERS_LENGTH="300000",
+	SIGMETS_FILE_PATH="",
+	
+	IPPC_ADMIN_VERSION="false",
+	BETA_RELEASE="0",
+	TEST_WEBSERVER_CONNECTION="true",
+	ENABLE_AERODROME_LIST="false",
+	ENABLE_AIRCRAFT_LIST="true",
+	AIMSL_STYLE_ONLY_PDF="true",
+	EAD_BRIEFINGS_INCLUDE_MET="true",
+	TEST_FOR_MOB_DEVICE="false",
+	API_MET_URL="https://aa025kn2jhfvzrxns.api.met.no/weatherapi",
+	DISABLE_DISCLAIMER="false",
+	TEST_ADFIR_BRIEFING="",
+	SHOW_CHG_DEP_ARR="false",
+	ADMIN_HIDE_FPL_LIST="",
+	FPL_SESSION_TIMEOUT="3600000",
+	FPL_USE_AUTOLOGON="false",
+	MARKER_CLUSTER_TYPE="CLUSTER",
+	SHOW_D_ATIS="false";
+	</script>
+<script src="dwr/engine.js?v=202610061739"></script>
+<script src="dwr/util.js?v=202610061739"></script>
+
+<script src="dwr/interface/AppInit.js?v=202610061739"></script>
+
+<script src="js/dist/ippc.init.js?v=202610061739"></script>
+
+
+<head>
+    <!-- Analytics -->
+    
+    <script>
+        var POSTHOG_API_KEY = "phc_D5ztQ8VjZuoBMkyBgkN8FvhYNQdz4zsNV8pP6YzPecDN";
+        !function (t, e) {
+            var o, n, p, r;
+            e.__SV || (window.posthog && window.posthog.__loaded) || (window.posthog = e, e._i = [], e.init = function (i, s, a) {
+                function g(t, e) {
+                    var o = e.split(".");
+                    2 == o.length && (t = t[o[0]], e = o[1]), t[e] = function () {
+                        t.push([e].concat(Array.prototype.slice.call(arguments, 0)))
+                    }
+                }
+
+                (p = t.createElement("script")).type = "text/javascript", p.crossOrigin = "anonymous", p.async = !0, p.src = s.api_host.replace(".i.posthog.com", "-assets.i.posthog.com") + "/static/array.js", (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r);
+                var u = e;
+                for (void 0 !== a ? u = e[a] = [] : a = "posthog", u.people = u.people || [], u.toString = function (t) {
+                    var e = "posthog";
+                    return "posthog" !== a && (e += "." + a), t || (e += " (stub)"), e
+                }, u.people.toString = function () {
+                    return u.toString(1) + ".people (stub)"
+                }, o = "xi Si init Ni ji pr qi Ui $i capture calculateEventProperties Zi register register_once register_for_session unregister unregister_for_session Yi getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync Ki identify setPersonProperties unsetPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty Qi Wi createPersonProfile setInternalOrTestUser Ji Fi tn opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing zi debug mr it getPageViewId captureTraceFeedback captureTraceMetric Ri".split(" "), n = 0; n < o.length; n++) g(u, o[n]);
+                e._i.push([i, s, a])
+            }, e.__SV = 1)
+        }(document, window.posthog || []);
+        posthog.init(POSTHOG_API_KEY, {
+            api_host: 'https://eu.i.posthog.com',
+            cross_subdomain_cookie: false,
+            cookieless_mode: "always",
+        })
+    </script>
+    
+    <script src="js/analytics/pagenames.js"></script>
+    <script src="js/analytics/tracking.js"></script>
+    <!-- Analytics End-->
+    <title>
+        IPPC - Norwegian Aerodrome Info
+    </title>
+    	<!--	This tag is there so the site knows to follow the size of the display	-->
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=0">
+
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+	<meta http-equiv="Content-Encoding" content="gzip" />
+	<meta http-equiv="cache-control" content="max-age=0" />
+	<meta http-equiv="cache-control" content="no-cache" />
+	<meta http-equiv="expires" content="0" />
+	<meta http-equiv="expires" content="Tue, 01 Jan 2980 1:00:00 GMT" />
+	<meta http-equiv="pragma" content="no-cache" />
+	
+	<meta http-equiv="X-UA-Compatible" content="IE=10" >
+	<meta name="google-site-verification" content="pQJzUqFoauUhHRARBKlvF3etLqBPXfOjTpQ2kHC_r9Y" />
+	<link rel="shortcut icon" href="images/favicon.ico" />
+    <!-- head_css_gm.jspf START-->
+    
+
+<link href="css/bootstrap.css?v=202610061739" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.css" rel="stylesheet" type="text/css" />
+<link href="css/jquery-ui.css?v=202610061739" rel="stylesheet">
+<link href="css/smoothness/jquery-ui-1.10.1.custom.css?v=202610061739" rel="stylesheet">
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jQuery-ui-Slider-Pips/1.11.4/jquery-ui-slider-pips.min.css" integrity="sha256-sKlemxcbJhCtL3BoS3JA7MIORA4bizjl1VpSgpBI4r8=" crossorigin="anonymous" />
+<link href="css/gm/ash.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/gm/gaf.css?v=202610061739" type="text/css" rel="stylesheet" />
+
+
+<link href="css/mtree.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/pde.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/jqmenu_style.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/print.css?v=202610061739" media="print" rel="stylesheet" type="text/css" />
+<link href="css/osx.css?v=202610061739" rel="stylesheet" type="text/css" />
+<link href="css/user.css?v=202610061739" rel="stylesheet" type="text/css" />
+<link href="css/ippc.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="components/login/login.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/spinner.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/fpl.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/iris.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/gm/gm.css?v=202610061739" type="text/css" rel="stylesheet">
+<link href="css/themes/theme.blue.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/themes/theme.grey.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/themes/theme.default.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/themes/theme.black-ice.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/themes/theme.dark.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/themes/theme.ippc.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/jquery.tablesort.css?v=202610061739" type="text/css" rel="stylesheet" />
+<link href="css/flags.css?v=202610061739" type="text/css" rel="stylesheet" />
+
+
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.0/css/bootstrap-select.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+
+<!-- <link rel="stylesheet" href="mob/css/mob.css" /> -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/jquery-mobile/1.4.5/jquery.mobile.min.css" rel="stylesheet" />
+
+
+
+    <!-- head_css_gm.jspf END -->
+</head>
+
+<body id="main_content" ng-app="ippcApp" class="toggleResponsive body">
+    
+<!-- Color palette for GM draw tool -->
+<div id="color-palette" class="display-none"></div>
+<noscript>
+	<style type="text/css">
+	#pagecontainer {
+		display: none;
+	}
+	
+	#no_javascript {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		width: 20em;
+		height: 6em;
+		margin-top: -3em; /*set to a negative number 1/2 of your height*/
+		margin-left: -10em; /*set to a negative number 1/2 of your width*/
+		border: 1px solid #ccc;
+		background-color: red;
+		border: 1px solid black;
+		color: white;
+		padding: 10px;
+	}
+	</style>
+	
+	<div id="no_javascript">
+		JavaScript seems to be disabled!<br />Please activate in order to
+		use this application.<br /> <br />Avinor Flysikring AS.
+	</div>
+</noscript>
+
+<div id="ippcwide-pagecontainer" class="wrapper">
+    <div id="ippcwide-wrapper">
+        <input id="hamburger" type="checkbox"/>
+        <!-- Checkbox to activate hamburger menu -->
+        <div id="pac-input-div" class="hidden"><input id="pac-input"
+                                                      class="controls"
+                                                      onclick="$jq(this).val('')"
+                                                      type="text"
+                                                      placeholder="Search Address"/>
+        </div>
+
+        <div id="ippcwide-header">
+            <!-- Hamburger Menu for Phone and maybe tablet? -->       <span id="span1"></span> 
+       <span id="span2"></span> 
+       <span id="span3"></span> 
+
+            <!-- JQuery menu, Banner -->		<div id="header">
+			<div class="center">
+<table>
+<tbody>
+
+            <tr>
+<td width="40%">
+				<div id="logo"  onclick="location.href='index.jsp';" class="cursor-pointer">
+					<img id="logo-img-1" style="padding-top:5px" src="images/avinor-fs-ippc-2.png">
+					<img id="logo-img-2" src="images/avinor-fs-ippc.png">
+				</div><!--id=logo-->
+</td>
+<td width="20%">
+</td>
+
+            <td width="40%">
+<div id="links">
+            <div id='header-fpl-logon'>   <div id='fpl-logon-view'></div>   <script type='text/javascript'>initFplLogon();</script></div>
+            </div></td>
+</tr>
+
+            </tbody>
+</table>
+			</div><!--class=center-->
+		</div><!--id=header-->
+
+                    <div id="servererror"><span id="display_no_connection">ERROR MESSAGE HERE!</span></div>
+
+            <div id='menuwrapper'>
+
+                  	<nav id='mainmenu'>
+         <ul class='content clearfix'>
+                <li class='dropdown'><a>Briefing</a>
+                <ul class='orangeMenu sub-menu' style='width:200px'>
+                      <li><a href='javascript:eadAdFirPIBBriefing();' target=''>Aerodrome and/or FIR</a></li>
+                      <li><a href='javascript:eadADAreaPIBBriefing();' target=''>Aerodrome and Area</a></li>
+                      <li><a href='javascript:eadAdSnowtamPIBBriefing();' target=''>SNOWTAM</a></li>
+                      <li><a href='javascript:eadAdWeatherPIBBriefing();' target=''>METAR and TAF</a></li>
+                <li class='dropdown'><a>Area</a>
+                <ul class='orangeMenu sub-menu' style=''>
+                      <li><a href='javascript:setDrawingMode(1)' target=''>Rectangle on Map</a></li>
+                      <li><a href='javascript:setDrawingMode(2)' target=''>Polygon on Map</a></li>
+                    </ul>
+                  </li>
+                      <li><a href='javascript:eadRoutePIBBriefing();' target=''>Route</a></li>
+                      <li><a href='javascript:eadNRPIBBriefing();' target=''>Narrow Route</a></li>
+                    </ul>
+                  </li>
+                <li class='dropdown'><a>MET - Meteo</a>
+                <ul class='orangeMenu sub-menu' style='width:200px'>
+                <li class='dropdown'><a>IGA Prognosis</a>
+                <ul class='orangeMenu sub-menu' style='width:300px'>
+                      <li><a href='javascript:naisIGABriefing("FBNO41","iga");' target='' title=''>FBNO41 - Polaris FIR SE-part</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO42","iga");' target='' title=''>FBNO42 - Polaris FIR SW-part</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO44","iga");' target='' title=''>FBNO44 - Polaris FIR N6200 to N6500</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO45","iga");' target='' title=''>FBNO45 - Polaris FIR N of N6500</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO41,NO42,NO44,NO45","iga");' target='' title=''>ALL - DISPLAY ALL IGA PROGNOSIS</a></li>
+                    </ul>
+                  </li>
+                <li class='dropdown'><a>Upper Winds and Temp</a>
+                <ul class='orangeMenu sub-menu' style='width:450px'>
+                      <li><a href='javascript:naisIGABriefing("FBNO56","upperwind");' target='' title=''>FBNO56 - STAVANGER/SOLA, FOERDE</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO55","upperwind");' target='' title=''>FBNO55 - AALESUND/VIGRA, TRONDHEIM/VAERNES, ROERVIK/RYUM</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO57","upperwind");' target='' title=''>FBNO57 - BODOE</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO62","upperwind");' target='' title=''>FBNO62 - BARDUFOSS</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO58","upperwind");' target='' title=''>FBNO58 - BANAK/LAKSELV</a></li>
+                      <li><a href='javascript:naisIGABriefing("FBNO56,NO55,NO57,NO62,NO58","upperwind");' target='' title=''>All Upperwind - ALL UPPERWIND PROGNOSIS</a></li>
+                    </ul>
+                  </li>
+                      <li><a href='javascript:meteoWeatherCharts();' target=''>Weather Charts</a></li>
+                      <li><a href='javascript:meteoSIGWX();' target=''>SIG-WX Charts</a></li>
+                <li class='dropdown'><a>Space Weather</a>
+                <ul class='orangeMenu sub-menu' style='width:300px'>
+                      <li><a href='https://www.sws.bom.gov.au' target='_blank' title=''>Space Weather Advisories</a></li>
+                      <li><a href='javascript:naisIGABriefing("FNXX01","space");' target='' title=''>FNXX01 - GNSS impact</a></li>
+                      <li><a href='javascript:naisIGABriefing("FNXX02","space");' target='' title=''>FNXX02 - HF COM impact</a></li>
+                      <li><a href='javascript:naisIGABriefing("FNXX03","space");' target='' title=''>FNXX03 - RADIATION impact</a></li>
+                      <li><a href='javascript:naisIGABriefing("FNXX01,XX02,XX03","space");' target='' title=''>ALL - ALL</a></li>
+                    </ul>
+                  </li>
+                      <li><a href='javascript:meteoWeatherRadars();' target=''>Weather Radars</a></li>
+                      <li><a href='javascript:meteoLightningMaps();' target=''>Lightning Maps</a></li>
+                      <li><a href='javascript:meteoTurbulenceMaps();' target=''>Turbulence Maps</a></li>
+                      <li><a href='javascript:meteoWaveMaps();' target=''>Wave Maps</a></li>
+                <li class='dropdown'><a>Ash</a>
+                <ul class='orangeMenu sub-menu' style='width:250px'>
+                      <li><a href='javascript:initAshStuff()' target=''>Norwegian Ash Forecast</a></li>
+                      <li><a href='https://www.metoffice.gov.uk/services/transport/aviation/regulated/international-aviation/vaac/va-advisories' target='_blank' title=''>VAAC London</a></li>
+                    </ul>
+                  </li>
+                      <li><a href='javascript:initHaloStuff(true)' target=''>GAF - Map Overlays</a></li>
+                    </ul>
+                  </li>
+                <li class='dropdown'><a>PUB - Publications</a>
+                <ul class='orangeMenu sub-menu' style='width:200px'>
+                      <li><a href='https://partner.avinor.no/en/ais/homepage/' target='_blank'>AIS Portal (AIP)</a></li>
+                      <li><a href='https://aim-prod.avinor.no/en/OperationalHours' target='_blank'>Operational hours</a></li>
+                    </ul>
+                  </li>
+                <li class='dropdown'><a>Other Operational Information</a>
+                <ul class='orangeMenu sub-menu' style='width:200px'>
+                      <li><a href='https://rise.articulate.com/share/vgF3gARLH1TqB3-DpXJ5Y2rh9rvB9sZr#/?_k=8cxzkx' target='_blank'>VFR-Guide</a></li>
+                      <li><a href='https://www.avinor.no/praktisk-info/droner/' target='_blank'>RPAS</a></li>
+                      <li><a href='https://www.norgeskart.no/#!?project=nrl&layers=1005,1013,1014,1015,1016,1017&zoom=8&lat=7114339.12&lon=186513.50&p=searchOptionsPanel' target='_blank'>Aviation obstacles</a></li>
+                      <li><a href='https://storymaps.arcgis.com/stories/b4004384d6a3420d83e0752f072494cd' target='_blank'>Statnett Heli Ops</a></li>
+                    </ul>
+                  </li>
+                <li class='dropdown'><a>Help & Information</a>
+                <ul class='orangeMenu sub-menu' style='width:200px'>
+                      <li><a href='javascript:showAgreement();' target='' title=''>User Agreement</a></li>
+                      <li><a href='javascript:showHelp();' target=''>Quick help</a></li>
+                      <li><a href='./help/About%20IPPC.PDF' target='_blank'>About</a></li>
+                      <li><a href='./help/Visualization%20of%20NOTAM%20on%20IPPC.pdf' target='_blank'>NOTAM visualization</a></li>
+                      <li><a href='./help/SNOWTAM%20help%20page.pdf' target='_blank'>SNOWTAM</a></li>
+                      <li><a href='https://www.skybrary.aero/index.php/Flight_Plan_Filling' target='_blank'>Flight Planning Filing</a></li>
+                      <li><a href='https://contentzone.eurocontrol.int/fpl/default.aspx' target='_blank'>Flight plan guide - equipment</a></li>
+                <li class='dropdown'><a>MET Help</a>
+                <ul class='orangeMenu sub-menu' style='width:250px'>
+                <li class='dropdown'><a>Graphical Aviation Forecast (GAF)</a>
+                <ul class='orangeMenu sub-menu' style='width:25em'>
+                      <li><a href='./help/Graphical Aviation Forecast User Guide v1.1.pdf' target='_blank'>Graphical Aviation Forecast (GAF)</a></li>
+                      <li><a href='./help/GAF Vertical Cross Sections v1.0.pdf' target='_blank'>GAF - Vertical Cross Sections</a></li>
+                      <li><a href='./help/GAF Map Overlays v1.1.pdf' target='_blank'>GAF - Map Overlay</a></li>
+                    </ul>
+                  </li>
+                      <li><a href='javascript:showHelpFile("help/igahelp.html");' target=''>IGA Help</a></li>
+                      <li><a href='./help/2025-11-19_MET_Codes.pdf' target='_blank'>MET Codes</a></li>
+                      <li><a href='./help/2026-03-13 MET Watch Offices in Norway.pdf' target='_blank'>MET Main Watch Offices in Norway</a></li>
+                      <li><a href='./help/Rules for Amending TAFs 2024-03-13.pdf' target='_blank'>Rules for Amending TAFs </a></li>
+                      <li><a href='./help/Information%20Sigmet%20Airmet%20ippc_v0.3.pdf' target='_blank'>SIGMET and AIRMET</a></li>
+                      <li><a href='./help/User Guide Norwegian Maritime and polar SWC.pdf' target='_blank'>Maritime and Polar Significant Weather</a></li>
+                <li class='dropdown'><a>Turbulence</a>
+                <ul class='orangeMenu sub-menu' style='width:25em'>
+                      <li><a href='./help/User%20Guide%20-%20Turbulence%20Predictions%20at%20Norwegian%20Airports%20(English%20version%201.0).pdf' target='_blank' title=''>Turbulence Predicition - English version</a></li>
+                      <li><a href='./help/Brukerveiledning%20for%20turbulensberegningssystemet%20(norsk%20versjon%201.0).pdf' target='_blank' title=''>Turbulensvarsel - Norsk versjon</a></li>
+                    </ul>
+                  </li>
+                    </ul>
+                  </li>
+                      <li><a href='javascript:showReleaseHistory(21)' target=''>Release History</a></li>
+                    </ul>
+                  </li>
+         </ul>
+       </nav> <!-- END JQUERY MENU with id=mainmenu-->
+
+            </div>
+
+                    <div id="bannermsg" style="display: none;">
+        </div>
+        <div id="debugmsg">
+        </div>
+
+        </div>
+
+
+        <div id="ippcwide-main">
+            <div class="wrapright">
+                <div id="map-canvas" class="right map-canvas"></div>
+                <div id="over_map" class="display-none"></div>
+                <div id="legend" class="display-none">
+                    <h3 id="legend-title"></h3>
+                    <div id="legend-content"></div>
+                </div>
+                <div id="notam-legend" class="display-none">
+                    <h3 id="notam-legend-title">NOTAM marker colors</h3>
+                    <div id="notam-legend-content">
+                        <div>Click to toggle filter:</div>
+                        <div id="notam_WARN_div"
+                             onClick="toggleNotamMarkers('WARN')">
+								<span style="cursor:pointer">
+									<span class="legend-color"
+                                          style="background:#ff0000"></span>
+									<span>Warning</span>
+									<input type="hidden" id="notam_WARN"
+                                           name="notam_WARN" value="on">
+								</span>
+                        </div>
+                        <div id="notam_MIL_div"
+                             onClick="toggleNotamMarkers('MIL')">
+								<span style="cursor:pointer">
+									<span class="legend-color"
+                                          style="background:#ff00ff"></span>
+									<span>MIL OPR area</span>
+									<input type="hidden" id="notam_MIL"
+                                           name="notam_MIL" value="on">
+								</span>
+                        </div>
+                        <div id="notam_OBSTACLE_div"
+                             onClick="toggleNotamMarkers('OBSTACLE')">
+								<span style="cursor:pointer">
+									<span class="legend-color"
+                                          style="background:#ffaa00"></span>
+									<span>Obstacle</span>
+									<input type="hidden" id="notam_OBSTACLE"
+                                           name="notam_OBSTACLE" value="on">
+								</span>
+                        </div>
+                        <div id="notam_ENROUTE_div"
+                             onClick="toggleNotamMarkers('ENROUTE')">
+								<span style="cursor:pointer">
+									<span class="legend-color"
+                                          style="background:#0000ff"></span>
+									<span>En route</span>
+									<input type="hidden" id="notam_ENROUTE"
+                                           name="notam_ENROUTE" value="on">
+								</span>
+                        </div>
+                        <div id="notam_UNMANNED_div"
+                             onClick="toggleNotamMarkers('UNMANNED')">
+								<span style="cursor:pointer">
+									<span class="legend-color"
+                                          style="background:#630eaf"></span>
+									<span>Unmanned ACFT</span>
+									<input type="hidden" id="notam_UNMANNED"
+                                           name="notam_UNMANNED" value="on">
+								</span>
+                        </div>
+                        <div id="notam_AERODROME_div"
+                             onClick="toggleNotamMarkers('AERODROME')">
+								<span style="cursor:pointer">
+									<span class="legend-color"
+                                          style="background:#00ff00"></span>
+									<span>Aerodrome</span>
+									<input type="hidden" id="notam_AERODROME"
+                                           name="notam_AERODROME" value="on">
+								</span>
+                        </div>
+                        <div>
+                            <hr/>
+                        </div>
+                        <div>
+                            <span class="legend-color"
+                                  style="background:#9c9c9c"></span>
+                            <span>Multiple NOTAM</span>
+                        </div>
+                        <div>
+                            Click once for short-list.
+                        </div>
+                        <div>
+                            Click once (more) for details.
+                        </div>
+                        <div>
+                            Click again to close.
+                        </div>
+                    </div>
+                </div>
+                <button id="open-map-filter" onclick="openMapFilter()">
+                    <img src="images/sliders.png">
+                </button>
+                <!-- Button to open the filter/toolbox -->
+            </div>
+        </div>
+        <div id="ippcwide-footer"><!-- Footer, tail -->
+                <div id="footercontent">
+                  IPPC Version <b>4.7.16.2</b>. Build <b>202610061739-PROD</b>. (c)Copyright 1997-2026 - Avinor Flysikring AS.Server: [<b>enhb-ippc-web04.ippc.ans</b>]
+                </div>
+                  <INPUT TYPE=hidden NAME=recipient VALUE="TESTWEBSERVER">
+        </div>
+    </div>
+</div>
+<!-- pagecontainer -->
+
+
+
+
+
+
+<script type="text/javascript">
+var divwin;
+
+function clearMessage()
+{
+	dwr.util.setValue("fplloggedin", "");
+	dwr.util.setValue("fplnotloggedin", "");
+}
+
+function clearFields()
+{
+	document.getElementById("in_username").value="";
+	document.getElementById("in_password").value="";
+}
+
+function OnDropDownChange(dropDown) {
+    var selectedValue = dropDown.options[dropDown.selectedIndex].value;
+    document.getElementById("mobile_cc").value = selectedValue;
+}
+
+
+function combo(thelist, theinput)
+{
+  theinput = document.getElementById(theinput);  
+  var idx = thelist.selectedIndex;
+  var content = thelist.options[idx].value;
+  theinput.value = content;	
+}
+
+function submitOnEnter(inputElement, event) {
+}
+</script>
+
+
+
+<div id="fpl-login-box" class="display-none"></div>
+
+<form ng-app="ippcApp" ng-controller="validateUserCtrl" name="userForm" novalidate class="display-none">
+	<div id="fpl_user_info" class="userinfobox" class="display-none" align="center">
+		<div class="m">
+			<div class="user_info_header">
+
+				<div id="new_user_profile" class="display-none">
+					<div class="contentheader_plain">New Flight Plan User Registration</div>
+					<div class="userinfobox_head fontsize-10 display-none">
+						 For customers flying to or inside Norwegian airspace.
+					</div>
+					<div class="userinfobox_head fontsize-10">
+						Once you have entered all mandatory information, press the "Save" button. After your information is acknowledged by AIS, you will receive a confirmation via e-mail
+						when your username and password is ready to use. The username and password can only contain letters and digits.
+					</div>
+				</div>
+
+				<div id="new_gdpr_ead_for_existing_user">
+					Update: in order to continue to use our flight planning functionality, our Agreement needs to be signed.
+					If you do not agree, you can continue to use our briefing functionality which do not require login.
+				</div>
+
+				<div id="edit_user_profile" class="display-none">
+					<div class="contentheader_plain">Edit your user information</div>
+					<div class="userinfobox_head fontsize-10">
+						Here you can edit your user information, including changing your password.<br />NB! You can not edit your <b>Username, Firstname or Lastname</b> as these fields are tied up to your saved flight plans.
+					</div>
+				</div>
+
+				<div id="needtoupdate_user_profile" class="display-none">
+					<div class="contentheader_plain">Please review your user information</div>
+					<div class="userinfobox_head fontsize-10">
+						In order to keep your user information up to date, please review your user information and do the neccessary changes.<br />Press "Save" when finished!<br> You can not edit your Username, Firstname
+						or Lastname. These fields are tied up to your saved flight plans.
+					</div>
+				</div>
+
+				<div class="userinfobox_head fontsize-10 background-dark-grey margin-bottom-2">
+					<div id="empty-password" class="white-on-red display-none padding-top-5 padding-bottom-5 font-size-1-2-bold"><center>NB! If you don't want to change your password, leave both fields empty.</center></div>
+					<div id="no-empty-password" class="white-on-red display-none padding-5 font-size-1-2-bold"><center>NB! You are required to create a new password based on the format rules below. If you already have a password that conforms to these rules, please re-enter it and save it.</center></div>
+					<div id="no-empty-password" class="padding-5 font-1-2">The password <font size="2" color="red">MUST</font> contain 12-15 characters, min. a number, a capital(uppercase), a lowercase and a special character.
+					The <font size="2" color="red"><strong>x</strong></font> symbol indicates mandatory items.</div>
+				</div>
+
+				<div id="userinfoerrorsDiv" align="center" class="display-none">
+					<span id="userinfoerrors"></span>
+				</div>
+			</div>
+		</div>
+
+		<div class="m border">
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Username
+				</div>
+				<div class="r">
+					<INPUT type="text" name="username" id="username" value="" maxlength="30" tabindex="1" ng-model="username" required /> <span class="color-red"
+						ng-show="userForm.username.$dirty && userForm.username.$invalid"> <span ng-show="userForm.username.$error.required">Username is required.</span>
+					</span>
+				</div>
+			</div>
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Password
+				</div>
+				<div class="r">
+					<INPUT type="password" name="password" id="password" maxlength="15" tabindex="2" ng-model="password" autocomplete="new-password"/>
+					<span toggle="#password" class="fa fa-fw fa-eye field-icon toggle-password"></span>
+					<span class="color-red"	ng-show="userForm.password.$dirty && userForm.password.$invalid"> <span ng-show="userForm.password.$error.required">Password is required.</span>
+					</span>
+				</div>
+			</div>
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Confirm password
+				</div>
+				<div class="r">
+					<INPUT type="password" name="confirmpwd" id="confirmpwd" maxlength="15" tabindex="3" ng-model="confirmpwd" autocomplete="new-password"/>
+					<span toggle="#confirmpwd" class="fa fa-fw fa-eye field-icon toggle-password"></span>
+					<span class="color-red"	ng-show="userForm.confirmpwd.$dirty && userForm.confirmpwd.$invalid"> <span ng-show="userForm.confirmpwd.$error.required">Password is required.</span>
+					</span>
+				</div>
+			</div>
+
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Firstname
+				</div>
+				<div class="r">
+					<INPUT type="text" name="firstname" id="firstname" value="" tabindex="4" ng-model="firstname" required /> <span class="color-red"
+						ng-show="userForm.firstname.$dirty && userForm.firstname.$invalid"> <span ng-show="userForm.firstname.$error.required">First name is required.</span>
+					</span>
+				</div>
+			</div>
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Lastname
+				</div>
+				<div class="r">
+					<INPUT type="text" name="lastname" id="lastname" value="" tabindex="5" ng-model="lastname" required /> <span class="color-red"
+						ng-show="userForm.lastname.$dirty && userForm.lastname.$invalid"> <span ng-show="userForm.lastname.$error.required">Last name is required.</span>
+					</span>
+				</div>
+			</div>
+			<INPUT type="hidden" name="phone" id="phone" value="" tabindex="10" />
+
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Cell Phone
+				</div>
+				<div class="r">
+					<input type="number" name="mobile_cc" id="mobile_cc" value="47" size="4" maxlength="4" title="Input country code. Max 4 numbers!" tabindex="11"
+						ng-model="mobile_cc" autocomplete="tel-country-code" required /> <span class="color-red" ng-show="userForm.mobile_cc.$dirty && userForm.mobile_cc.$invalid"> <span
+						ng-show="userForm.mobile_cc.$error.required">Country Code is required.</span>
+					</span>
+
+					
+					<input type="hidden" id="mobile_cc_hidden" value="null" /> <select id="thelist" onChange="combo(this, 'mobile_cc')" tabindex="12">
+						
+							<option value="" >Other</option>
+						
+							<option value="47" >Norway</option>
+						
+							<option value="46" >Sweden</option>
+						
+							<option value="45" >Denmark</option>
+						
+							<option value="358" >Finland</option>
+						
+							<option value="354" >Iceland</option>
+						
+							<option value="49" >Germany</option>
+						
+							<option value="31" >Netherlands</option>
+						
+							<option value="32" >Belgium</option>
+						
+							<option value="44" >UK</option>
+						
+							<option value="1" >USA</option>
+						
+					</select> <br /> <input type="number" name="mobile_no" id="mobile_no" value="" size="15" maxlength="15" title="Input cell phone number. Max. 15 numbers" tabindex="13"
+						ng-model="mobile_no" autocomplete="tel-national" required /> <span class="color-red" ng-show="userForm.mobile_no.$dirty && userForm.mobile_no.$invalid"> <span
+						ng-show="userForm.mobile_no.$error.required">Cell phone's number is required.</span>
+					</span>
+				</div>
+			</div>
+
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>E-mail
+				</div>
+				<div class="r">
+					<INPUT type="email" name="email" id="email" value="" tabindex="14" ng-model="email" required /> <span class="color-red"
+						ng-show="userForm.email.$dirty && userForm.email.$invalid"> <span ng-show="userForm.email.$error.required">Email is required.</span> <span
+						ng-show="userForm.email.$error.email">Invalid email address.</span>
+					</span>
+				</div>
+			</div>
+			
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Confirm e-mail
+				</div>
+				<div class="r">
+					<INPUT type="email" name="confirmemail" id="confirmemail" value="" tabindex="15" ng-model="confirmemail" required /> <span class="color-red"
+						ng-show="userForm.confirmemail.$dirty && userForm.confirmemail.$invalid"> <span ng-show="userForm.confirmemail.$error.required">Confirm email field is required.</span>
+						<span ng-show="userForm.confirmemail.$error.email">Invalid email address.</span>
+					</span>
+				</div>
+			</div>
+
+
+			<div class="a">
+				<div class="l">
+					FPL status by SMS
+				</div>
+				<div class="r">
+					<input type="checkbox" id="smsnotifications" title="Receive SMS notifications for flightplan status" class="check-box"/>
+				</div>
+			</div>
+
+
+			<div class="a">
+				<div class="l">
+					<font size="2" color="red"><strong>x </strong></font>Reason for Application
+				</div>
+				<div class="r">
+					<TEXTAREA NAME="justification" ROWS="3" COLS="25" id="justification" tabindex="17" ng-model="justification" required></TEXTAREA>
+					<span class="color-red" ng-show="userForm.justification.$dirty && userForm.justification.$invalid"> <span ng-show="userForm.justification.$error.required">Please
+							write a justification for obtaining an account...</span>
+					</span>
+				</div>
+			</div>
+
+			<div class="b">
+				<div class="m display-none">
+					<font size="2" color="red"><b>Warning:<br />
+					</b></font>After 18 months of inactivity access will automatically be denied.<br />User access can also be withdrawn in case of inappropriate use.
+				</div>
+			</div>
+			<div class="b display-none">
+				<div id="new_user_profile_btn" class="display-none">
+					<input type="button" id="register_userinfo_create" class="submitbutton" value="Saves" onClick="javascript:processUserInfo('Create', false);" /> <input
+						type="button" class="submitbutton" value="Close" onClick="closeBox_old('fpl_user_info');" />
+				</div>
+				<div id="edit_user_profile_btn" class="display-none">
+					<input type="button" id="register_userinfo_edit" class="submitbutton" value="Save" onClick="javascript:processUserInfo('Edit', true);" /> <input type="button"
+						id="register_userinfo_edit_close" class="submitbutton" value="Close" onClick="closeBox_old('fpl_user_info');" />
+				</div>
+			</div>
+		</div>
+
+		<div class="b">
+			<div id="show_agreement_gdpr_btn_new_user" class="a">
+				</b>I have read the agreement and accept it
+			    <input type="checkbox" id="agreement_new_user_checkbox" class="check-box" onChange="javascript:toggle_save_user_profile_btn('agreement_new_user_checkbox')"/>
+				<input type="button" id="agreement_btn" class="submitbutton" value="Read Agreement" onClick="javascript:show_gdpr_ead();" />
+			</div>
+		</div>
+
+		<div class="b">
+			<div id="show_agreement_gdpr_btn_existing_user" class="a">
+				</b>I have read the updated agreement and accept it
+				<input type="checkbox" id="agreement_edit_user_checkbox" class="check-box" onChange="javascript:toggle_save_user_profile_btn('agreement_edit_user_checkbox')"/>
+				<input type="button" id="agreement_btn2" class="submitbutton" value="Read Agreement" onClick="javascript:show_gdpr_ead();" />
+			</div>
+		</div>
+
+		<div class="userinfobox_footer">
+			<font size="2" color="red"><b>Warning:<br />
+			</b></font>After 18 months of inactivity access will automatically be denied. User access can also be withdrawn in case of inappropriate use.
+		</div>
+
+	</div>
+</form>	
+<!-- HTML END -->
+<!-- Google Maps Distance Measuring -->
+<!-- <script src="https://unpkg.com/measuretool-googlemaps-v3"></script> -->
+<script charset="UTF-8" src="js/3p/gmaps-measuretool.umd.js" type="text/javascript"></script>
+
+<!-- USING CDNJS -->
+<!-- AngularJS -->
+<script src='https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js' type="text/javascript"></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-route.min.js' type="text/javascript"></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular-route.min.js.map' type="application/json"></script>
+
+<!-- Order: 1. jQuery core and ui. 2.popper core 3.bootstrap core (uses popper!)-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js" crossorigin="anonymous" type="text/javascript"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.js" integrity="sha512-uDHyvPvTQ8Ky0B5lOEgrh1JL5JAjsOy6nHOnGW+sKgLDOmKXX1NmxyAGpbAznxkW09a8A4tQBR5LecIvhbvpiA==" crossorigin="anonymous"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+	crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+	crossorigin="anonymous"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-autocomplete/1.0.7/jquery.auto-complete.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gmaps.js/0.4.25/gmaps.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.2.0/js.cookie.min.js" type="text/javascript"></script>
+
+<!-- THE VERSION 2.28.9 IS THE HIGHEST THAT DOES WORK AS STICKYHEADERS! -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/jquery.tablesorter.combined.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/extras/jquery.tablesorter.pager.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.31.3/js/widgets/widget-cssStickyHeaders.min.js" type="text/javascript"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.alphanum/1.0.24/jquery.alphanum.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-scrollTo/2.1.2/jquery.scrollTo.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/magnific-popup.js/1.1.0/jquery.magnific-popup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-scrollTo/2.1.2/jquery.scrollTo.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jQuery-ui-Slider-Pips/1.11.4/jquery-ui-slider-pips.min.js" integrity="sha256-OL8tV6ONTtyNVwcLNx0HfV0RVvreW1rvBCu/Nv2zIxo=" crossorigin="anonymous"></script>
+
+
+<!-- Ippc global js -->
+
+<script src='js/dist/ippc.global.js?v=202610061739' type="text/javascript"></script>
+
+
+
+<!-- FOR ASH NEW TEST -->
+
+<!--jQuery -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.0/js/bootstrap-select.min.js"></script>
+<script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+<!-- Add icon library -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<!-- END -->
+
+<script src="js/3p/jquery.dialogextend.min.js?v=202610061739" type="text/javascript"></script>
+
+<script type="text/javascript">
+	//jQuery rename to $jq because of DWR
+  var $jq = jQuery.noConflict();
+  useBSNns = true;
+</script>
+
+
+
+
+<script src="https://maps.googleapis.com/maps/api/js?v=quarterly&key=AIzaSyBjJMtxQvhdtxsxv4xOgQqdVoYYQg0ff7o&libraries=weather,places,geometry,elevator?force=webgl"></script>
+
+
+<!-- IPPC DWR Scripts start-->
+<script src="dwr/interface/IGABean.js?v=202610061739"></script>
+<script src="dwr/interface/NRBBean.js?v=202610061739"></script>
+<script src="dwr/interface/PIBListBean.js?v=202610061739"></script>
+<script src="dwr/interface/PIBBean.js?v=202610061739"></script>
+<script src="dwr/interface/NotamByIdBean.js?v=202610061739"></script>
+<script src="dwr/interface/BriefingBean.js?v=202610061739"></script>
+
+<script src="dwr/interface/AIMSLBriefingClient.js?v=202610061739"></script>
+<script src="dwr/interface/ShowTurbulenceMaps.js?v=202610061739"></script>
+<script src="dwr/interface/TurbMapsBeingUpdated.js?v=202610061739"></script>
+<script src="dwr/interface/WeatherInfo.js?v=202610061739"></script>
+<script src="dwr/interface/AIMSL_RESTClient.js?v=202610061739"></script>
+<script src="dwr/interface/FplUser.js?v=202610061739"></script>
+<script src="dwr/interface/Flightplans.js?v=202610061739"></script>
+<script src="dwr/interface/FlightplanInterface.js?v=202610061739"></script>
+<script src="dwr/interface/IppcMail.js?v=202610061739"></script>
+<script src="dwr/interface/ChartList.js?v=202610061739"></script>
+<script src="dwr/interface/WarningMaps.js?v=202610061739"></script>
+<script src="dwr/interface/ShowWarningMaps.js?v=202610061739"></script>
+<script src="dwr/interface/IppcBean.js?v=202610061739"></script>
+<script src="dwr/interface/StaticDataInterface.js?v=202610061739"></script>
+<script src="dwr/interface/FlightServicesInterface.js?v=202610061739"></script>
+
+<script src="dwr/interface/NTPClock.js?v=202610061739"></script>
+
+<!-- Used in v4.0 -->
+<script src="dwr/interface/DATISInterface.js?v=202610061739"></script>
+<script src="dwr/interface/ASDInterface.js?v=202610061739"></script>
+<script src="dwr/interface/AdaptationInterface.js?v=202610061739"></script>
+<script src="dwr/interface/NotamInterface.js?v=202610061739"></script>
+<script src="dwr/interface/OldNotamInterface.js?v=202610061739"></script>
+<script src="dwr/interface/MetInterface.js?v=202610061739"></script>
+<script src="dwr/interface/IppcWebInterface.js?v=202610061739"></script>
+<script src="dwr/interface/AshWarning.js?v=202610061739"></script>
+<script src="dwr/interface/BannerMessage.js?v=202610061739"></script>
+<!-- IPPC DWR Scripts end -->
+
+<!-- GOOGLE MAP DEF WAS HERE! -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.8.0/suncalc.min.js" integrity="sha256-QQrHWG5ftBlXSj/H5cBsFVMV8L1f7CTdIbg8tpW0y4M=" crossorigin="anonymous"></script>
+<script src="js/3p/geoxml3.js?v=202610061739"></script>
+<script charset="UTF-8" src="js/3p/map-tools-2.0.2.js?v=202610061739" type="text/javascript"></script>
+<script src="js/3p/google-maps-gridlines.min.js?v=202610061739"></script>
+<script charset="UTF-8" src="js/3p/latlon-spherical.js?v=202610061739" type="text/javascript"></script>
+<script charset="UTF-8" src="js/3p/dms.js?v=202610061739" type="text/javascript"></script>
+<script src="js/3p/maplabel.js?v=202610061739"></script>
+<!-- Terra Draw replaces the deprecated google.maps.drawing.DrawingManager, see js/google/gm_terra_draw_shim.js -->
+<script src="js/3p/terra-draw.umd.js?v=202610061739"></script>
+<script src="js/3p/terra-draw-google-maps-adapter.umd.js?v=202610061739"></script>
+
+	<script src="js/dist/gm_terra_draw_shim.js?v=202610061739"></script>
+	<script src="js/dist/gm_draw.js?v=202610061739"></script>
+    <script src="js/dist/geoutils/GeoDirection.js?v=202610061739"></script>
+    <script src="js/dist/geoutils/LatitudeHelper.js?v=202610061739"></script>
+    <script src="js/dist/geoutils/LongitudeHelper.js?v=202610061739"></script>
+	<script src="js/dist/ippc_gm_common.js?v=202610061739"></script>
+	<script src="js/dist/fpl_gm.js?v=202610061739"></script>
+
+
+
+<!-- IPPC scripts start -->
+
+<script src="js/3p/markercluster.min.js"></script> 
+<!-- <script src="https://unpkg.com/@googlemaps/markerclustererplus/dist/index.min.js"></script> --> 
+<!--  <script src="https://cdnjs.cloudflare.com/ajax/libs/markerclustererplus/2.1.4/markerclusterer.min.js"></script> -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier/1.0.3/oms.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.0.201604172/pdfobject.min.js?v=202610061739"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mobile-detect/1.4.1/mobile-detect.min.js?v=202610061739"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.2/pdf.min.js?v=202610061739"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.2/pdf.worker.min.js?v=202610061739"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.2.2/pdf_viewer.js?v=202610061739"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Base64/1.0.1/base64.min.js?v=202610061739"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/x2js/1.2.0/xml2json.min.js?v=202610061739"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.20.1/moment.min.js?v=202610061739"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js?v=202610061739"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.27/moment-timezone-with-data.min.js" integrity="sha256-ltodGpbck6Njvgsa9pG7Xnr0xkVF57ctgfAS+LOeZt4=" crossorigin="anonymous"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js?v=202610061739" integrity="sha256-uEFhyfv3UgzRTnAZ+SEgvYepKKB0FW6RqZLrqfyUNug=" crossorigin="anonymous"></script>
+<script src="https://cdn.klokantech.com/maptilerlayer/v1/index.js?v=202610061739"></script>
+
+<script src="js/3p/geopoint.js?v=202610061739"></script>
+<script src="js/3p/NTP.js?v=202610061739"></script>
+<script src="js/3p/suncalc.js?v=202610061739"></script>
+<script src="js/3p/date.js?v=202610061739"></script>
+
+
+
+	<script src="js/dist/ippc.common.js?v=202610061739"></script>
+	<script src="js/dist/ippc.js?v=202610061739"></script>
+	<script src="js/dist/ippc.pibs.js?v=202610061739"></script>
+	<script src="js/dist/fpl.globals.js?v=202610061739"></script>
+	<script src="js/dist/fpl.user.js?v=202610061739"></script>
+	<script src="js/dist/fpl.js?v=202610061739"></script>
+	<script src="js/dist/fpl-components/clock.js?v=202610061739"></script>
+	<script src="js/dist/turbmaps.js?v=202610061739"></script>
+	<script src="js/dist/warningmaps.js?v=202610061739"></script>
+	<script src="js/dist/webtest.js?v=202610061739"></script>
+	<script src="js/dist/iris.js?v202610061739"></script>
+	<script src="js/dist/ippc_aimsl.js?v=202610061739"></script>
+	<script src="js/dist/naisbriefings.js?v=202610061739"></script>
+	
+	<script src="js/dist/ippc.gm.js?v=202610061739"></script>
+	<script src="js/dist/ippc.notams.js?v=202610061739"></script>
+	<script src="js/dist/ippc.sigmets.js?v=202610061739"></script>
+	<!-- <script src="js/dist/geocoder-tool.js?v=202610061739"></script> -->
+	
+	<script src="js/dist/init_gm.js?v=202610061739"></script>
+		
+	
+	<script src="js/dist/custommarker.js?v=202610061739"></script>
+	
+	
+	<script src="js/dist/ippc.animtimer.js?v=202610061739"></script>
+	
+	
+	<script src="js/dist/ippc.gafclass.js?v=202610061739"></script>
+	<script src="js/dist/ippc.gaf.js?v=202610061739"></script>
+	
+	<script src="js/dist/ippc.nrlclass.js?v=202610061739"></script>
+	<script src="js/dist/ippc.nrl.js?v=202610061739"></script>
+	
+	
+	
+	<script src="js/dist/ippc.ashtest.js?v=202610061739"></script>
+	<script src="js/dist/ippc.ash.js?v=202610061739"></script>
+	
+		
+	<script src="js/dist/ippcApp.js?v=202610061739"></script>
+	<script src="js/dist/ippcCtrl.js?v=202610061739"></script>
+
+
+
+
+<!-- IPPC scripts end -->
+
+
+<script type="text/javascript">
+	showHideFplLogin(false);
+
+// 	window.onbeforeunload = function() {
+// 	  if ((window.event.clientX < 0) || (window.event.clientY < 0)) // close button
+// 	  {
+// 		  alert("Window Closed");
+// 	  } else if (window.event.altKey == true) // ALT + F4
+// 	  {
+// 		  alert("Window Closed");
+// 	  } else // for all other unload events
+// 	  {
+// 		  alert("unload event");
+// 	  }
+//   }
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,26 @@
+[
+  {
+    "type": "airep",
+    "data": []
+  },
+  {
+    "type": "taf",
+    "data": []
+  },
+  {
+    "type": "metar",
+    "data": []
+  },
+  {
+    "type": "notam",
+    "data": []
+  },
+  {
+    "type": "snowtam",
+    "data": []
+  },
+  {
+    "type": "sigmet",
+    "data": []
+  }
+]

@@ -1,0 +1,17 @@
+HTTP/2 200 
+content-type: text/html; charset=utf-8
+date: Fri, 09 Oct 2026 21:26:15 GMT
+accept-ranges: bytes
+cache-control: no-store, max-age=0
+etag: "42e133bd24b6e1021eb6393f2956d2d27d783779"
+pragma: no-cache
+vary: Accept-Encoding
+content-length: 2599
+strict-transport-security: max-age=31536000 ; includeSubDomains
+cross-origin-opener-policy: same-origin
+referrer-policy: no-referrer
+x-content-type-options: nosniff
+x-frame-options: deny
+x-permitted-cross-domain-policies: none
+content-disposition: inline; filename="index.html"
+

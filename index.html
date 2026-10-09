@@ -226,9 +226,33 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
 .devbox { border-top:1px solid var(--line); padding-top:14px; display:grid; gap:4px; }
 .devbox .row { gap:12px; }
 .devbox b { font-family:var(--f-mono); font-size:22px; letter-spacing:.06em; }
-.lic { display:flex; flex-wrap:wrap; align-items:center; gap:2px 10px; margin-top:4px; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); }
-.lic.soon { color:var(--warn); }
-.lic .lnk { border:0; background:none; padding:0; color:inherit; font:inherit; text-decoration:underline; text-underline-offset:2px; cursor:pointer; min-height:24px; }
+/* license: chip in the header, details in a dialog */
+.status { display:flex; flex-wrap:wrap; gap:0 14px; }
+.licbtn { display:inline-flex; flex-wrap:wrap; align-items:center; gap:2px 8px; margin-top:8px; min-height:32px; padding:4px 10px 4px 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-family:var(--f-mono); font-size:12px; text-align:left; cursor:pointer; max-width:100%; }
+.licbtn svg { width:15px; height:15px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.licbtn b { font-weight:600; }
+.licbtn .k { color:var(--muted); }
+.licbtn.soon { background:var(--warnbg); border-color:transparent; color:var(--warn); }
+.licbtn.end { background:var(--badbg); border-color:transparent; color:var(--bad); }
+.licbtn.soon .k, .licbtn.end .k { color:inherit; opacity:.8; }
+dialog.licdlg { width:min(calc(100% - 32px), 440px); max-height:calc(100dvh - 32px); overflow:auto; border:1px solid var(--line); border-radius:16px; padding:0; background:var(--surface); color:var(--ink); }
+dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
+.licdlg .in { padding:20px; display:grid; gap:16px; }
+.licdlg .hd { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.licdlg h2 { margin:0; }
+.licdlg .x { width:40px; height:40px; justify-content:center; padding:0; }
+.licdlg .days { border-radius:12px; padding:14px 16px; background:var(--okbg); display:grid; gap:2px; }
+.licdlg .days b { font-family:var(--f-head); font-weight:700; font-size:40px; line-height:1; }
+.licdlg .days b small { font-size:20px; margin-left:6px; font-weight:600; }
+.licdlg .days span { font-size:14px; color:var(--muted); }
+.licdlg .days.soon { background:var(--warnbg); color:var(--warn); } .licdlg .days.soon span { color:inherit; }
+.licdlg .days.end { background:var(--badbg); color:var(--bad); } .licdlg .days.end span { color:inherit; }
+.licdlg dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:8px 16px; font-size:15px; }
+.licdlg dt { color:var(--muted); }
+.licdlg dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.licdlg .keybox { font-family:var(--f-mono); font-size:13px; line-height:1.45; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:10px 12px; overflow-wrap:anywhere; word-break:break-all; -webkit-user-select:all; user-select:all; }
+.licdlg .acts { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.licdlg .acts .btn { flex:1 1 140px; }
 </style>
 </head>
 <body>
@@ -249,6 +273,27 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
     </div>
   </div>
 </div>
+<dialog class="licdlg" id="licDlg" aria-labelledby="ldTitle">
+  <div class="in">
+    <div class="hd"><h2 id="ldTitle">Your license</h2><button class="ghost x" type="button" id="ldClose" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="days" id="ldBox"><b id="ldNum">–</b><span id="ldUntil"></span></div>
+    <dl>
+      <dt>Licensed to</dt><dd id="ldName">–</dd>
+      <dt>Issued</dt><dd id="ldIssued">–</dd>
+      <dt>Works on</dt><dd id="ldDev">–</dd>
+      <dt>Last sync</dt><dd id="ldSync">–</dd>
+    </dl>
+    <div style="display:grid;gap:6px">
+      <span class="lbl">License key</span>
+      <div class="keybox" id="ldKey"></div>
+    </div>
+    <div class="acts">
+      <button class="btn fill" type="button" id="ldCopy">Copy key</button>
+      <button class="btn" type="button" id="ldSyncNow">Sync now</button>
+      <button class="ghost" type="button" id="ldChange">Enter a new key</button>
+    </div>
+  </div>
+</dialog>
 
 <div id="app"></div>
 
@@ -410,15 +455,20 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     } catch (e) { return false; } finally { clearTimeout(timer); }
   }
   function daysSinceSync() { const t = Number(store.get(K_SYNC)) || 0; return t ? (trustedNow() - t) / DAY : null; }
-  function showSync() {
-    const el = document.getElementById('syncLine'); if (!el) return;
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  function syncState() {
     const d = daysSinceSync();
-    if (d === null) { el.textContent = 'Not synced yet'; el.className = 'offl busy'; return; }
+    if (d === null) return {text: 'Not synced yet', cls: 'busy'};
     const left = Math.max(0, Math.ceil(SYNC_DAYS - d));
-    el.textContent = d < 1 ? 'Synced today' : `Synced ${Math.floor(d)} day${Math.floor(d) === 1 ? '' : 's'} ago` + (left <= 2 ? ` · connect within ${left} day${left === 1 ? '' : 's'}` : '');
-    el.className = 'offl ' + (left <= 2 ? 'busy' : 'ok');
+    return {text: (d < 1 ? 'Synced today' : `Synced ${plural(Math.floor(d), 'day')} ago`) + (left <= 2 ? ` · connect within ${plural(left, 'day')}` : ''), cls: left <= 2 ? 'busy' : 'ok'};
+  }
+  function showSync() {
+    const st = syncState();
+    const el = $('syncLine'); if (el) { el.textContent = st.text; el.className = 'offl ' + st.cls; }
+    const ld = $('ldSync'); if (ld) ld.textContent = st.text;
   }
   function lock(msg, canCancel) {
+    closeLicense();
     document.documentElement.classList.add('locked');
     $('lock').hidden = false;
     $('licBusy').hidden = true; $('licForm').hidden = false;
@@ -443,19 +493,42 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     $('app').innerHTML = app.html;
     const s = document.createElement('script'); s.textContent = app.js; document.body.appendChild(s);
     started = true;
-    const ch = $('licChange');
-    if (ch) ch.addEventListener('click', () => { $('licKey').value = ''; lock('', true); });
+    const lb = $('licBtn');
+    if (lb) lb.addEventListener('click', openLicense);
     if (window.GRFOffline) window.GRFOffline();
     showSync();
     return true;
   }
-  function showLicense(r) {
-    const el = $('licLine'); if (!el) return;
-    const soon = r.daysLeft <= 14;
-    el.className = 'lic' + (soon ? ' soon' : '');
-    el.firstChild.textContent = (r.info.name ? `Licensed to ${r.info.name} · ` : '') +
-      (soon ? `expires in ${r.daysLeft} day${r.daysLeft === 1 ? '' : 's'} (${fmt(r.info.expiresDate)})` : `valid until ${fmt(r.info.expiresDate)}`);
+  /* the key in use and the days it has left: a chip in the header, the full details in a dialog */
+  let cur = null;
+  const daysText = n => n <= 0 ? 'Last day today' : `${plural(n, 'day')} left`;
+  const shortKey = k => k.length > 16 ? k.slice(0, 8) + '…' + k.slice(-6) : k;
+  function showLicense(r, key) {
+    cur = {r, key};
+    const n = r.daysLeft, cls = n <= 3 ? 'end' : n <= 14 ? 'soon' : '';
+    const b = $('licBtn');
+    if (b) {
+      b.className = 'licbtn' + (cls ? ' ' + cls : '');
+      $('licDays').textContent = daysText(n);
+      $('licShort').textContent = shortKey(key);
+      b.setAttribute('aria-label', `License: ${daysText(n)}, valid through ${fmt(r.info.expiresDate)}. Show license details.`);
+    }
+    const box = $('ldBox'); if (!box) return;
+    box.className = 'days' + (cls ? ' ' + cls : '');
+    $('ldNum').replaceChildren(...(n <= 0 ? ['Last day'] : [String(n), Object.assign(document.createElement('small'), {textContent: n === 1 ? 'day left' : 'days left'})]));
+    $('ldUntil').textContent = `Valid through ${fmt(r.info.expiresDate)}` + (n <= 0 ? ' (today)' : '');
+    $('ldName').textContent = r.info.name || '–';
+    $('ldIssued').textContent = fmt(r.info.issuedDate);
+    $('ldDev').textContent = r.info.deviceCode ? `This device only (${r.info.deviceCode})` : 'Any device';
+    $('ldKey').textContent = key;
+    showSync();
   }
+  function openLicense() {
+    const d = $('licDlg'); if (!d || !cur) return;
+    $('ldCopy').textContent = 'Copy key';
+    if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
+  }
+  function closeLicense() { const d = $('licDlg'); if (!d) return; if (d.close) d.close(); else d.removeAttribute('open'); }
   async function check(key, fromForm) {
     let r;
     try { r = await GRFLicense.verify(key, PUB, trustedNow(), dev); }
@@ -471,7 +544,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       store.set(K_KEY, key.replace(/\s+/g, ''));
       document.documentElement.classList.remove('locked');
       $('lock').hidden = true;
-      showLicense(r); showSync();
+      showLicense(r, key.replace(/\s+/g, '')); showSync();
       return true;
     }
     if (r.reason === 'expired') {
@@ -496,6 +569,22 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (ok) window.GRFLock.recheck(); else lock('Could not reach the app\'s web address. ' + WHY.sync, false);
     });
     $('licCancel').addEventListener('click', () => window.GRFLock.recheck());
+    $('ldClose').addEventListener('click', closeLicense);
+    $('licDlg').addEventListener('click', e => { if (e.target === $('licDlg')) closeLicense(); });   /* tap outside */
+    $('ldCopy').addEventListener('click', () => {
+      if (!cur) return;
+      const done = () => { $('ldCopy').textContent = 'Copied'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(cur.key).then(done, () => { getSelection().selectAllChildren($('ldKey')); });
+      else getSelection().selectAllChildren($('ldKey'));
+    });
+    $('ldSyncNow').addEventListener('click', async () => {
+      const b = $('ldSyncNow'); b.disabled = true; b.textContent = 'Syncing…';
+      const ok = await sync();
+      b.disabled = false; b.textContent = ok ? 'Synced' : 'No connection';
+      setTimeout(() => { b.textContent = 'Sync now'; }, 2500);
+      if (ok) window.GRFLock.recheck();
+    });
+    $('ldChange').addEventListener('click', () => { closeLicense(); $('licKey').value = ''; lock('', true); });
     $('devCopy').addEventListener('click', () => {
       navigator.clipboard && navigator.clipboard.writeText(devCode).then(() => { $('devCopy').textContent = 'Copied'; }, () => {});
     });
@@ -518,8 +607,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   if (!('serviceWorker' in navigator)) { show('Offline use not supported in this browser'); return; }
   navigator.serviceWorker.register('sw.js').then(function (reg) {
     function check() {
-      caches.open('grf-38f5f3efeb').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
-        if (r) show('Works offline · v38f5f3efeb', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
+      caches.open('grf-0c3238614b').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
+        if (r) show('Works offline · v0c3238614b', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
       }).catch(function () { show('Offline storage not available'); });
     }
     check();

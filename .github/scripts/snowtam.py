@@ -102,8 +102,10 @@ def extract(text, ref):
         while j < len(lines) and len(body) < 40:
             l = lines[j]
             if not l: j += 1; continue
-            if frm is None and icao is None and l.startswith('FROM:') and 'TO:' not in l:
-                frm = l[5:].strip(); j += 1; continue
+            if icao is None and l.startswith('FROM:') and 'TO:' not in l:
+                frm = l[5:].strip() or frm; j += 1; continue
+            if icao is None and re.fullmatch(r'\d{2} [A-Z]{3} \d{4} \d{2}:\d{2}', l):
+                frm = l; j += 1; continue          # the PDF text puts the date before "FROM:"
             if icao is None and re.fullmatch(r'[A-Z]{4}', l):
                 icao = l; j += 1; continue
             if icao is None:
@@ -115,13 +117,16 @@ def extract(text, ref):
         txt = '\n'.join(body).strip()
         m = RCR.search(txt)
         if not icao or not m: continue
-        out.append({'icao': icao, 'observed': iso(observed(m.group(1), ref)), 'from': frm, 'text': txt})
+        issued = None
+        fm = re.fullmatch(r'(\d{2}) ([A-Z]{3}) (\d{4}) (\d{2}):(\d{2})', frm or '')
+        if fm and fm.group(2) in MON: issued = datetime(int(fm.group(3)), MON[fm.group(2)], int(fm.group(1)), int(fm.group(4)), int(fm.group(5)), tzinfo=timezone.utc)
+        out.append({'icao': icao, 'observed': iso(observed(m.group(1), ref)), 'issued': iso(issued), 'text': txt})
     return names, out
 
 def lfv_sources():
     res = []
     for sid, folder, listname, prefix, label, pre in LFV:
-        src = {'id': sid, 'name': label, 'prefixes': pre, 'ok': False}
+        src = {'id': sid, 'name': label, 'host': 'aro.lfv.se', 'prefixes': pre, 'ok': False}
         try:
             listing = get('https://aro.lfv.se/Links/Link/ShowFileList?' + urllib.parse.urlencode({'type': 'AIS', 'path': '\\' + folder + '\\', 'torlinkName': listname}))
             files = re.findall(r'href="([^"]*/FileList/[^"]*?' + re.escape(prefix) + r'_(\d{14})\.pdf)"', html.unescape(listing))
@@ -140,7 +145,7 @@ def aisfi_sources():
     res = []
     for sid, page, label, pre in AISFI:
         url = f'https://www.ais.fi/bulletins/{page}.htm'
-        src = {'id': sid, 'name': label, 'prefixes': pre, 'ok': False, 'url': url}
+        src = {'id': sid, 'name': label, 'host': 'ais.fi', 'prefixes': pre, 'ok': False, 'url': url}
         try:
             text = html_text(get(url))
             m = re.search(r'(\d{2})([A-Z]{3})(\d{4})\s+(\d{2})(\d{2})\s*-\s*\d{2}[A-Z]{3}\d{4}', text)
@@ -170,9 +175,10 @@ def main(outdir):
                 same = next((x for x in a['snowtams'] if re.sub(r'\s+', ' ', x['text']) == key), None)
                 if same:
                     if src['id'] not in same['sources']: same['sources'].append(src['id'])
+                    same['issued'] = same['issued'] or s['issued']
                     if (src.get('issued') or '') > (same['bulletin'] or ''): same['bulletin'] = src.get('issued'); same['source'] = src['id']
                 else:
-                    a['snowtams'].append({'observed': s['observed'], 'text': s['text'], 'source': src['id'], 'sources': [src['id']], 'bulletin': src.get('issued')})
+                    a['snowtams'].append({'observed': s['observed'], 'issued': s['issued'], 'text': s['text'], 'source': src['id'], 'sources': [src['id']], 'bulletin': src.get('issued')})
         sources.append(src)
     for a in airports.values():
         a['snowtams'].sort(key=lambda x: x['observed'] or '', reverse=True)

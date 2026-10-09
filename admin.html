@@ -137,7 +137,7 @@ input[type=date]::-webkit-calendar-picker-indicator { margin-left:auto; }
   <section class="panel">
     <h2>Check a key</h2>
     <textarea id="cKey" aria-label="Key to check" placeholder="Paste a key starting with GRF-"></textarea>
-    <div class="row"><button class="btn" type="button" id="cGo">Check</button><button class="btn" type="button" id="cRevoke" hidden>Withdraw this key</button></div>
+    <div class="row"><button class="btn" type="button" id="cGo">Check</button><button class="btn" type="button" id="cAdd" hidden>Add to the list</button><button class="btn" type="button" id="cRevoke" hidden>Withdraw this key</button></div>
     <div id="cOut" class="note" hidden></div>
   </section>
 </main>
@@ -267,7 +267,13 @@ async function gh(method, path, body) {
     headers: {'Authorization': 'Bearer ' + tok, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(body ? {'Content-Type': 'application/json'} : {})},
     body: body ? JSON.stringify(body) : undefined, cache: 'no-store'});
   if (res.status === 404 && method === 'GET') return null;
-  if (!res.ok) { const e = new Error(res.status === 401 || res.status === 403 ? 'GitHub refused the token. Check that it has Contents: read and write on this repository.' : res.status === 409 ? 'conflict' : `GitHub answered ${res.status}.`); e.status = res.status; throw e; }
+  if (!res.ok) {
+    const msg = res.status === 401 ? 'GitHub did not accept the token. Check that it was pasted in full and has not expired.'
+      : res.status === 403 && method === 'PUT' ? 'The token can read but not change files. On GitHub, edit the token: Repository permissions → Contents → Read and write, then tap Reload here.'
+      : res.status === 403 ? 'The token has no access to this repository. On GitHub, edit the token: Repository access → Only select repositories → ' + GH.repo + '.'
+      : res.status === 409 ? 'conflict' : `GitHub answered ${res.status}.`;
+    const e = new Error(msg); e.status = res.status; throw e;
+  }
   return res.json();
 }
 async function getFile(path) { const r = await gh('GET', path + '?t=' + Date.now()); return r ? {sha: r.sha, bytes: b64.dec(r.content)} : null; }
@@ -335,7 +341,10 @@ function renderSetup() {
 async function connect() {
   setMsg('');
   if (!kf || !tok) { renderSetup(); return; }
-  try { await loadLog(); await loadRevoked(); }
+  try {
+    await loadLog(); await loadRevoked();
+    if (!logSha) await saveLog('Create key list');   /* also proves the token may write */
+  }
   catch (e) { log = null; setMsg(e.name === 'OperationError' ? 'The key list in the repository could not be opened with this signing key.' : (e.message || 'Could not reach GitHub.')); }
   renderSetup(); renderLog();
 }
@@ -343,6 +352,7 @@ $('kFile').onclick = () => $('kFileIn').click();
 $('kFileIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const m = await useKeyFile(await f.text()); setMsg(m); if (!m) connect(); else renderSetup(); };
 $('ghGo').onclick = () => { tok = $('ghTok').value.trim(); if (!tok) return setMsg('Paste the token first.'); store.set('grf-gh-token', tok); $('ghTok').value = ''; connect(); };
 $('logReload').onclick = () => connect();
+/* a key made while the list could not be saved: add it with Check a key → Add to list */
 
 /* ---- validity ---- */
 function endFor(p) {
@@ -445,10 +455,19 @@ $('cGo').onclick = async () => {
   const isRev = (log && log.some(e => e.id === k.id && e.revoked)) || (revPublished && revPublished.ids.includes(k.id));
   if (r.ok || r.reason === 'expired') checked = k;
   $('cRevoke').hidden = !checked || isRev || !log;
+  $('cAdd').hidden = !checked || !log || log.some(e => e.id === k.id);
   if (isRev) { out.className = 'note bad'; out.textContent = `Withdrawn. ${facts}`; }
   else if (r.ok) { out.className = 'note ok'; out.textContent = `Valid, ${r.daysLeft} day${r.daysLeft === 1 ? '' : 's'} left. ${facts}`; }
   else if (r.reason === 'expired') { out.className = 'note warn'; out.textContent = `Expired. ${facts}`; }
   else { out.className = 'note bad'; out.textContent = 'Not valid: the signature does not match. The key was changed or made with another signing key.'; }
+};
+$('cAdd').onclick = async () => {
+  if (!checked) return; $('cAdd').hidden = true;
+  const k = checked, out = $('cOut');
+  try {
+    await changeLog(l => { if (!l.some(e => e.id === k.id)) l.unshift({name: k.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: k.issuedDate, expires: k.expiresDate, device: k.deviceCode || '', id: k.id, createdAt: Date.now()}); }, 'Key added to the list');
+    out.className = 'note ok'; out.textContent = 'Added to the list.'; renderLog();
+  } catch (e) { out.className = 'note bad'; out.textContent = 'Not added: ' + e.message; $('cAdd').hidden = false; }
 };
 $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };

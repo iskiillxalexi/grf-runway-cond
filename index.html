@@ -668,6 +668,18 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     store.set(K_ACT, JSON.stringify({id, dev: devCode, at: trustedNow(), checked: trustedNow()}));
     return null;
   }
+  /* ask GitHub to read the SNOWTAM bulletins now, when GitHub's own schedule is late. Uses the device-limit
+     token from act.bin; it needs "Actions: Read and write" for this (it still cannot change files). */
+  async function refreshSnow() {
+    const k = store.get(K_KEY), info = k && GRFLicense.decode(k);
+    if (!info || info.old) return {ok: false, why: 'nokey'};
+    let acc;
+    try { acc = await access(info.ck); } catch (e) { return {ok: false, why: 'setup'}; }
+    try {
+      const r = await ghApi(acc, '/actions/workflows/snowtam.yml/dispatches', 'POST', {ref: 'main'});
+      return r.status === 204 ? {ok: true} : {ok: false, why: r.status === 403 || r.status === 404 ? 'permission' : 'net', status: r.status};
+    } catch (e) { return {ok: false, why: 'net'}; }
+  }
   let actRun = null;
   function activate(r) { if (!actRun) actRun = activateOnce(r).finally(() => { actRun = null; }); return actRun; }
 
@@ -788,7 +800,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   }
   window.GRFLock = {recheck() { const k = store.get(K_KEY); if (k) check(k, false); else lock(''); },
     /* called when the version check reached GitHub: fetch the withdrawn-license list too, so "Synced" is current */
-    syncNow(force) { return syncAndCheck(force); }};
+    syncNow(force) { return syncAndCheck(force); },
+    refreshSnow() { return refreshSnow(); }};
   /* sync whenever possible, then apply what it says */
   /* several triggers can fire at once (coming back to the app, the version check): share a run that is under way,
      and skip one that comes within 3 s of a successful sync. A failed sync never holds up the next try. */
@@ -860,7 +873,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '1674eb25e4', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'db8f355741', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

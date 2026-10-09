@@ -1,5 +1,5 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-0c3238614b';
+const CACHE = 'grf-5f025591eb';
 const FILES = [
 "./",
 "app.bin",

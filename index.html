@@ -607,8 +607,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   if (!('serviceWorker' in navigator)) { show('Offline use not supported in this browser'); return; }
   navigator.serviceWorker.register('sw.js').then(function (reg) {
     function check() {
-      caches.open('grf-0c3238614b').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
-        if (r) show('Works offline · v0c3238614b', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
+      caches.open('grf-5f025591eb').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
+        if (r) show('Works offline · v5f025591eb', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
       }).catch(function () { show('Offline storage not available'); });
     }
     check();

@@ -1,0 +1,37 @@
+# Temporary: look at how briefing.naviair.dk and ippc.no deliver SNOWTAM (removed after use)
+name: probe
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch pages and scripts
+        run: |
+          mkdir -p out && cd out
+          UA="GRF-Runway-Cond probe (github.com/iskiillxalexi/grf-runway-cond)"
+          for u in https://briefing.naviair.dk/ https://airspace.naviair-utm.dk/; do
+            n=$(echo "$u" | sed 's#https://##; s#/#_#g')
+            curl -sSL -A "$UA" -D "$n.headers" -o "$n.html" "$u" || true
+          done
+          for f in *.html; do grep -oE '(src|href)="[^"]+\.(js|json)[^"]*"' "$f" | sed 's/^[a-z]*="//; s/"$//' ; done | sort -u > scripts.txt
+          cat scripts.txt
+          while read s; do
+            case "$s" in http*) u="$s";; /*) u="https://airspace.naviair-utm.dk$s";; *) u="https://airspace.naviair-utm.dk/$s";; esac
+            curl -sSL -A "$UA" -o "js_$(basename "${s%%\?*}")" "$u" || true
+          done < scripts.txt
+          ls -la
+          grep -ohiE '"[^"]{0,120}(snowtam|notam|briefing|/api/)[^"]{0,120}"' js_* 2>/dev/null | sort -u | head -300 > api_strings.txt || true
+          grep -ohiE 'https?://[a-z0-9.-]+[a-z]{2,}(/[^"'"'"' ]*)?' js_* 2>/dev/null | sort -u | head -200 > urls.txt || true
+          curl -sSL -A "$UA" -o ippc_index.html https://ippc.no/ippc/index.jsp || true
+          grep -oE '(src)="[^"]+\.js[^"]*"' ippc_index.html | sed 's/^src="//; s/"$//' | sort -u > ippc_scripts.txt
+          while read s; do case "$s" in http*) u="$s";; /*) u="https://ippc.no$s";; *) u="https://ippc.no/ippc/$s";; esac; curl -sSL -A "$UA" -o "ippc_$(basename "${s%%\?*}")" "$u" || true; done < ippc_scripts.txt
+          grep -ohiE '.{0,160}(snowtam|SnowtamPIB).{0,200}' ippc_*.js ippc_index.html 2>/dev/null | head -80 > ippc_snowtam.txt || true
+      - name: Save
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd out && find . -size +3M -delete
+          git init -q -b probe && git config user.name "github-actions[bot]" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -q -m probe && git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" probe

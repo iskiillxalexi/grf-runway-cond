@@ -28,6 +28,14 @@ jobs:
           grep -oE '(src)="[^"]+\.js[^"]*"' ippc_index.html | sed 's/^src="//; s/"$//' | sort -u > ippc_scripts.txt
           while read s; do case "$s" in http*) u="$s";; /*) u="https://ippc.no$s";; *) u="https://ippc.no/ippc/$s";; esac; curl -sSL -A "$UA" -o "ippc_$(basename "${s%%\?*}")" "$u" || true; done < ippc_scripts.txt
           grep -ohiE '.{0,160}(snowtam|SnowtamPIB).{0,200}' ippc_*.js ippc_index.html 2>/dev/null | head -80 > ippc_snowtam.txt || true
+      - name: Naviair API
+        run: |
+          cd out
+          K=a397b655ae4f4d078fd6151b4df4d28c
+          for q in EKCH EKCH,EKBI,EKYT,EKAH,EKRN,EKSB,EKEB; do
+            curl -sS -A "GRF-Runway-Cond probe" -H "Accept: application/json" -H "Ocp-Apim-Subscription-Key: $K" -D "naviair_$q.headers" -o "naviair_$q.json" "https://api.naviair-utm.dk/aftn/search/$q" || true
+            head -c 600 "naviair_$q.json"; echo
+          done
       - name: Save
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}

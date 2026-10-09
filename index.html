@@ -226,6 +226,7 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
 .devbox { border-top:1px solid var(--line); padding-top:14px; display:grid; gap:4px; }
 .devbox .row { gap:12px; }
 .devbox b { font-family:var(--f-mono); font-size:22px; letter-spacing:.06em; }
+.updbar { position:fixed; left:12px; right:12px; top:calc(10px + env(safe-area-inset-top, 0px)); z-index:50; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:520px; margin-inline:auto; padding:10px 12px 10px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); box-shadow:0 6px 24px rgba(0,0,0,.18); font-size:15px; }
 /* license: chip in the header, details in a dialog */
 .status { display:flex; flex-wrap:wrap; gap:0 14px; }
 .licbtn { display:inline-flex; flex-wrap:wrap; align-items:center; gap:2px 8px; margin-top:8px; min-height:32px; padding:4px 10px 4px 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-family:var(--f-mono); font-size:12px; text-align:left; cursor:pointer; max-width:100%; }
@@ -460,7 +461,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const d = daysSinceSync();
     if (d === null) return {text: 'Not synced yet', cls: 'busy'};
     const left = Math.max(0, Math.ceil(SYNC_DAYS - d));
-    return {text: (d < 1 ? 'Synced today' : `Synced ${plural(Math.floor(d), 'day')} ago`) + (left <= 2 ? ` · connect within ${plural(left, 'day')}` : ''), cls: left <= 2 ? 'busy' : 'ok'};
+    const at = new Date(Number(store.get(K_SYNC))).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+    return {text: (d < 1 ? `Synced ${new Date().toDateString() === new Date(Number(store.get(K_SYNC))).toDateString() ? 'today' : 'yesterday'} ${at}` : `Synced ${plural(Math.floor(d), 'day')} ago`) + (left <= 2 ? ` · connect within ${plural(left, 'day')}` : ''), cls: left <= 2 ? 'busy' : 'ok'};
   }
   function showSync() {
     const st = syncState();
@@ -593,7 +595,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     /* the app may stay open for days: sync and check again when it comes back */
     document.addEventListener('visibilitychange', () => { if (!document.hidden) syncAndCheck(); });
     window.addEventListener('online', () => syncAndCheck());
-    setInterval(() => syncAndCheck(), 3600000);
+    setInterval(() => { if (!document.hidden) syncAndCheck(); }, 600000);
   });
 })();
 
@@ -605,10 +607,25 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   function show(t, c) { last = [t, c || '']; var el = document.getElementById('offl'); if (el) { el.textContent = t; el.className = 'offl ' + last[1]; } }
   window.GRFOffline = function () { show(last[0], last[1]); };
   if (!('serviceWorker' in navigator)) { show('Offline use not supported in this browser'); return; }
-  navigator.serviceWorker.register('sw.js').then(function (reg) {
+  /* a new version: reload by itself, unless a result is on the screen; then offer it */
+  var had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!had) { had = true; return; }
+    if (document.hidden || !document.querySelector('.hero')) { location.reload(); return; }
+    if (document.getElementById('updBar')) return;
+    var bar = document.createElement('div'); bar.id = 'updBar'; bar.className = 'updbar';
+    bar.innerHTML = '<span>A new version of the app is ready.</span><button type="button" class="btn fill">Reload</button>';
+    bar.querySelector('button').onclick = function () { location.reload(); };
+    document.body.appendChild(bar);
+  });
+  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(function (reg) {
+    function upd() { reg.update().catch(function () {}); }
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) upd(); });
+    window.addEventListener('online', upd);
+    setInterval(upd, 600000);
     function check() {
-      caches.open('grf-5f025591eb').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
-        if (r) show('Works offline · v5f025591eb', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
+      caches.open('grf-823b22300f').then(function (c) { return c.match('ocr/eng.traineddata'); }).then(function (r) {
+        if (r) show('Works offline · v823b22300f', 'ok'); else { show('Saving for offline use…', 'busy'); setTimeout(check, 1500); }
       }).catch(function () { show('Offline storage not available'); });
     }
     check();

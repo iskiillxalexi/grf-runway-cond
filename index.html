@@ -218,6 +218,12 @@ details.how li::marker { color:var(--muted); }
 .aptrow input::placeholder { text-transform:none; font-family:var(--f-ui); }
 .aptrow .btn { flex:none; min-height:48px; }
 #aptOut { display:grid; gap:10px; }
+.aptsug { display:grid; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface); }
+.aptsug button { display:flex; align-items:baseline; gap:10px; min-height:44px; padding:8px 12px; border:0; border-top:1px solid var(--line); background:transparent; color:var(--ink); text-align:left; font:inherit; cursor:pointer; }
+.aptsug button:first-child { border-top:0; }
+.aptsug button b { font-family:var(--f-mono); font-weight:600; }
+.aptsug button span { color:var(--muted); font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+.aptsug button i { font-style:normal; font-family:var(--f-head); font-weight:700; font-size:11.5px; letter-spacing:.06em; color:var(--brand); }
 .apthd { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; }
 .apthd b { font-family:var(--f-head); font-size:19px; letter-spacing:.04em; text-transform:uppercase; }
 .apthd span { font-family:var(--f-mono); font-size:12px; color:var(--muted); }
@@ -854,7 +860,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '511d985c80', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'efa82141ca', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

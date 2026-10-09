@@ -11,6 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
+<script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -208,6 +209,28 @@ details.how li::marker { color:var(--muted); }
   .right { position:sticky; top:16px; }
   .bar { display:none; }
 }
+/* airport: live SNOWTAM */
+.srcs.four { grid-auto-flow:row; grid-template-columns:repeat(2, minmax(0,1fr)); }
+.srcs.four button { min-height:76px; padding:10px 6px; }
+@media (min-width:560px) { .srcs.four { grid-auto-flow:column; grid-template-columns:none; } .srcs.four button { min-height:92px; } }
+.aptrow { flex-wrap:nowrap; }
+.aptrow input { flex:1 1 auto; min-width:0; min-height:48px; border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:9px; padding:10px 12px; font-family:var(--f-mono); font-size:16px; text-transform:uppercase; }
+.aptrow input::placeholder { text-transform:none; font-family:var(--f-ui); }
+.aptrow .btn { flex:none; min-height:48px; }
+#aptOut { display:grid; gap:10px; }
+.apthd { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; }
+.apthd b { font-family:var(--f-head); font-size:19px; letter-spacing:.04em; text-transform:uppercase; }
+.apthd span { font-family:var(--f-mono); font-size:12px; color:var(--muted); }
+.snow { border:1px solid var(--line); border-left:4px solid var(--c5); border-radius:10px; padding:12px 14px; display:grid; gap:8px; background:var(--surface); }
+.snow.soon { border-left-color:var(--c2); } .snow.old { border-left-color:var(--c0); }
+.snow .pill { justify-self:start; font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; padding:3px 8px; border-radius:6px; background:var(--c5); color:var(--c5t); }
+.snow.soon .pill { background:var(--c2); color:var(--c2t); } .snow.old .pill { background:var(--c0); color:var(--c0t); }
+.snow dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:14px; }
+.snow dt { color:var(--muted); }
+.snow dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.snow dd a { color:inherit; }
+.snow pre { margin:0; font-family:var(--f-mono); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--bg); border-radius:8px; padding:9px 11px; }
+.snow .row .btn { min-height:40px; }
 /* runway picture */
 .rv { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px 14px; display:grid; gap:8px; --rv-asph:#4A5059; --rv-mark:#F2F4F6; }
 @media (prefers-color-scheme:dark) { :root:not([data-theme="light"]) .rv { --rv-asph:#353B43; } }
@@ -831,7 +854,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'f60ae04e44', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '58e3821aa8', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

@@ -1,5 +1,5 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-9099b8c0df';
+const CACHE = 'grf-38f5f3efeb';
 const FILES = [
 "./",
 "app.bin",
@@ -34,10 +34,12 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
-  if (req.method !== 'GET' || url.origin !== self.location.origin || url.pathname.endsWith('/revoked.json')) return;
+  /* the revocation list and the key tool always come from the network, never from the app's cache */
+  if (req.method !== 'GET' || url.origin !== self.location.origin || /\/(revoked\.json|admin\.html|keys-log\.bin)$/.test(url.pathname)) return;
   e.respondWith(caches.open(CACHE).then(async c => {
-    const hit = await c.match(req, {ignoreSearch: true}) || (req.mode === 'navigate' ? await c.match('index.html') : null);
+    const hit = await c.match(req, {ignoreSearch: true});
     if (hit) return hit;
-    try { return await fetch(req); } catch (err) { return new Response('Offline', {status: 503}); }
+    try { return await fetch(req); }
+    catch (err) { return (req.mode === 'navigate' && await c.match('index.html')) || new Response('Offline', {status: 503}); }
   }));
 });

@@ -227,6 +227,16 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
 .devbox .row { gap:12px; }
 .devbox b { font-family:var(--f-mono); font-size:22px; letter-spacing:.06em; }
 .updbar { position:fixed; left:12px; right:12px; top:calc(10px + env(safe-area-inset-top, 0px)); z-index:50; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:520px; margin-inline:auto; padding:10px 12px 10px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); box-shadow:0 6px 24px rgba(0,0,0,.18); font-size:15px; }
+/* legal: notice under results, footer, terms dialog */
+.legalnote { border-left:3px solid var(--brand); background:var(--surface); border-radius:0 10px 10px 0; padding:10px 14px; font-size:13.5px; color:var(--muted); line-height:1.45; }
+.legalnote b { color:var(--ink); font-weight:600; }
+.legal { max-width:1100px; margin:22px auto 0; padding:14px 16px 0; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 12px; font-size:12.5px; color:var(--muted); }
+.legal .ghost, .lockterms .ghost { min-height:28px; padding:0; font-size:inherit; text-decoration:underline; text-underline-offset:2px; }
+.lockterms { margin:0; font-size:12.5px; color:var(--muted); line-height:1.45; }
+.lockterms .ghost { min-height:0; display:inline; color:var(--ink); }
+dialog.licdlg .tm { display:grid; gap:10px; font-size:15px; line-height:1.5; }
+dialog.licdlg .tm p { margin:0; }
+dialog.licdlg .tm .fine { font-size:13px; color:var(--muted); }
 /* license: chip in the header, details in a dialog */
 .status { display:flex; flex-wrap:wrap; gap:0 14px; }
 .licbtn { display:inline-flex; flex-wrap:wrap; align-items:center; gap:2px 8px; margin-top:8px; min-height:32px; padding:4px 10px 4px 9px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-family:var(--f-mono); font-size:12px; text-align:left; cursor:pointer; max-width:100%; }
@@ -267,6 +277,7 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
       <textarea id="licKey" aria-label="License key" placeholder="GRF-…" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
       <div id="licMsg" class="note bad" hidden></div>
       <div class="row"><button class="btn fill lg" type="button" id="licSync" hidden>Sync now</button><button class="btn fill lg" type="button" id="licGo">Activate</button><button class="btn" type="button" id="licCancel" hidden>Cancel</button></div>
+      <p class="lockterms">A supplementary aid only: it never replaces the performance manuals, and the flight crew remains responsible for every calculation. You accept the <button class="ghost" type="button" id="lkTerms">terms of use</button> when you activate.</p>
       <div class="devbox">
         <span class="lbl">This device's code</span>
         <div class="row"><b id="devCode">…</b><button class="ghost" type="button" id="devCopy">Copy</button></div>
@@ -293,7 +304,22 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
       <button class="btn fill" type="button" id="ldCopy">Copy key</button>
       <button class="btn" type="button" id="ldSyncNow">Sync now</button>
       <button class="ghost" type="button" id="ldChange">Enter a new key</button>
+      <button class="ghost" type="button" id="ldTerms">Terms of use</button>
     </div>
+  </div>
+</dialog>
+<dialog class="licdlg" id="termsDlg" aria-labelledby="tmTitle">
+  <div class="in">
+    <div class="hd"><h2 id="tmTitle">Terms of use</h2><button class="ghost x" type="button" id="tmX" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="lead" id="tmLead" hidden style="margin:0">Your license key is valid. Read and accept the terms to open the app on this device.</p>
+    <div class="tm">
+      <p>GRF Runway Cond is a <b>supplementary aid</b>. It applies the GRF flowcharts and the crosswind table to runway condition reports, to help you prepare the Flysmart inputs.</p>
+      <p>It <b>never replaces</b> the Operations Manual, the Performance Manual, the RCAM or the approved performance software, and it is not an approved operational tool. Where they differ, the manuals apply.</p>
+      <p>Results can be wrong, for example when a report is read incorrectly, a value is missing, or a condition is not covered. Check every input and every result against the report and the approved documentation before use.</p>
+      <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation and the safe conduct of the flight.</p>
+      <p class="fine">The app is provided "as is", without warranty of any kind. To the extent permitted by law, its author accepts no liability for any loss or damage arising from its use.</p>
+    </div>
+    <div class="acts"><button class="btn fill" type="button" id="tmAccept">I accept</button><button class="btn" type="button" id="tmDecline">Decline</button><button class="btn" type="button" id="tmClose">Close</button></div>
   </div>
 </dialog>
 
@@ -437,6 +463,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const PUB = {"kty":"EC","x":"r3YvGRUXkcvbh-k-D5hoQLXtYifnXYC0G864tGYvwaE","y":"wbxScIibcmHJ4H59naDk4IN71bPT7-NMWpCdRC4NLE8","crv":"P-256"};
   const K_KEY = 'grf-license', K_DEV = 'grf-device', K_SEEN = 'grf-last-seen';
   const K_SYNC = 'grf-last-sync', K_REV = 'grf-revoked', K_REVI = 'grf-revoked-issued', K_ACT = 'grf-activation';
+  const K_TERMS = 'grf-terms', TERMS_V = '1';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
   const store = {
@@ -549,7 +576,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (GRFLicense.actHolders(list, max).length >= max) return actFull(max);
       let res;
       try { res = await ghApi(acc, '/issues', 'POST', {title: GRFLicense.actTitle(id, devCode),
-        body: 'Made by the GRF Runway Cond app when the license was activated on a device. Close this issue to free the place: that device is logged out at its next check.'}); }
+        body: `Made by the GRF Runway Cond app when the license was activated on a device. Terms of use version ${TERMS_V} accepted ${store.get(K_TERMS + '-at') || ''}.\n\nClose this issue to free the place: that device is logged out at its next check.`}); }
       catch (e) { return WHY.act_online; }
       if (!res.ok) return res.status === 401 || res.status === 403 || res.status === 404 || res.status === 410 ? WHY.act_setup : WHY.act_online;
       const mine = (await res.json()).number;
@@ -601,6 +628,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     started = true;
     const lb = $('licBtn');
     if (lb) lb.addEventListener('click', openLicense);
+    const ft = $('ftTerms');
+    if (ft) ft.addEventListener('click', () => showTerms(false));
     if (window.GRFOffline) window.GRFOffline();
     showSync();
     return true;
@@ -631,6 +660,22 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     $('ldKey').textContent = key;
     showSync();
   }
+  /* terms of use: accepted when a license is registered on a device (each license, each new version of the terms),
+     and readable any time */
+  let termsMust = false, termsAsk = null, termsDone = null;
+  const termsOk = id => store.get(K_TERMS) === `${TERMS_V}:${id}`;
+  function showTerms(must) {
+    const d = $('termsDlg'); if (!d) return;
+    termsMust = !!must;
+    $('tmAccept').hidden = !must; $('tmDecline').hidden = !must; $('tmClose').hidden = !!must; $('tmX').hidden = !!must;
+    $('tmTitle').textContent = 'Terms of use'; $('tmLead').hidden = !must;
+    if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
+  }
+  function closeTerms() { const d = $('termsDlg'); if (d) { if (d.close) d.close(); else d.removeAttribute('open'); } }
+  function askTerms() {
+    if (!termsAsk) termsAsk = new Promise(res => { termsDone = res; closeLicense(); showTerms(true); }).finally(() => { termsAsk = null; termsDone = null; });
+    return termsAsk;
+  }
   function openLicense() {
     const d = $('licDlg'); if (!d || !cur) return;
     $('ldCopy').textContent = 'Copy key';
@@ -647,6 +692,10 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     if (r.ok) {
       if (!store.get(K_SYNC)) store.set(K_SYNC, String(trustedNow()));   /* the first week counts from activation */
       if (daysSinceSync() > SYNC_DAYS) { lock(WHY.sync, false); return false; }
+      if (!termsOk(r.info.id)) {
+        if (!(await askTerms())) { lock('The app opens when you accept the terms of use. Tap Activate to read them again.', !$('licCancel').hidden); $('licKey').value = key.replace(/\s+/g, ''); return false; }
+        store.set(K_TERMS, `${TERMS_V}:${r.info.id}`); store.set(K_TERMS + '-at', new Date().toISOString());
+      }
       if (r.info.maxDevices) {
         const why = await activate(r);
         if (why === 'removed') { store.del(K_KEY); lock(WHY.act_removed); return false; }
@@ -684,6 +733,14 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     });
     $('licCancel').addEventListener('click', () => window.GRFLock.recheck());
     $('ldClose').addEventListener('click', closeLicense);
+    $('ldTerms').addEventListener('click', () => { closeLicense(); showTerms(false); });
+    $('lkTerms').addEventListener('click', () => showTerms(false));
+    $('tmAccept').addEventListener('click', () => { closeTerms(); if (termsDone) termsDone(true); });
+    $('tmDecline').addEventListener('click', () => { closeTerms(); if (termsDone) termsDone(false); });
+    $('tmClose').addEventListener('click', closeTerms); $('tmX').addEventListener('click', closeTerms);
+    /* the first time it must be accepted: Escape and a tap outside do not close it */
+    $('termsDlg').addEventListener('cancel', e => { if (termsMust) e.preventDefault(); });
+    $('termsDlg').addEventListener('click', e => { if (e.target === $('termsDlg') && !termsMust) closeTerms(); });
     $('licDlg').addEventListener('click', e => { if (e.target === $('licDlg')) closeLicense(); });   /* tap outside */
     $('ldCopy').addEventListener('click', () => {
       if (!cur) return;
@@ -719,7 +776,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '6487a83d74', stored = false, latest = null, reg = null, timer = null, ready = false;
+  var VER = 'e6dc572390', stored = false, latest = null, reg = null, timer = null, ready = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

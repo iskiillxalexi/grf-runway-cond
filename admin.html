@@ -46,7 +46,7 @@ button, input, textarea { font:inherit; color:inherit; }
 .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
 .field { display:grid; gap:5px; flex:1 1 200px; min-width:0; }
 .lbl, label { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-input[type=text], input[type=date], textarea { width:100%; min-height:46px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px 12px; }
+input[type=text], input[type=date], input[type=number], input[type=search], textarea { width:100%; min-height:46px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px 12px; }
 textarea { font-family:var(--f-mono); font-size:13px; min-height:84px; resize:vertical; }
 /* iOS gives date fields a fixed inner width and centred text: let them shrink to the column */
 input[type=date] { -webkit-appearance:none; appearance:none; display:block; min-width:0; max-width:100%; text-align:left; line-height:24px; }
@@ -79,6 +79,14 @@ input[type=date]::-webkit-calendar-picker-indicator { margin-left:auto; }
 @media (max-width:520px) { .log th:nth-child(4), .log td:nth-child(4) { display:none; } .log td, .log th { padding-left:4px; padding-right:4px; } .log td:last-child { text-align:right; } .log td:last-child .ghost { display:block; margin-left:auto; } }
 .mono { font-family:var(--f-mono); }
 .seg button:disabled { opacity:.45; cursor:default; }
+#nSeg { display:grid; grid-template-columns:repeat(3, 1fr); }
+#nSeg button { padding:0 6px; white-space:nowrap; }
+@media (min-width:600px) { #nSeg { grid-template-columns:repeat(6, 1fr); } }
+.filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.filters .seg { flex:1 1 300px; }
+.filters input[type=search] { flex:1 1 160px; min-height:40px; }
+.seg.sm button { min-height:36px; font-size:14px; padding:0 10px; }
+.seg.sm button .n { font-family:var(--f-mono); font-size:12px; opacity:.75; margin-left:5px; }
 details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 .devs { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:4px; font-size:13px; color:var(--muted); }
 .devs .mono { font-size:12.5px; color:var(--ink); }
@@ -132,7 +140,11 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
       <span class="lbl">Number of devices</span>
       <div class="seg" id="nSeg" role="group" aria-label="Number of devices">
         <button type="button" data-n="1">1</button><button type="button" data-n="2">2</button><button type="button" data-n="3">3</button>
-        <button type="button" data-n="5">5</button><button type="button" data-n="0">Any number</button>
+        <button type="button" data-n="5">5</button><button type="button" data-n="c">Custom</button><button type="button" data-n="0">Any number</button>
+      </div>
+      <div class="row" id="nCustomRow" hidden>
+        <input type="number" id="nCustom" min="1" max="127" step="1" inputmode="numeric" placeholder="e.g. 8" aria-label="Number of devices" style="width:130px">
+        <span class="disc">devices, 1 to 127</span>
       </div>
       <p class="disc" id="nHint"></p>
     </div>
@@ -154,6 +166,13 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 
   <section class="panel">
     <div class="row" style="justify-content:space-between"><h2>Issued keys</h2><button class="ghost" type="button" id="logReload">Reload</button></div>
+    <div class="filters">
+      <div class="seg sm" id="fSeg" role="group" aria-label="Show">
+        <button type="button" data-f="active">Active</button><button type="button" data-f="expired">Expired</button>
+        <button type="button" data-f="withdrawn">Withdrawn</button><button type="button" data-f="all">All</button>
+      </div>
+      <input type="search" id="fQ" placeholder="Search name" aria-label="Search by name" autocomplete="off">
+    </div>
     <div id="revState" class="note" hidden></div>
     <div id="logBody"><div class="empty">Set up this device to see the keys.</div></div>
     <p class="disc">Withdraw publishes the change by itself: phones pick it up the next time they are online, and the app needs a connection at least once a week. A withdrawn key cannot be restored; issue a new key instead.</p>
@@ -170,7 +189,7 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 /* GRF license keys: ECDSA P-256 signed, checked on the device with no network.
    Key = "GRF-" + base64url(payload + 64-byte signature)
    payload v2: v(1)=2 | issued day(2) | expiry day(2) | id(4) | flags(1) | [device id(5)] | app content key(32) | name length(1) | name (UTF-8)
-   flags: bit 0 = bound to one device id; bits 1-5 = number of devices it may be activated on (0 = any number).
+   flags: bit 0 = bound to one device id; bits 1-7 = number of devices it may be activated on (0 = any number, up to 127).
    Keys made before the device limit have those bits at 0, so they keep working on any number of devices.
    The content key decrypts the app itself, so the app cannot be read or run without a key. */
 const GRFLicense = (() => {
@@ -199,7 +218,7 @@ const GRFLicense = (() => {
   function encodePayload({issued, expires, id, device, maxDevices, ck, name}) {
     const nm = new TextEncoder().encode(String(name || '').trim()).slice(0, 60);
     const out = [2, issued >> 8 & 255, issued & 255, expires >> 8 & 255, expires & 255,
-      id >>> 24 & 255, id >>> 16 & 255, id >>> 8 & 255, id & 255, (device ? 1 : 0) | ((maxDevices & 31) << 1)];
+      id >>> 24 & 255, id >>> 16 & 255, id >>> 8 & 255, id & 255, (device ? 1 : 0) | ((maxDevices & 127) << 1)];
     if (device) out.push(...device);
     out.push(...ck, nm.length, ...nm);
     return Uint8Array.from(out);
@@ -216,7 +235,7 @@ const GRFLicense = (() => {
     i = 1;
     const issued = u16(), expires = u16(), id = ((u8() << 24) | (u8() << 16) | (u8() << 8) | u8()) >>> 0, flags = u8();
     let device = null;
-    const maxDevices = (flags >> 1) & 31;
+    const maxDevices = (flags >> 1) & 127;
     if (flags & 1) { device = p.slice(i, i + 5); i += 5; }
     const ck = p.slice(i, i + 32); i += 32;
     const n = u8(); if (i + n !== p.length) return null;
@@ -249,7 +268,7 @@ const GRFLicense = (() => {
     if (deviceCode && String(deviceCode).trim()) { device = bytesOfCode(deviceCode); if (!device) throw new Error('The device code should be 8 characters, like 7K3M-Q9TB.'); }
     const idb = new Uint8Array(4); crypto.getRandomValues(idb);
     const id = ((idb[0] << 24) | (idb[1] << 16) | (idb[2] << 8) | idb[3]) >>> 0;
-    const max = device ? 0 : Math.max(0, Math.min(31, Math.floor(Number(maxDevices) || 0)));
+    const max = device ? 0 : Math.max(0, Math.min(127, Math.floor(Number(maxDevices) || 0)));
     const payload = encodePayload({issued, expires, id, device, maxDevices: max, ck, name});
     const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), payload));
     const all = new Uint8Array(payload.length + 64); all.set(payload); all.set(sig, payload.length);
@@ -307,7 +326,8 @@ const iso = d => d.toISOString().slice(0, 10);
 const b64 = { enc(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); },
               dec(s) { return Uint8Array.from(atob(s.replace(/\s+/g, '')), c => c.charCodeAt(0)); } };
 let kf = null, logKey = null, tok = store.get('grf-gh-token') || '', log = null, logSha = null, revSha = null, revPublished = null, lastIssued = null, period = 'm3', checked = null;
-let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = false;
+let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = false, nCustom = false;
+let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
 
 /* ---- where the app lives: owner.github.io/repo ---- */
 const GH = (() => {
@@ -497,17 +517,24 @@ $('iEnd').min = iso(new Date());
 setPeriod('m3');
 
 /* ---- number of devices ---- */
-function setDevices(n) {
-  nDev = n;
-  document.querySelectorAll('#nSeg button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.n) === n)));
+function setDevices(n, custom) {
+  nDev = n; nCustom = !!custom;
+  document.querySelectorAll('#nSeg button').forEach(b => b.setAttribute('aria-pressed', String(nCustom ? b.dataset.n === 'c' : Number(b.dataset.n) === n && b.dataset.n !== 'c')));
+  $('nCustomRow').hidden = !nCustom;
+  if (nCustom && !n) { $('nHint').textContent = 'Enter how many devices the key may be activated on.'; return; }
   const bound = !!$('iDev').value.trim();
   $('nHint').textContent = bound ? 'Locked to the device code below: the number of devices does not apply.'
     : !acc ? 'Set up Device limits above to choose a number.'
     : n ? `The key is activated online the first time on each phone or iPad. When ${n === 1 ? 'that place is' : `all ${n} places are`} used, it does not open on more devices. You can free a place in the list below.`
     : 'The key opens the app on any number of devices.';
 }
-document.querySelectorAll('#nSeg button').forEach(b => b.onclick = () => { if (!b.disabled) { nUser = true; setDevices(Number(b.dataset.n)); } });
-$('iDev').oninput = () => setDevices(nDev || 0);
+const customN = () => { const v = Number($('nCustom').value); return Number.isInteger(v) && v >= 1 && v <= 127 ? v : 0; };
+document.querySelectorAll('#nSeg button').forEach(b => b.onclick = () => {
+  if (b.disabled) return; nUser = true;
+  if (b.dataset.n === 'c') { setDevices(customN(), true); $('nCustom').focus(); } else setDevices(Number(b.dataset.n));
+});
+$('nCustom').oninput = () => setDevices(customN(), true);
+$('iDev').oninput = () => setDevices(nDev || 0, nCustom);
 
 /* ---- issue ---- */
 const iMsg = m => { $('iMsg').hidden = !m; $('iMsg').textContent = m || ''; };
@@ -516,7 +543,9 @@ $('iGo').onclick = async () => {
   const name = $('iName').value.trim();
   if (!name) return iMsg('Enter the name of the person the key is for.');
   if (!$('iEnd').value) return iMsg('Pick the last valid day.');
-  const bound = !!$('iDev').value.trim(), n = bound ? 0 : (nDev || 0);
+  const bound = !!$('iDev').value.trim();
+  if (!bound && nCustom && !customN()) return iMsg('Enter a number of devices from 1 to 127, or choose Any number.');
+  const n = bound ? 0 : (nDev || 0);
   if (n && !acc) return iMsg('Set up Device limits first, or choose Any number.');
   $('iGo').disabled = true;
   try {
@@ -544,8 +573,10 @@ $('iCopy').onclick = () => copy(lastIssued.key, $('iCopy'));
 $('iCopyMsg').onclick = () => copy(message(lastIssued), $('iCopyMsg'));
 
 /* ---- list, withdraw ---- */
+const catOf = e => e.revoked ? 'withdrawn' : (GRFLicense.dayOf(Date.parse(e.expires + 'T00:00:00Z')) < GRFLicense.dayOf(Date.now()) ? 'expired' : 'active');
+const short = ms => new Date(ms).toLocaleDateString('en-GB', {day:'numeric', month:'short'});
 function status(e) {
-  if (e.revoked) return ['Withdrawn', 'bad'];
+  if (e.revoked) return [e.revokedAt ? 'Withdrawn ' + short(e.revokedAt) : 'Withdrawn', 'bad'];
   const left = GRFLicense.dayOf(Date.parse(e.expires + 'T00:00:00Z')) - GRFLicense.dayOf(Date.now());
   return left < 0 ? ['Expired', 'bad'] : left <= 14 ? [`${left} d left`, 'warn'] : ['Active', 'ok'];
 }
@@ -560,14 +591,24 @@ async function withdraw(id, entry) {
 }
 function renderLog() {
   const body = $('logBody');
+  document.querySelector('.filters').hidden = !log || !log.length;
   if (!log) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent:'Set up this device to see the keys.'})); return; }
   const pending = log.some(e => e.revoked) && (!revPublished || log.filter(e => e.revoked).some(e => !revPublished.ids.includes(e.id)));
   if (pending) { const el = $('revState'); el.hidden = false; el.className = 'note warn'; el.replaceChildren('Some withdrawals are not published yet. ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Publish now', onclick: async () => { try { await publishRevoked(); el.className = 'note ok'; el.textContent = 'Published.'; } catch (e) { el.textContent = 'Not published: ' + e.message; } }})); }
+  const counts = {active: 0, expired: 0, withdrawn: 0, all: log.length};
+  log.forEach(e => counts[catOf(e)]++);
+  document.querySelectorAll('#fSeg button').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.f === fCat));
+    b.replaceChildren(b.dataset.f[0].toUpperCase() + b.dataset.f.slice(1), Object.assign(document.createElement('span'), {className:'n', textContent: counts[b.dataset.f]}));
+  });
   if (!log.length) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent:'No keys issued yet. Keys you create above are listed here with their end dates.'})); return; }
+  const q = fQ.trim().toLowerCase();
+  const rows = log.filter(e => (fCat === 'all' || catOf(e) === fCat) && (!q || String(e.name || '').toLowerCase().includes(q)));
+  if (!rows.length) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent: q ? `No ${fCat === 'all' ? '' : fCat + ' '}keys match "${fQ.trim()}".` : `No ${fCat} keys.`})); return; }
   const t = document.createElement('table'); t.className = 'log';
   t.innerHTML = '<thead><tr><th>Name</th><th>Valid until</th><th>Status</th><th>Devices</th><th></th></tr></thead>';
   const tb = document.createElement('tbody');
-  for (const v of log) {
+  for (const v of rows) {
     const [st, cls] = status(v);
     const tr = document.createElement('tr');
     const td = (txt, c) => { const e = document.createElement('td'); if (c) e.className = c; e.textContent = txt; return e; };
@@ -601,6 +642,9 @@ function renderLog() {
   const wrap = document.createElement('div'); wrap.className = 'tbl'; wrap.append(t);
   body.replaceChildren(wrap);
 }
+
+document.querySelectorAll('#fSeg button').forEach(b => b.onclick = () => { fCat = b.dataset.f; store.set('grf-admin-filter', fCat); renderLog(); });
+$('fQ').oninput = () => { fQ = $('fQ').value; renderLog(); };
 
 /* ---- check ---- */
 $('cGo').onclick = async () => {

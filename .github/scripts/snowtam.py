@@ -14,11 +14,11 @@ from datetime import datetime, timezone
 UA = 'GRF-Runway-Cond bulletin reader (low volume, every 15 min; github.com/iskiillxalexi/grf-runway-cond)'
 MON = {m: i + 1 for i, m in enumerate('JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC'.split())}
 
-LFV = [  # (id, listing path, file name prefix, label, ICAO prefixes)
-    ('lfv-esaa', r'\pibsweden\\', 'ESAA FIR IFR 24hr', 'LFV bulletin ESAA FIR IFR', ['ES']),
-    ('lfv-efin', r'\pibother\\', 'EFIN FIR 24hr', 'LFV bulletin EFIN FIR', ['EF']),
-    ('lfv-ekdk', r'\pibother\\', 'EKDK FIR 24hr', 'LFV bulletin EKDK FIR', ['EK']),
-    ('lfv-enor', r'\pibother\\', 'ENOR ENOB FIR 24hr', 'LFV bulletin ENOR/ENOB FIR', ['EN']),
+LFV = [  # (id, folder, listing name, file name prefix, label, ICAO prefixes)
+    ('lfv-esaa', 'pibsweden', 'NOTAM Sweden', 'ESAA FIR IFR 24hr', 'LFV bulletin ESAA FIR IFR', ['ES']),
+    ('lfv-efin', 'pibother', 'NOTAM Other', 'EFIN FIR 24hr', 'LFV bulletin EFIN FIR', ['EF']),
+    ('lfv-ekdk', 'pibother', 'NOTAM Other', 'EKDK FIR 24hr', 'LFV bulletin EKDK FIR', ['EK']),
+    ('lfv-enor', 'pibother', 'NOTAM Other', 'ENOR ENOB FIR 24hr', 'LFV bulletin ENOR/ENOB FIR', ['EN']),
 ]
 AISFI = [  # (id, page, label, ICAO prefixes)
     ('aisfi-efin-ifr', 'efinen', 'Fintraffic AIS Helsinki FIR IFR', ['EF']),
@@ -41,7 +41,12 @@ def get(url, binary=False):
             req = urllib.request.Request(url, headers={'User-Agent': UA})
             with urllib.request.urlopen(req, timeout=40) as r:
                 data = r.read()
-                return data if binary else data.decode(r.headers.get_content_charset() or 'utf-8', 'replace')
+                if binary: return data
+                for cs in (r.headers.get_content_charset(), 'utf-8', 'cp1252'):
+                    if not cs: continue
+                    try: return data.decode(cs)
+                    except (UnicodeDecodeError, LookupError): pass
+                return data.decode('latin-1')
         except Exception as e:
             last = e; time.sleep(3 * (attempt + 1))
     raise last
@@ -52,7 +57,8 @@ def html_text(page):
     page = re.sub(r'(?is)<(script|style)[^>]*>.*?</\1>', ' ', page)
     page = re.sub(r'(?i)<br\s*/?>|</(p|div|tr|li|h\d|table|td|th)>|<(tr|p|div|li|h\d|table)[^>]*>', '\n', page)
     page = html.unescape(re.sub(r'<[^>]+>', ' ', page)).replace('\xa0', ' ')
-    return '\n'.join(re.sub(r'[ \t]+', ' ', l).strip() for l in page.split('\n'))
+    lines = [re.sub(r'[ \t]+', ' ', l).strip() for l in page.split('\n')]
+    return '\n'.join(l for l in lines if l and not re.fullmatch(r'[\u2022\u00b7\ufffd\u0095*]+', l))
 
 def pdf_text(data):
     with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as f:
@@ -78,11 +84,13 @@ def observed(b, ref):
 
 def extract(text, ref):
     """SNOWTAM blocks: 'SNOWTAM' [FROM: ...] ICAO, then the runway condition line(s) and any plain-language remarks"""
-    lines = [l.strip() for l in text.split('\n')]
+    lines = [l.strip() for l in text.split('\n') if l.strip()]
     names, out = {}, []
-    for l in lines:
+    for k, l in enumerate(lines):
         m = HEAD.match(l)
         if m: names[m.group(1)] = m.group(2).strip()
+        elif re.fullmatch(r'[A-Z]{4}', l) and k + 2 < len(lines) and lines[k + 1] == '-' and re.match(r'[A-Z]', lines[k + 2]):
+            names[l] = lines[k + 2]   # web bulletin: "ESNZ" / "-" / "ARE OESTERSUND" on separate lines
     i = 0
     while i < len(lines):
         if not re.match(r'^SNOWTAM\b', lines[i]):
@@ -101,7 +109,7 @@ def extract(text, ref):
             if icao is None:
                 m = re.match(r'^([A-Z]{4})\s+(\d{8}\s.*)$', l)
                 if m: icao = m.group(1); body.append(m.group(2)); j += 1; continue
-            if STOP.match(l) or (body and re.fullmatch(r'[A-Z]{4}', l)): break
+            if STOP.match(l) or l == 'NIL' or (body and re.fullmatch(r'[A-Z]{4}', l)): break
             body.append(l); j += 1
         i = j
         txt = '\n'.join(body).strip()
@@ -112,10 +120,10 @@ def extract(text, ref):
 
 def lfv_sources():
     res = []
-    for sid, path, prefix, label, pre in LFV:
+    for sid, folder, listname, prefix, label, pre in LFV:
         src = {'id': sid, 'name': label, 'prefixes': pre, 'ok': False}
         try:
-            listing = get('https://aro.lfv.se/Links/Link/ShowFileList?type=AIS&path=' + urllib.parse.quote(path) + '&torlinkName=x')
+            listing = get('https://aro.lfv.se/Links/Link/ShowFileList?' + urllib.parse.urlencode({'type': 'AIS', 'path': '\\' + folder + '\\', 'torlinkName': listname}))
             files = re.findall(r'href="([^"]*/FileList/[^"]*?' + re.escape(prefix) + r'_(\d{14})\.pdf)"', html.unescape(listing))
             if not files: raise RuntimeError('file not listed')
             href, stamp = max(files, key=lambda f: f[1])

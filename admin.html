@@ -515,8 +515,8 @@ function renderStatus() {
   document.querySelectorAll('#stSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === stPick)));
   document.querySelectorAll('#stScope button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === stScope)));
   $('stHint').textContent = stPick === 'ok' ? 'The app works as usual: no notice, calculations open.'
-    : stPick === 'warn' ? 'A notice with your message stands above the inputs. The calculations can still be used.'
-    : 'The inputs and the results are hidden on every phone, and your message is shown instead.';
+    : stPick === 'warn' ? 'A notice with your message stands above the inputs; the calculations can still be used. Each pilot can tap Understood to fold it into a small Notice chip in the header. A new notice shows again on every phone.'
+    : 'The inputs and the results are hidden on every phone, and your message is shown instead. It cannot be dismissed.';
   $('stTextF').hidden = $('stScopeF').hidden = stPick === 'ok';
   $('stScopeHint').textContent = stScope === 'all' ? 'Holds until you set the status again here.'
     : 'Holds for the app versions published until now, and lifts by itself on each phone that installs the next version of the app (the one with the new flowcharts). Any new version lifts it, so choose this only when the next one is the update.' + (appLine ? ' ' + appLine : '');
@@ -938,7 +938,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = '86d559da7a';
+const ADMIN_VER = 'dcea8364c9';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

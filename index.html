@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1791647520816;</script>
+<script>window.GRF_BUILD=1791651177265;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -67,7 +67,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 /* header: logo, name and revision on one line; status chips under it; the mode choice last (on iPad: to the right) */
 .top { background:var(--head); border-bottom:1px solid var(--line); padding:14px 16px 16px; }
 .top-in { max-width:1100px; margin-inline:auto; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"brand sw" "meta meta" "modes modes"; gap:12px; align-items:center; }
-.brand { grid-area:brand; } .top-in > .themesw { grid-area:sw; } .meta { grid-area:meta; } .top .seg.modes { grid-area:modes; }
+.brand { grid-area:brand; } .top-in > .themesw, .top-in > .tools { grid-area:sw; } .meta { grid-area:meta; } .top .seg.modes { grid-area:modes; }
 @media (max-width:559px) { .brand p span { display:block; } .brand p .sep { display:none; } }
 .brand { display:flex; align-items:center; gap:12px; min-width:0; }
 .brand .ttl { min-width:0; }
@@ -295,13 +295,16 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
 .themesw[aria-checked="true"] .knob { transform:translateX(28px); }
 .themesw[aria-checked="true"] .sun { color:var(--muted); } .themesw[aria-checked="true"] .moon { color:var(--ink); }
 @media (prefers-reduced-motion:reduce) { .themesw .knob, .themesw svg { transition:none; } }
-.top-in > .themesw { justify-self:end; }
+.top-in > .tools { grid-area:sw; justify-self:end; display:flex; align-items:center; gap:8px; }
 /* header chips: license (opens the details) and app status (taps check for a new version) */
 .meta { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
 .hchip { display:inline-flex; align-items:center; gap:7px; min-height:34px; padding:0 13px 0 11px; border:1px solid var(--line); border-radius:17px; background:var(--surface); color:var(--ink); font-family:var(--f-ui); font-weight:600; font-size:13.5px; line-height:1; cursor:pointer; white-space:nowrap; max-width:100%; min-width:0; }
 .hchip svg { width:15px; height:15px; flex:none; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .hchip.lic.soon { background:var(--warnbg); border-color:transparent; color:var(--warn); }
 .hchip.lic.end { background:var(--badbg); border-color:transparent; color:var(--bad); }
+.hchip.note { background:var(--warnbg); border-color:transparent; color:var(--warn); width:34px; padding:0; justify-content:center; }
+.hchip.note span { display:none; }
+@media (min-width:560px) { .hchip.note { width:auto; padding:0 13px 0 11px; } .hchip.note span { display:inline; } }
 .hchip.st { color:var(--muted); font-weight:500; }
 .hchip.st .t { overflow:hidden; text-overflow:ellipsis; min-width:0; }
 .hchip.st #offl { color:var(--ink); font-weight:600; }
@@ -430,7 +433,8 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
   <svg class="ic p" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>
   <svg class="ic w" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg>
   <div><h2 id="stTitle"></h2><p id="stText"></p><p class="fine" id="stWhen"></p>
-  <button class="btn" type="button" id="stCheck" data-check-version>Check for an update</button></div>
+  <button class="btn" type="button" id="stCheck" data-check-version>Check for an update</button>
+  <button class="btn fill" type="button" id="stAck" hidden>Understood</button></div>
 </section>
 
 <script>
@@ -616,7 +620,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_KEY = 'grf-license', K_DEV = 'grf-device', K_SEEN = 'grf-last-seen';
   const K_SYNC = 'grf-last-sync', K_REV = 'grf-revoked', K_REVI = 'grf-revoked-issued', K_ACT = 'grf-activation';
   const K_LIC = 'grf-licenses', K_LICI = 'grf-licenses-issued', K_OKID = 'grf-unlocked-id';
-  const K_ST = 'grf-status';   /* the issuer's app status: notice or paused calculations (status.json) */
+  const K_ST = 'grf-status', K_STACK = 'grf-status-ack';   /* a notice the pilot has acknowledged (its issue time) */   /* the issuer's app status: notice or paused calculations (status.json) */
   const K_TERMS = 'grf-terms', TERMS_V = '1';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
@@ -690,9 +694,13 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const st = stStored(), build = Number(window.GRF_BUILD) || 0;
     const on = st && st.mode !== 'ok' && (!st.before || build < st.before) ? st.mode : null;
     document.documentElement.classList.toggle('paused', on === 'pause');
-    const box = $('stBox'), top = document.querySelector('#app .top');
+    const box = $('stBox'), top = document.querySelector('#app .top'), chip = $('stChip');
     if (!box) return;
-    if (!on) { box.hidden = true; return; }
+    /* a notice can be acknowledged on this device: it then folds into a chip in the header until a new one is published.
+       A pause cannot be dismissed. */
+    const acked = on === 'warn' && store.get(K_STACK) === String(st.issued);
+    if (chip) chip.hidden = !acked;
+    if (!on || acked) { box.hidden = true; return; }
     if (top && box.previousElementSibling !== top) top.after(box);
     box.hidden = false; box.className = 'stbox ' + on;
     $('stTitle').textContent = on === 'pause' ? 'Calculations paused' : 'Notice from the issuer';
@@ -701,6 +709,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       ? (st.before ? 'Calculations open again when an updated version of the app is installed.' : 'Calculations open again when the issuer lifts the pause.')
       : 'The calculations can be used.');
     $('stCheck').hidden = on !== 'pause';
+    $('stAck').hidden = on !== 'warn';
     if (!$('stCheck').disabled) $('stCheck').textContent = st.before ? 'Check for an update' : 'Check again';
   }
   function daysSinceSync() { const t = Number(store.get(K_SYNC)) || 0; return t ? (trustedNow() - t) / DAY : null; }
@@ -985,6 +994,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (ok) window.GRFLock.recheck();
     });
     $('ldChange').addEventListener('click', () => { closeLicense(); $('licKey').value = ''; lock('', true); });
+    $('stAck').addEventListener('click', () => { const st = stStored(); if (st) store.set(K_STACK, String(st.issued)); applyStatus(); });
+    document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#stChip')) { store.del(K_STACK); applyStatus(); $('stBox').scrollIntoView({block:'nearest'}); } });
     $('devCopy').addEventListener('click', () => {
       navigator.clipboard && navigator.clipboard.writeText(devCode).then(() => { $('devCopy').textContent = 'Copied'; }, () => {});
     });
@@ -1005,7 +1016,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'bfc7edf2e4', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '56950bb05c', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

@@ -87,6 +87,12 @@ input[type=date]::-webkit-calendar-picker-indicator { margin-left:auto; }
 .filters .seg { flex:1 1 300px; }
 .filters input[type=search] { flex:1 1 160px; min-height:40px; }
 .seg.sm button { min-height:36px; font-size:14px; padding:0 10px; }
+.editrow td { background:var(--bg); }
+.editbox { display:grid; gap:12px; padding:6px 2px 4px; }
+.editbox .field { flex:none; }
+.editbox .quick { gap:4px 14px; }
+.editbox .quick .ghost { min-height:32px; font-size:14px; }
+@media (max-width:520px) { .editrow td { display:table-cell !important; text-align:left !important; } .editrow td .ghost { display:inline-flex !important; margin-left:0 !important; } }
 .seg.sm button .n { font-family:var(--f-mono); font-size:12px; opacity:.75; margin-left:5px; }
 details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 .devs { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:4px; font-size:13px; color:var(--muted); }
@@ -256,14 +262,21 @@ const GRFLicense = (() => {
   }
   const importPub = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['verify']);
   const importPriv = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['sign']);
-  /* now = trusted time in ms; returns {ok, reason, info} */
-  async function verify(key, pubJwk, now, deviceBytes) {
+  /* now = trusted time in ms; returns {ok, reason, info}.
+     ov = an edit the issuer published for this license in licenses.json: {e: last valid day, m: number of devices} */
+  async function verify(key, pubJwk, now, deviceBytes, ov) {
     const k = decode(key);
     if (!k) return {ok:false, reason:'format'};
     if (k.old) return {ok:false, reason:'old'};
     const good = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), k.sig, k.payload);
     if (!good) return {ok:false, reason:'signature'};
     const today = dayOf(now);
+    if (ov) {
+      k.orig = {expires: k.expires, expiresDate: k.expiresDate, maxDevices: k.maxDevices};
+      if (Number.isInteger(ov.e)) { k.expires = ov.e; k.expiresDate = dateOfDay(ov.e); }
+      if (Number.isInteger(ov.m) && !k.device) k.maxDevices = ov.m;
+      k.edited = k.expires !== k.orig.expires || k.maxDevices !== k.orig.maxDevices;
+    }
     if (today > k.expires) return {ok:false, reason:'expired', info:k};
     if (today < k.issued - 1) return {ok:false, reason:'clock', info:k};
     if (k.device && (!deviceBytes || k.device.some((b, j) => b !== deviceBytes[j]))) return {ok:false, reason:'device', info:k};
@@ -324,7 +337,26 @@ const GRFLicense = (() => {
     const j = JSON.parse(new TextDecoder().decode(plain));
     return j && typeof j.token === 'string' && typeof j.repo === 'string' ? j : null;
   }
-  return {decode, verify, sign, signRevoked, verifyRevoked, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  /* Edits after issue (licenses.json): per license id a new last valid day and/or number of devices, signed like the
+     revocation list. The newest list (by its issue time) replaces the older one. */
+  const normRules = rules => (rules || []).map(r => [Number(r[0]) >>> 0, Number.isInteger(r[1]) ? r[1] : null, Number.isInteger(r[2]) ? r[2] : null])
+    .filter(r => r[1] !== null || r[2] !== null).sort((a, b) => a[0] - b[0]);
+  const licMsg = (issued, rules) => new TextEncoder().encode(`GRF-LICENSES-1|${issued}|${rules.map(r => r.map(v => v === null ? '' : v).join(':')).join(',')}`);
+  async function signLicenses(rules, privJwk, issuedMs) {
+    const list = normRules(rules), issued = Math.floor(issuedMs ?? Date.now());
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), licMsg(issued, list)));
+    return {v:1, issued, rules:list, sig: b64u.enc(sig)};
+  }
+  async function verifyLicenses(obj, pubJwk) {
+    if (!obj || obj.v !== 1 || !Number.isFinite(obj.issued) || !Array.isArray(obj.rules) || typeof obj.sig !== 'string') return null;
+    const list = normRules(obj.rules);
+    if (JSON.stringify(list) !== JSON.stringify(obj.rules)) return null;
+    let sig; try { sig = b64u.dec(obj.sig); } catch (e) { return null; }
+    const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, licMsg(obj.issued, list));
+    return ok ? {issued: obj.issued, rules: list} : null;
+  }
+  const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -339,6 +371,7 @@ const b64 = { enc(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) 
 let kf = null, logKey = null, tok = store.get('grf-gh-token') || '', log = null, logSha = null, revSha = null, revPublished = null, lastIssued = null, period = 'm3', checked = null;
 let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = false, nCustom = false;
 let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
+let licSha = null, licPublished = null, editing = null;
 
 /* ---- where the app lives: owner.github.io/repo ---- */
 const GH = (() => {
@@ -391,6 +424,28 @@ async function loadRevoked() {
   const f = await getFile('revoked.json');
   revSha = f ? f.sha : null;
   revPublished = f ? await GRFLicense.verifyRevoked(JSON.parse(new TextDecoder().decode(f.bytes)), PUB) : null;
+}
+/* ---- edits after issue: licenses.json, signed; phones apply it at their next sync ---- */
+async function loadLicenses() {
+  const f = await getFile('licenses.json');
+  licSha = f ? f.sha : null;
+  licPublished = f ? await GRFLicense.verifyLicenses(JSON.parse(new TextDecoder().decode(f.bytes)), PUB) : null;
+}
+/* what the key itself says, before any edit */
+const origOf = v => { const k = GRFLicense.decode(v.key); return k && !k.old ? {expires: k.expiresDate, devices: k.device ? null : k.maxDevices} : {expires: v.expires, devices: null}; };
+function rulesFromLog() {
+  return log.filter(e => !e.revoked).map(e => {
+    const o = origOf(e), dev = e.device ? null : (Number.isInteger(e.devices) ? e.devices : o.devices);
+    return [e.id, e.expires !== o.expires ? GRFLicense.dayOf(Date.parse(e.expires + 'T00:00:00Z')) : null, (!e.device && dev !== o.devices) ? dev : null];
+  });
+}
+async function publishLicenses() {
+  const list = await GRFLicense.signLicenses(rulesFromLog(), kf.key);
+  if (!(await GRFLicense.verifyLicenses(JSON.parse(JSON.stringify(list)), PUB))) throw new Error('The list did not pass its own check.');
+  for (let i = 0; i < 2; i++) {
+    try { licSha = await putFile('licenses.json', new TextEncoder().encode(JSON.stringify(list)), licSha, `License edits: ${list.rules.length}`); licPublished = {issued: list.issued, rules: list.rules}; return; }
+    catch (e) { if (e.message !== 'conflict' || i) throw e; await loadLicenses(); }
+  }
 }
 async function publishRevoked() {
   const ids = log.filter(e => e.revoked).map(e => e.id);
@@ -497,7 +552,7 @@ async function connect() {
   setMsg('');
   if (!kf || !tok) { renderSetup(); return; }
   try {
-    await loadLog(); await loadRevoked();
+    await loadLog(); await loadRevoked(); await loadLicenses();
     if (!logSha) await saveLog('Create key list');   /* also proves the token may write */
     await loadAccess(); await loadActs();
   }
@@ -600,12 +655,80 @@ async function withdraw(id, entry) {
   } catch (e) { el.className = 'note bad'; el.textContent = 'Not finished: ' + (e.message || 'GitHub could not be reached') + ' Tap Withdraw again.'; }
   renderLog();
 }
+/* ---- edit a key after issue: last valid day and number of devices ---- */
+function addTime(dateStr, p) {
+  const base = new Date(Math.max(Date.parse(dateStr + 'T00:00:00Z'), Date.parse(iso(new Date()) + 'T00:00:00Z')));
+  if (p === 'w1') base.setUTCDate(base.getUTCDate() + 7);
+  else { const m = Number(p.slice(1)), day = base.getUTCDate(); base.setUTCDate(1); base.setUTCMonth(base.getUTCMonth() + m); base.setUTCDate(Math.min(day, new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + 1, 0)).getUTCDate())); }
+  return iso(base);
+}
+function editor(v) {
+  const el = (tag, props, ...kids) => { const e = Object.assign(document.createElement(tag), props || {}); e.append(...kids.filter(k => k != null)); return e; };
+  const o = origOf(v), bound = !!v.device;
+  let n = maxOf(v), custom = ![0, 1, 2, 3, 5].includes(n);
+  const date = el('input', {type: 'date', value: v.expires});
+  const quick = el('div', {className: 'row quick'}, ...[['w1', '+1 week'], ['m1', '+1 month'], ['m3', '+3 months'], ['m12', '+1 year']].map(([p, t]) =>
+    el('button', {className: 'ghost', type: 'button', textContent: t, onclick: () => { date.value = addTime(date.value || v.expires, p); hint(); }})));
+  const num = el('input', {type: 'number', min: 1, max: 127, step: 1, inputMode: 'numeric', value: custom ? n : '', placeholder: 'e.g. 8', ariaLabel: 'Number of devices'});
+  num.style.width = '120px';
+  const numRow = el('div', {className: 'row'}, num, el('span', {className: 'disc', textContent: 'devices, 1 to 127'}));
+  const seg = el('div', {className: 'seg sm', role: 'group'}, ...[['1', 1], ['2', 2], ['3', 3], ['5', 5], ['Custom', 'c'], ['Any number', 0]].map(([t, val]) =>
+    el('button', {type: 'button', textContent: t, onclick: () => { if (val === 'c') { custom = true; num.focus(); } else { custom = false; n = val; } paint(); }})));
+  seg.dataset.vals = '1,2,3,5,c,0';
+  const msg = el('div', {className: 'note', hidden: true});
+  const info = el('p', {className: 'disc'});
+  const devVal = () => custom ? (Number.isInteger(Number(num.value)) && Number(num.value) >= 1 && Number(num.value) <= 127 ? Number(num.value) : null) : n;
+  function paint() {
+    [...seg.children].forEach((b, i) => b.setAttribute('aria-pressed', String(custom ? i === 4 : !custom && [1, 2, 3, 5, 'c', 0][i] === n)));
+    numRow.hidden = !custom; hint();
+  }
+  function hint() {
+    const d = devVal(), used = acts ? GRFLicense.actHolders(acts.get(v.id) || [], 0).length : null;
+    const bits = [`Originally valid until ${fmt(o.expires)}${bound ? `, locked to device ${v.device}` : `, ${devText(o.devices || 0)}`}.`];
+    if (date.value && date.value < iso(new Date())) bits.push('This date has passed: the key stops working at the next sync.');
+    if (!bound && d && used !== null && used > d) bits.push(`${used} devices use it now: the last ${used - d === 1 ? 'one' : used - d} activated will be logged out at their next check.`);
+    if (!bound && d && !acc) bits.push('Set up Device limits above to limit the number of devices.');
+    bits.push('Phones apply the change at their next sync: when the app is opened online, at the latest within a week.');
+    info.textContent = bits.join(' ');
+  }
+  date.oninput = hint; num.oninput = hint;
+  const save = el('button', {className: 'btn fill', type: 'button', textContent: 'Save and publish', onclick: async () => {
+    const d = bound ? null : devVal();
+    if (!date.value) { msg.hidden = false; msg.className = 'note bad'; msg.textContent = 'Pick the last valid day.'; return; }
+    if (!bound && d === null) { msg.hidden = false; msg.className = 'note bad'; msg.textContent = 'Enter a number of devices from 1 to 127, or choose Any number.'; return; }
+    if (!bound && d && !acc) { msg.hidden = false; msg.className = 'note bad'; msg.textContent = 'Set up Device limits first, or choose Any number.'; return; }
+    save.disabled = true; msg.hidden = false; msg.className = 'note'; msg.textContent = 'Saving and publishing…';
+    try {
+      await changeLog(l => { const x = l.find(e => e.id === v.id); if (!x) return; x.expires = date.value; if (!bound) x.devices = d; x.editedAt = Date.now(); }, `Key edited`);
+      await publishLicenses();
+      editing = null; renderLog();
+      const st = $('revState'); st.hidden = false; st.className = 'note ok';
+      st.textContent = `${v.name}: saved and published. Phones apply it at their next sync (when the app is opened online, at the latest within a week).`;
+    } catch (e) { msg.className = 'note bad'; msg.textContent = 'Not saved: ' + (e.message || 'GitHub could not be reached.'); save.disabled = false; }
+  }});
+  const reset = el('button', {className: 'ghost', type: 'button', textContent: 'Back to the original', onclick: () => { date.value = o.expires; if (!bound) { n = o.devices || 0; custom = ![0, 1, 2, 3, 5].includes(n); num.value = custom ? n : ''; } paint(); }});
+  const box = el('div', {className: 'editbox'},
+    el('b', {textContent: `Edit ${v.name}`}),
+    el('div', {className: 'field'}, el('span', {className: 'lbl', textContent: 'Last valid day'}), date, quick),
+    bound ? el('p', {className: 'disc', textContent: `Locked to device ${v.device}: the number of devices does not apply.`})
+          : el('div', {className: 'field'}, el('span', {className: 'lbl', textContent: 'Number of devices'}), seg, numRow),
+    info, msg,
+    el('div', {className: 'row'}, save, el('button', {className: 'btn', type: 'button', textContent: 'Cancel', onclick: () => { editing = null; renderLog(); }}), reset));
+  paint();
+  return box;
+}
+
 function renderLog() {
   const body = $('logBody');
   document.querySelector('.filters').hidden = !log || !log.length;
   if (!log) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent:'Set up this device to see the keys.'})); return; }
   const pending = log.some(e => e.revoked) && (!revPublished || log.filter(e => e.revoked).some(e => !revPublished.ids.includes(e.id)));
   if (pending) { const el = $('revState'); el.hidden = false; el.className = 'note warn'; el.replaceChildren('Some withdrawals are not published yet. ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Publish now', onclick: async () => { try { await publishRevoked(); el.className = 'note ok'; el.textContent = 'Published.'; } catch (e) { el.textContent = 'Not published: ' + e.message; } }})); }
+  const wantRules = JSON.stringify(rulesFromLog().filter(r => r[1] !== null || r[2] !== null).sort((a, b) => a[0] - b[0]));
+  if (!pending && wantRules !== JSON.stringify(licPublished ? licPublished.rules : [])) {
+    const el = $('revState'); el.hidden = false; el.className = 'note warn';
+    el.replaceChildren('Some key edits are not published yet. ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Publish now', onclick: async () => { try { await publishLicenses(); el.className = 'note ok'; el.textContent = 'Published.'; } catch (e) { el.textContent = 'Not published: ' + e.message; } }}));
+  }
   const counts = {active: 0, expired: 0, withdrawn: 0, all: log.length};
   log.forEach(e => counts[catOf(e)]++);
   document.querySelectorAll('#fSeg button').forEach(b => {
@@ -626,10 +749,15 @@ function renderLog() {
     const stTd = document.createElement('td'); stTd.append(Object.assign(document.createElement('span'), {className:'st ' + cls, textContent: st}));
     const act = document.createElement('td');
     act.append(Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Copy key', onclick: e => copy(v.key, e.target)}));
+    if (!v.revoked) act.append(' ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent: editing === v.id ? 'Close' : 'Edit',
+      onclick: () => { editing = editing === v.id ? null : v.id; renderLog(); if (editing && acc) loadActs().then(() => { if (editing === v.id) renderLog(); }); }}));
     if (!v.revoked) act.append(' ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Withdraw',
       onclick: e => { const b = e.target; if (b.dataset.sure) { b.disabled = true; withdraw(v.id); } else { b.dataset.sure = '1'; b.textContent = 'Tap again to withdraw'; b.style.color = 'var(--bad)'; setTimeout(() => { delete b.dataset.sure; b.textContent = 'Withdraw'; b.style.color = ''; }, 4000); } }}));
     const mx = maxOf(v), used = mx && acts ? GRFLicense.actHolders(acts.get(v.id) || [], 0) : null;
     const nameTd = td(v.name);
+    const o = origOf(v), changed = !v.revoked && (v.expires !== o.expires || (!v.device && maxOf(v) !== (o.devices || 0)));
+    if (changed) nameTd.append(Object.assign(document.createElement('div'), {className: 'devs', textContent:
+      `Edited${v.expires !== o.expires ? `: was valid until ${fmt(o.expires)}` : ''}${!v.device && maxOf(v) !== (o.devices || 0) ? `${v.expires !== o.expires ? ',' : ':'} was ${devText(o.devices || 0)}` : ''}`}));
     if (mx && !v.revoked) {
       const d = document.createElement('div'); d.className = 'devs';
       if (!acc) d.append(`Limited to ${devText(mx)}`);
@@ -648,6 +776,7 @@ function renderLog() {
     }
     tr.append(nameTd, td(fmt(v.expires), 'mono'), stTd, td(v.device || (mx ? (used ? `${used.length}/${mx}` : `max ${mx}`) : 'any'), 'mono'), act);
     tb.append(tr);
+    if (editing === v.id) { const er = document.createElement('tr'); er.className = 'editrow'; const c = document.createElement('td'); c.colSpan = 5; c.append(editor(v)); er.append(c); tb.append(er); }
   }
   t.append(tb);
   const wrap = document.createElement('div'); wrap.className = 'tbl'; wrap.append(t);
@@ -663,7 +792,7 @@ $('cGo').onclick = async () => {
   const k = GRFLicense.decode($('cKey').value);
   if (k && k.old) { out.className = 'note bad'; out.textContent = 'An old-format key: it does not open the current app.'; return; }
   if (!k) { out.className = 'note bad'; out.textContent = 'Not a license key. It starts with GRF- and is one long line.'; return; }
-  const r = await GRFLicense.verify($('cKey').value, PUB, Date.now(), k.device);
+  const r = await GRFLicense.verify($('cKey').value, PUB, Date.now(), k.device, licPublished ? GRFLicense.ruleFor(licPublished.rules, k.id) : null);
   const used = k.maxDevices && acts ? GRFLicense.actHolders(acts.get(k.id) || [], 0) : null;
   const facts = `${k.name || 'No name'} · issued ${fmt(k.issuedDate)} · valid until ${fmt(k.expiresDate)} · ${k.deviceCode ? 'device ' + k.deviceCode : devText(k.maxDevices)}`
     + (used ? ` (${used.length} used${used.length ? ': ' + used.join(', ') : ''})` : '');
@@ -671,9 +800,10 @@ $('cGo').onclick = async () => {
   if (r.ok || r.reason === 'expired') checked = k;
   $('cRevoke').hidden = !checked || isRev || !log;
   $('cAdd').hidden = !checked || !log || log.some(e => e.id === k.id);
+  const ed = r.info && r.info.edited ? ` Edited after issue: valid until ${fmt(r.info.expiresDate)}${r.info.maxDevices !== r.info.orig.maxDevices ? `, ${devText(r.info.maxDevices)}` : ''}.` : '';
   if (isRev) { out.className = 'note bad'; out.textContent = `Withdrawn. ${facts}`; }
-  else if (r.ok) { out.className = 'note ok'; out.textContent = `Valid, ${r.daysLeft} day${r.daysLeft === 1 ? '' : 's'} left. ${facts}`; }
-  else if (r.reason === 'expired') { out.className = 'note warn'; out.textContent = `Expired. ${facts}`; }
+  else if (r.ok) { out.className = 'note ok'; out.textContent = `Valid, ${r.daysLeft} day${r.daysLeft === 1 ? '' : 's'} left. ${facts}${ed}`; }
+  else if (r.reason === 'expired') { out.className = 'note warn'; out.textContent = `Expired. ${facts}${ed}`; }
   else { out.className = 'note bad'; out.textContent = 'Not valid: the signature does not match. The key was changed or made with another signing key.'; }
 };
 $('cAdd').onclick = async () => {

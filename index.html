@@ -456,14 +456,21 @@ const GRFLicense = (() => {
   }
   const importPub = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['verify']);
   const importPriv = jwk => subtle.importKey('jwk', jwk, {name:'ECDSA', namedCurve:'P-256'}, false, ['sign']);
-  /* now = trusted time in ms; returns {ok, reason, info} */
-  async function verify(key, pubJwk, now, deviceBytes) {
+  /* now = trusted time in ms; returns {ok, reason, info}.
+     ov = an edit the issuer published for this license in licenses.json: {e: last valid day, m: number of devices} */
+  async function verify(key, pubJwk, now, deviceBytes, ov) {
     const k = decode(key);
     if (!k) return {ok:false, reason:'format'};
     if (k.old) return {ok:false, reason:'old'};
     const good = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), k.sig, k.payload);
     if (!good) return {ok:false, reason:'signature'};
     const today = dayOf(now);
+    if (ov) {
+      k.orig = {expires: k.expires, expiresDate: k.expiresDate, maxDevices: k.maxDevices};
+      if (Number.isInteger(ov.e)) { k.expires = ov.e; k.expiresDate = dateOfDay(ov.e); }
+      if (Number.isInteger(ov.m) && !k.device) k.maxDevices = ov.m;
+      k.edited = k.expires !== k.orig.expires || k.maxDevices !== k.orig.maxDevices;
+    }
     if (today > k.expires) return {ok:false, reason:'expired', info:k};
     if (today < k.issued - 1) return {ok:false, reason:'clock', info:k};
     if (k.device && (!deviceBytes || k.device.some((b, j) => b !== deviceBytes[j]))) return {ok:false, reason:'device', info:k};
@@ -524,7 +531,26 @@ const GRFLicense = (() => {
     const j = JSON.parse(new TextDecoder().decode(plain));
     return j && typeof j.token === 'string' && typeof j.repo === 'string' ? j : null;
   }
-  return {decode, verify, sign, signRevoked, verifyRevoked, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  /* Edits after issue (licenses.json): per license id a new last valid day and/or number of devices, signed like the
+     revocation list. The newest list (by its issue time) replaces the older one. */
+  const normRules = rules => (rules || []).map(r => [Number(r[0]) >>> 0, Number.isInteger(r[1]) ? r[1] : null, Number.isInteger(r[2]) ? r[2] : null])
+    .filter(r => r[1] !== null || r[2] !== null).sort((a, b) => a[0] - b[0]);
+  const licMsg = (issued, rules) => new TextEncoder().encode(`GRF-LICENSES-1|${issued}|${rules.map(r => r.map(v => v === null ? '' : v).join(':')).join(',')}`);
+  async function signLicenses(rules, privJwk, issuedMs) {
+    const list = normRules(rules), issued = Math.floor(issuedMs ?? Date.now());
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), licMsg(issued, list)));
+    return {v:1, issued, rules:list, sig: b64u.enc(sig)};
+  }
+  async function verifyLicenses(obj, pubJwk) {
+    if (!obj || obj.v !== 1 || !Number.isFinite(obj.issued) || !Array.isArray(obj.rules) || typeof obj.sig !== 'string') return null;
+    const list = normRules(obj.rules);
+    if (JSON.stringify(list) !== JSON.stringify(obj.rules)) return null;
+    let sig; try { sig = b64u.dec(obj.sig); } catch (e) { return null; }
+    const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, licMsg(obj.issued, list));
+    return ok ? {issued: obj.issued, rules: list} : null;
+  }
+  const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -534,6 +560,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const PUB = {"kty":"EC","x":"r3YvGRUXkcvbh-k-D5hoQLXtYifnXYC0G864tGYvwaE","y":"wbxScIibcmHJ4H59naDk4IN71bPT7-NMWpCdRC4NLE8","crv":"P-256"};
   const K_KEY = 'grf-license', K_DEV = 'grf-device', K_SEEN = 'grf-last-seen';
   const K_SYNC = 'grf-last-sync', K_REV = 'grf-revoked', K_REVI = 'grf-revoked-issued', K_ACT = 'grf-activation';
+  const K_LIC = 'grf-licenses', K_LICI = 'grf-licenses-issued', K_OKID = 'grf-unlocked-id';
   const K_TERMS = 'grf-terms', TERMS_V = '1';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
@@ -570,6 +597,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const actFull = n => `This license is already in use on ${n === 1 ? 'one device' : n + ' devices'}. Ask the person who issued it to free a place.`;
   /* ---- weekly sync: fetch the signed list of withdrawn licenses (revoked.json) ---- */
   const revoked = () => { try { return JSON.parse(store.get(K_REV) || '[]'); } catch (e) { return []; } };
+  const editFor = key => { const k = GRFLicense.decode(key); if (!k || k.old) return null; try { return GRFLicense.ruleFor(JSON.parse(store.get(K_LIC) || '[]'), k.id); } catch (e) { return null; } };
   async function sync() {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 10000);
     try {
@@ -580,6 +608,12 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (list.issued >= (Number(store.get(K_REVI)) || 0)) store.set(K_REVI, String(list.issued));
       /* withdrawn licenses stay withdrawn on this device, even if an older list turns up */
       store.set(K_REV, JSON.stringify(Array.from(new Set(revoked().concat(list.ids)))));
+      /* edits the issuer made after issue (new last valid day, number of devices): the newest signed list wins */
+      try {
+        const r2 = await fetch('licenses.json?t=' + Date.now(), {cache:'no-store', signal: ctl.signal});
+        const L = r2.ok ? await GRFLicense.verifyLicenses(await r2.json(), PUB) : null;
+        if (L && L.issued >= (Number(store.get(K_LICI)) || 0)) { store.set(K_LIC, JSON.stringify(L.rules)); store.set(K_LICI, String(L.issued)); }
+      } catch (e) {}
       store.set(K_SYNC, String(trustedNow()));
       showSync();
       return true;
@@ -635,7 +669,11 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     if (local && (trustedNow() - (a.checked || 0) < ACT_CHECK || navigator.onLine === false)) return null;
     let acc, list;
     try { acc = await access(r.info.ck); list = await activations(acc, id); }
-    catch (why) { return local ? null : (WHY[why] || WHY.act_online); }      /* already activated here: keep working, check later */
+    catch (why) {
+      if (local) return null;                                                 /* already activated here: keep working, check later */
+      if (why === 'act_online' && store.get(K_OKID) === String(id)) return null;   /* opened here before a limit was added: activate when online */
+      return WHY[why] || WHY.act_online;
+    }
     const here = list.some(x => x.dev === devCode);
     if (local) {
       if (here && GRFLicense.actHolders(list, max).includes(devCode)) { store.set(K_ACT, JSON.stringify({...a, checked: trustedNow()})); return null; }
@@ -683,14 +721,14 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   let actRun = null;
   function activate(r) { if (!actRun) actRun = activateOnce(r).finally(() => { actRun = null; }); return actRun; }
 
-  function lock(msg, canCancel) {
+  function lock(msg, canCancel, offerSync) {
     closeLicense();
     document.documentElement.classList.add('locked');
     $('lock').hidden = false;
     $('licBusy').hidden = true; $('licForm').hidden = false;
     $('licMsg').hidden = !msg; $('licMsg').textContent = msg || '';
     $('licCancel').hidden = !canCancel;
-    $('licSync').hidden = msg !== WHY.sync;
+    $('licSync').hidden = !(msg === WHY.sync || offerSync);
     $('devCode').textContent = devCode;
   }
   /* decrypt and start the app once */
@@ -734,7 +772,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const box = $('ldBox'); if (!box) return;
     box.className = 'days' + (cls ? ' ' + cls : '');
     $('ldNum').replaceChildren(...(n <= 0 ? ['Last day'] : [String(n), Object.assign(document.createElement('small'), {textContent: n === 1 ? 'day left' : 'days left'})]));
-    $('ldUntil').textContent = `Valid through ${fmt(r.info.expiresDate)}` + (n <= 0 ? ' (today)' : '');
+    $('ldUntil').textContent = `Valid through ${fmt(r.info.expiresDate)}` + (n <= 0 ? ' (today)' : '')
+      + (r.info.edited && r.info.orig.expires !== r.info.expires ? ` · changed by the issuer (was ${fmt(r.info.orig.expiresDate)})` : '');
     $('ldName').textContent = r.info.name || '–';
     $('ldIssued').textContent = fmt(r.info.issuedDate);
     const mx = r.info.maxDevices;
@@ -767,7 +806,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   function closeLicense() { const d = $('licDlg'); if (!d) return; if (d.close) d.close(); else d.removeAttribute('open'); }
   async function check(key, fromForm) {
     let r;
-    try { r = await GRFLicense.verify(key, PUB, trustedNow(), dev); }
+    try { r = await GRFLicense.verify(key, PUB, trustedNow(), dev, editFor(key)); }
     catch (e) { r = {ok:false, reason:'signature'}; }
     if (r.ok && revoked().includes(r.info.id)) {
       store.del(K_KEY); lock(WHY.revoked); return false;
@@ -786,15 +825,16 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       }
       try { await start(r.info.ck); }
       catch (why) { if (!fromForm && why === 'app') store.del(K_KEY); lock(WHY[why] || WHY.load, false); return false; }
-      store.set(K_KEY, key.replace(/\s+/g, ''));
+      store.set(K_KEY, key.replace(/\s+/g, '')); store.set(K_OKID, String(r.info.id));
       document.documentElement.classList.remove('locked');
       $('lock').hidden = true;
       showLicense(r, key.replace(/\s+/g, '')); showSync();
       return true;
     }
     if (r.reason === 'expired') {
-      lock(`${fromForm ? 'This key' : 'Your license'} expired on ${fmt(r.info.expiresDate)}. Enter a new key.`);
-      if (!fromForm) store.del(K_KEY);
+      /* the key is kept: if the issuer extends it, the next sync opens the app again */
+      lock(`${fromForm ? 'This key' : 'Your license'} expired on ${fmt(r.info.expiresDate)}. If it has been extended, connect to the internet and tap Sync now. Otherwise enter a new key.`, false, true);
+      if (fromForm) store.set(K_KEY, key.replace(/\s+/g, ''));
     } else lock(fromForm ? WHY[r.reason] : (r.reason === 'device' ? WHY.device : r.reason === 'old' ? WHY.old : 'Enter your license key.'));
     return false;
   }
@@ -826,7 +866,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       $('licSync').disabled = true; $('licSync').textContent = 'Syncing…';
       const ok = await sync();
       $('licSync').disabled = false; $('licSync').textContent = 'Sync now';
-      if (ok) window.GRFLock.recheck(); else lock('Could not reach the app\'s web address. ' + WHY.sync, false);
+      if (ok) window.GRFLock.recheck(); else lock('Could not reach the app\'s web address. ' + WHY.sync, false, true);
     });
     $('licCancel').addEventListener('click', () => window.GRFLock.recheck());
     $('ldClose').addEventListener('click', closeLicense);
@@ -873,7 +913,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'db8f355741', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '8a833a1b0d', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

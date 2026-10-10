@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1791651692009;</script>
+<script>window.GRF_BUILD=1791653528304;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -324,6 +324,13 @@ html.paused .wrap, html.paused .bar, html.paused .top .seg.modes { display:none 
 .stbox h2 { color:inherit; font-size:17px; letter-spacing:.06em; }
 .stbox p { margin:6px 0 0; color:var(--ink); line-height:1.45; overflow-wrap:anywhere; white-space:pre-line; }
 .stbox p.fine { font-size:13.5px; color:inherit; }
+/* feedback: a button in the footer, a dialog like the license one */
+.fbbtn { display:inline-flex; align-items:center; gap:7px; min-height:36px; padding:0 14px 0 12px; border:1px solid var(--line); border-radius:18px; background:var(--surface); color:var(--ink); font-weight:600; font-size:14px; cursor:pointer; }
+.fbbtn svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.legal .fbbtn { margin-left:auto; }
+dialog.licdlg textarea { width:100%; min-height:120px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px 12px; font:inherit; font-size:15px; resize:vertical; }
+.fbchk { display:flex; gap:10px; align-items:flex-start; font-size:14px; color:var(--muted); line-height:1.4; cursor:pointer; }
+.fbchk input { width:20px; height:20px; margin:1px 0 0; flex:none; accent-color:var(--brand); }
 .stbox .stacts { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
 .stbox .stacts .btn { min-width:120px; }
 @media (min-width:860px) { .stbox { width:calc(100% - 48px); margin-top:20px; } }
@@ -411,7 +418,21 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
       <button class="btn" type="button" id="ldSyncNow">Sync now</button>
       <button class="ghost" type="button" id="ldChange">Enter a new key</button>
       <button class="ghost" type="button" id="ldTerms">Terms of use</button>
+      <button class="ghost" type="button" id="ldFeedback">Send feedback</button>
     </div>
+  </div>
+</dialog>
+<dialog class="licdlg" id="fbDlg" aria-labelledby="fbTitle">
+  <div class="in">
+    <div class="hd"><h2 id="fbTitle">Send feedback</h2><button class="ghost x" type="button" id="fbX" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p class="lead" id="fbLead" style="margin:0"></p>
+    <div class="seg" id="fbKind" role="group" aria-label="Kind of feedback">
+      <button type="button" data-k="problem" aria-pressed="true">Problem</button><button type="button" data-k="idea" aria-pressed="false">Idea</button><button type="button" data-k="other" aria-pressed="false">Other</button>
+    </div>
+    <textarea id="fbText" maxlength="2000" aria-label="Your feedback" placeholder="What happened, or what could be better?"></textarea>
+    <label class="fbchk"><input type="checkbox" id="fbCtx" checked> <span>Attach the current calculation (report text, inputs and result), to help find a problem</span></label>
+    <div id="fbMsg" class="note" hidden></div>
+    <div class="acts"><button class="btn fill" type="button" id="fbSend">Send</button><button class="btn" type="button" id="fbCancel">Cancel</button></div>
   </div>
 </dialog>
 <dialog class="licdlg" id="termsDlg" aria-labelledby="tmTitle">
@@ -609,8 +630,40 @@ const GRFLicense = (() => {
     const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, stMsg(obj.issued, obj.mode, obj.before, obj.text));
     return ok ? {issued: obj.issued, mode: obj.mode, before: obj.before, text: obj.text} : null;
   }
+  /* Feedback from the app: encrypted to the issuer's feedback key (ECDH P-256 + HKDF + AES-GCM), so it can travel as a
+     GitHub issue in a public repository and only the key tool can read it. */
+  const FB_INFO = new TextEncoder().encode('GRF-FEEDBACK-1');
+  async function fbAes(priv, pub, usage) {
+    const bits = await subtle.deriveBits({name:'ECDH', public: pub}, priv, 256);
+    const hk = await subtle.importKey('raw', bits, 'HKDF', false, ['deriveKey']);
+    return subtle.deriveKey({name:'HKDF', hash:'SHA-256', salt:new Uint8Array(16), info:FB_INFO}, hk, {name:'AES-GCM', length:256}, false, [usage]);
+  }
+  const ecJwk = j => ({kty:'EC', crv:'P-256', x:j.x, y:j.y, ...(j.d ? {d:j.d} : {})});
+  async function sealFeedback(obj, pubJwk) {
+    const rp = await subtle.importKey('jwk', ecJwk(pubJwk), {name:'ECDH', namedCurve:'P-256'}, false, []);
+    const eph = await subtle.generateKey({name:'ECDH', namedCurve:'P-256'}, true, ['deriveBits']);
+    const k = await fbAes(eph.privateKey, rp, 'encrypt');
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await subtle.encrypt({name:'AES-GCM', iv}, k, new TextEncoder().encode(JSON.stringify(obj))));
+    const e = await subtle.exportKey('jwk', eph.publicKey);
+    return 'GRF-FB-1:' + b64u.enc(new TextEncoder().encode(JSON.stringify({x:e.x, y:e.y, iv:b64u.enc(iv), ct:b64u.enc(ct)})));
+  }
+  async function openFeedback(text, privJwk) {
+    const m = /GRF-FB-1:([A-Za-z0-9_-]+)/.exec(String(text || ''));
+    if (!m) return null;
+    const o = JSON.parse(new TextDecoder().decode(b64u.dec(m[1])));
+    const epk = await subtle.importKey('jwk', ecJwk(o), {name:'ECDH', namedCurve:'P-256'}, false, []);
+    const priv = await subtle.importKey('jwk', ecJwk(privJwk), {name:'ECDH', namedCurve:'P-256'}, false, ['deriveBits']);
+    const k = await fbAes(priv, epk, 'decrypt');
+    return JSON.parse(new TextDecoder().decode(await subtle.decrypt({name:'AES-GCM', iv: b64u.dec(o.iv)}, k, b64u.dec(o.ct))));
+  }
+  const fbTitle = (id, dev) => `GRF feedback ${id >>> 0} ${dev}`;
+  function fbParse(title) {
+    const m = /^GRF feedback (\d{1,10}) ([0-9A-Z]{4}-[0-9A-Z]{4})$/.exec(String(title || '').trim());
+    return m ? {id: Number(m[1]) >>> 0, dev: m[2]} : null;
+  }
   const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
-  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -618,6 +671,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
    Everything is checked and decrypted on the device, no network needed. */
 (function () {
   const PUB = {"kty":"EC","x":"r3YvGRUXkcvbh-k-D5hoQLXtYifnXYC0G864tGYvwaE","y":"wbxScIibcmHJ4H59naDk4IN71bPT7-NMWpCdRC4NLE8","crv":"P-256"};
+  const FBPUB = {"kty": "EC", "crv": "P-256", "x": "B6ypoaNMv3Mm5YTXKnp_OdpUac00whxFVIvn8EKuZI4", "y": "hnxB0kHAkoQvm11sA8A8D5za-fepT82x-nZ9IMvgW4U"};   /* feedback is encrypted to this key; only the key tool holds the private half */
   const K_KEY = 'grf-license', K_DEV = 'grf-device', K_SEEN = 'grf-last-seen';
   const K_SYNC = 'grf-last-sync', K_REV = 'grf-revoked', K_REVI = 'grf-revoked-issued', K_ACT = 'grf-activation';
   const K_LIC = 'grf-licenses', K_LICI = 'grf-licenses-issued', K_OKID = 'grf-unlocked-id';
@@ -857,6 +911,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     if (lb) lb.addEventListener('click', openLicense);
     const ft = $('ftTerms');
     if (ft) ft.addEventListener('click', () => showTerms(false));
+    const ff = $('ftFeedback');
+    if (ff) ff.addEventListener('click', openFeedbackDlg);
     if (window.GRFOffline) window.GRFOffline();
     showSync(); applyStatus();
     return true;
@@ -910,6 +966,56 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const d = $('licDlg'); if (!d || !cur) return;
     $('ldCopy').textContent = 'Copy key';
     if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
+  }
+  /* ---- feedback: an encrypted GitHub issue (with the issues-only token in act.bin), read in the key tool ---- */
+  const K_FBD = 'grf-feedback-draft', K_FBT = 'grf-feedback-last';
+  let fbKind = 'problem';
+  const setKind = k => { fbKind = k; document.querySelectorAll('#fbKind button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === k))); };
+  function openFeedbackDlg() {
+    const d = $('fbDlg'); if (!d || !cur) return;
+    closeLicense();
+    const name = cur.r.info.name;
+    $('fbLead').textContent = `It goes to the person who issued your license, with your name${name ? ` (${name})` : ''} and this device's code (${devCode}). It is encrypted on the way: nobody else can read it.`;
+    $('fbText').value = store.get(K_FBD) || '';
+    $('fbCtx').checked = !!document.querySelector('.hero');
+    $('fbMsg').hidden = true; $('fbSend').disabled = false; $('fbSend').textContent = 'Send';
+    setKind(fbKind);
+    if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
+  }
+  function closeFeedbackDlg() { const d = $('fbDlg'); if (d) { if (d.close) d.close(); else d.removeAttribute('open'); } }
+  /* what was on the screen: helps to find a wrong reading or result */
+  function fbContext() {
+    try {
+      const pt = $('pasteText'), ph = $('photoText'), g = sel => ((document.querySelector(sel) || {}).innerText || '');
+      return {mode: state.mode, phase: state.phase, ac: state.ac, src: state.src, narrow: state.narrow, oat: state.oat, thirds: state.thirds,
+        report: ((pt && pt.value) || (ph && ph.textContent) || '').slice(0, 3000), result: g('.hero').slice(0, 800), line: g('.reshead .ctx'),
+        msg: g('#scanMsg').slice(0, 600)};
+    } catch (e) { return null; }
+  }
+  async function sendFeedback() {
+    const msg = (t, c) => { $('fbMsg').hidden = false; $('fbMsg').className = 'note ' + c; $('fbMsg').textContent = t; };
+    const text = $('fbText').value.trim();
+    if (!text) return msg('Write your feedback first.', 'warn');
+    if (Date.now() - (Number(store.get(K_FBT)) || 0) < 60000) return msg('Feedback was just sent from this device. Wait a minute before sending more.', 'warn');
+    const key = store.get(K_KEY), info = key && GRFLicense.decode(key);
+    if (!info || info.old) return msg('There is no license on this device.', 'bad');
+    if (navigator.onLine === false) return msg('No connection. Your text is kept here: send it when you are online.', 'warn');
+    const b = $('fbSend'); b.disabled = true; b.textContent = 'Sending…';
+    try {
+      let acc; try { acc = await access(info.ck); } catch (why) { throw why === 'act_setup' ? 'setup' : 'net'; }
+      const payload = {v:1, at:new Date().toISOString(), kind:fbKind, text, key, id:info.id, name:info.name || '', dev:devCode,
+        app:window.GRF_VER || '', ua:navigator.userAgent.slice(0, 200), ctx: $('fbCtx').checked ? fbContext() : null};
+      const body = 'Feedback from the GRF Runway Cond app. It is encrypted: only the key tool can read it.\n\n' + await GRFLicense.sealFeedback(payload, FBPUB);
+      let res; try { res = await ghApi(acc, '/issues', 'POST', {title: GRFLicense.fbTitle(info.id, devCode), body}); } catch (e) { throw 'net'; }
+      if (!res.ok) throw [401, 403, 404, 410].includes(res.status) ? 'setup' : 'net';
+      store.set(K_FBT, String(Date.now())); store.del(K_FBD); $('fbText').value = '';
+      msg('Sent. Thank you!', 'ok'); b.textContent = 'Sent';
+      setTimeout(closeFeedbackDlg, 1800);
+    } catch (why) {
+      b.disabled = false; b.textContent = 'Send';
+      msg(why === 'setup' ? 'Feedback cannot be sent yet: the issuer has not set it up. Your text is kept here.'
+        : 'It could not be sent: no connection to GitHub. Your text is kept here: try again when you are online.', 'bad');
+    }
   }
   function closeLicense() { const d = $('licDlg'); if (!d) return; if (d.close) d.close(); else d.removeAttribute('open'); }
   async function check(key, fromForm) {
@@ -1001,6 +1107,12 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (ok) window.GRFLock.recheck();
     });
     $('ldChange').addEventListener('click', () => { closeLicense(); $('licKey').value = ''; lock('', true); });
+    $('ldFeedback').addEventListener('click', openFeedbackDlg);
+    $('fbX').addEventListener('click', closeFeedbackDlg); $('fbCancel').addEventListener('click', closeFeedbackDlg);
+    $('fbDlg').addEventListener('click', e => { if (e.target === $('fbDlg')) closeFeedbackDlg(); });
+    $('fbSend').addEventListener('click', sendFeedback);
+    $('fbText').addEventListener('input', () => { store.set(K_FBD, $('fbText').value); if ($('fbMsg').className.includes('warn')) $('fbMsg').hidden = true; });
+    document.querySelectorAll('#fbKind button').forEach(b => b.addEventListener('click', () => setKind(b.dataset.k)));
     $('stAck').addEventListener('click', () => { const st = stStored(); if (st) store.set(K_STACK, String(st.issued)); stReview = false; applyStatus(); });
     $('stClose').addEventListener('click', () => { stReview = false; applyStatus(); });
     $('stClear').addEventListener('click', () => { const st = stStored(); if (st) store.set(K_STCLR, String(st.issued)); stReview = false; applyStatus(); });
@@ -1025,7 +1137,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '76dbfa3fed', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '8379aae149', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;
@@ -1038,7 +1150,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     var chip = el.closest ? el.closest('.hchip') : null; if (chip) chip.dataset.off = c;
     var ld = document.getElementById('ldVer'); if (ld) ld.textContent = v;
   }
-  window.GRFOffline = render;
+  window.GRFOffline = render; window.GRF_VER = VER;
   function bar(text, btn, fn) {
     var b = document.getElementById('updBar');
     if (!b) { b = document.createElement('div'); b.id = 'updBar'; b.className = 'updbar'; b.setAttribute('role', 'status'); document.body.appendChild(b); }

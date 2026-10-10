@@ -103,6 +103,16 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 .devs { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:4px; font-size:13px; color:var(--muted); }
 .devs .mono { font-size:12.5px; color:var(--ink); }
 .devs .ghost { min-height:24px; font-size:13px; }
+.fbitem { border:1px solid var(--line); border-radius:10px; padding:12px 14px; display:grid; gap:6px; }
+.fbitem.done { opacity:.72; }
+.fbitem .who { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
+.fbitem .who b { font-size:16px; }
+.fbitem .meta { font-family:var(--f-mono); font-size:12.5px; color:var(--muted); }
+.fbitem .txt { white-space:pre-wrap; overflow-wrap:anywhere; font-size:15.5px; }
+.fbitem pre { margin:6px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; font-family:var(--f-mono); font-size:12.5px; background:var(--bg); border-radius:8px; padding:8px 10px; }
+.fbitem details summary { cursor:pointer; color:var(--muted); font-weight:600; font-size:14px; }
+.fbitem .unv { color:var(--warn); font-size:13px; }
+#fbList { display:grid; gap:10px; }
 .btn.danger, #stSeg button[data-s="pause"][aria-pressed="true"] { background:#B3261E; border-color:#B3261E; color:#FFFFFF; }
 /* light/dark switch */
 .themesw { position:relative; display:inline-flex; align-items:center; justify-content:space-between; width:62px; height:32px; padding:0 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface2); color:var(--muted); cursor:pointer; flex:none; }
@@ -138,6 +148,7 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 
   <section class="panel" id="pAct" hidden>
     <h2>Device limits</h2>
+    <div id="actIssues" class="note bad" hidden>Issues are turned off for the repository. Device limits and feedback both use issues, so they cannot work: a key limited to a number of devices cannot be activated. On GitHub: the repository → Settings → General → Features → tick Issues. Then tap Reload under Issued keys.</div>
     <div id="actOk" class="note ok" hidden></div>
     <div id="actNeed" style="display:grid;gap:10px">
       <p class="disc">To limit a key to a number of devices, the app records each activation as an issue in the repository. For that it needs a second GitHub token that can only handle issues. It is stored in the repository encrypted, readable only by licensed apps.</p>
@@ -146,6 +157,15 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
       </div>
       <div id="actMsg" class="note bad" hidden></div>
     </div>
+  </section>
+
+  <section class="panel" id="pFb" hidden>
+    <div class="row" style="justify-content:space-between"><h2>Feedback <span class="st warn" id="fbCount" hidden></span></h2><button class="ghost" type="button" id="fbReload">Reload</button></div>
+    <div class="seg sm" id="fbSeg" role="group" aria-label="Show">
+      <button type="button" data-f="open">New</button><button type="button" data-f="closed">Done</button><button type="button" data-f="all">All</button>
+    </div>
+    <div id="fbList"><div class="empty">Loading…</div></div>
+    <p class="disc">Pilots send feedback from the app (Send feedback at the bottom, or in the license window). It is stored as an encrypted issue in the repository and can only be read here, with your signing key. The name is checked against your key list. Done closes the issue.</p>
   </section>
 
   <section class="panel" id="pStatus" hidden>
@@ -402,8 +422,40 @@ const GRFLicense = (() => {
     const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, stMsg(obj.issued, obj.mode, obj.before, obj.text));
     return ok ? {issued: obj.issued, mode: obj.mode, before: obj.before, text: obj.text} : null;
   }
+  /* Feedback from the app: encrypted to the issuer's feedback key (ECDH P-256 + HKDF + AES-GCM), so it can travel as a
+     GitHub issue in a public repository and only the key tool can read it. */
+  const FB_INFO = new TextEncoder().encode('GRF-FEEDBACK-1');
+  async function fbAes(priv, pub, usage) {
+    const bits = await subtle.deriveBits({name:'ECDH', public: pub}, priv, 256);
+    const hk = await subtle.importKey('raw', bits, 'HKDF', false, ['deriveKey']);
+    return subtle.deriveKey({name:'HKDF', hash:'SHA-256', salt:new Uint8Array(16), info:FB_INFO}, hk, {name:'AES-GCM', length:256}, false, [usage]);
+  }
+  const ecJwk = j => ({kty:'EC', crv:'P-256', x:j.x, y:j.y, ...(j.d ? {d:j.d} : {})});
+  async function sealFeedback(obj, pubJwk) {
+    const rp = await subtle.importKey('jwk', ecJwk(pubJwk), {name:'ECDH', namedCurve:'P-256'}, false, []);
+    const eph = await subtle.generateKey({name:'ECDH', namedCurve:'P-256'}, true, ['deriveBits']);
+    const k = await fbAes(eph.privateKey, rp, 'encrypt');
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await subtle.encrypt({name:'AES-GCM', iv}, k, new TextEncoder().encode(JSON.stringify(obj))));
+    const e = await subtle.exportKey('jwk', eph.publicKey);
+    return 'GRF-FB-1:' + b64u.enc(new TextEncoder().encode(JSON.stringify({x:e.x, y:e.y, iv:b64u.enc(iv), ct:b64u.enc(ct)})));
+  }
+  async function openFeedback(text, privJwk) {
+    const m = /GRF-FB-1:([A-Za-z0-9_-]+)/.exec(String(text || ''));
+    if (!m) return null;
+    const o = JSON.parse(new TextDecoder().decode(b64u.dec(m[1])));
+    const epk = await subtle.importKey('jwk', ecJwk(o), {name:'ECDH', namedCurve:'P-256'}, false, []);
+    const priv = await subtle.importKey('jwk', ecJwk(privJwk), {name:'ECDH', namedCurve:'P-256'}, false, ['deriveBits']);
+    const k = await fbAes(priv, epk, 'decrypt');
+    return JSON.parse(new TextDecoder().decode(await subtle.decrypt({name:'AES-GCM', iv: b64u.dec(o.iv)}, k, b64u.dec(o.ct))));
+  }
+  const fbTitle = (id, dev) => `GRF feedback ${id >>> 0} ${dev}`;
+  function fbParse(title) {
+    const m = /^GRF feedback (\d{1,10}) ([0-9A-Z]{4}-[0-9A-Z]{4})$/.exec(String(title || '').trim());
+    return m ? {id: Number(m[1]) >>> 0, dev: m[2]} : null;
+  }
   const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
-  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -420,6 +472,7 @@ let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = fa
 let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
 let licSha = null, licPublished = null, editing = null;
 let stSha = null, stPublished = null, stPick = 'ok', stScope = 'all', appInfo = null;
+let fbPriv = null, fbItems = null, fbErr = '', fbF = 'open', repoInfo = null;
 
 /* ---- where the app lives: owner.github.io/repo ---- */
 const GH = (() => {
@@ -479,6 +532,92 @@ async function loadLicenses() {
   licSha = f ? f.sha : null;
   licPublished = f ? await GRFLicense.verifyLicenses(JSON.parse(new TextDecoder().decode(f.bytes)), PUB) : null;
 }
+/* ---- feedback from the app: issues "GRF feedback <license id> <device>", the body encrypted to the feedback key.
+   The private feedback key is in the repository as fb-key.bin, encrypted with a key derived from the signing key. ---- */
+async function loadRepoInfo() {
+  try { const r = await fetch(`${GH.api}/repos/${GH.owner}/${GH.repo}`, {headers: {'Authorization': 'Bearer ' + tok, 'Accept': 'application/vnd.github+json'}, cache: 'no-store'}); repoInfo = r.ok ? await r.json() : null; }
+  catch (e) { repoInfo = null; }
+}
+async function loadFbKey() {
+  fbPriv = null;
+  const f = await getFile('fb-key.bin'); if (!f) return;
+  try {
+    const k = await crypto.subtle.importKey('raw', await crypto.subtle.digest('SHA-256', new TextEncoder().encode('GRF-FB-1|' + kf.key.d)), 'AES-GCM', false, ['decrypt']);
+    fbPriv = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM', iv: f.bytes.slice(0, 12)}, k, f.bytes.slice(12))));
+  } catch (e) { fbPriv = null; }
+}
+async function loadFeedback() {
+  fbItems = null; fbErr = '';
+  if (repoInfo && repoInfo.has_issues === false) { fbErr = 'issues'; return; }
+  if (!acc) { fbErr = 'acc'; return; }
+  if (!fbPriv) { fbErr = 'key'; return; }
+  try {
+    const out = [];
+    for (let page = 1; page <= 10; page++) {
+      const r = await ghIssues(acc, `/issues?state=all&per_page=100&page=${page}`);
+      if (!r.ok) throw new Error(r.status === 410 ? 'issues' : r.status === 401 ? 'The device-limit token is not accepted any more. Save a new one under Device limits.' : `GitHub answered ${r.status} for the feedback.`);
+      const list = await r.json();
+      for (const it of list) {
+        const t = !it.pull_request && GRFLicense.fbParse(it.title); if (!t) continue;
+        let d = null; try { d = await GRFLicense.openFeedback(it.body, fbPriv); } catch (e) { d = null; }
+        out.push({n: it.number, open: it.state === 'open', at: it.created_at, t, d});
+      }
+      if (list.length < 100) break;
+    }
+    fbItems = out.sort((a, b) => b.n - a.n);
+  } catch (e) { fbErr = e.message || 'Feedback could not be read.'; }
+}
+const KIND = {problem: 'Problem', idea: 'Idea', other: 'Other'};
+function fbCtxText(c) {
+  if (!c) return '';
+  const th = Array.isArray(c.thirds) ? c.thirds.map((t, i) => `  ${i + 1}: ${t.type}${t.cov != null ? ' ' + t.cov + '%' : ''}${t.depth != null ? ' ' + t.depth + 'mm' : ''}${t.rep != null ? ' RWYCC ' + t.rep : ''}`).join('\n') : '';
+  return [`Mode: ${c.mode === 'inflight' ? 'in-flight landing' : 'dispatch ' + (c.phase === 'to' ? 'take-off' : 'landing')} · ${c.ac || ''}${c.narrow ? ' · narrow' : ''}${c.oat ? ' · OAT ' + c.oat : ''} · source ${c.src || ''}`,
+    c.line ? 'Result line: ' + c.line : '', c.result ? 'Result:\n' + c.result : '', th ? 'Thirds:\n' + th : '', c.msg ? 'Message shown:\n' + c.msg : '', c.report ? 'Report text:\n' + c.report : ''].filter(Boolean).join('\n\n');
+}
+function renderFb() {
+  const el = $('fbList');
+  document.querySelectorAll('#fbSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === fbF)));
+  const nNew = fbItems ? fbItems.filter(x => x.open).length : 0;
+  $('fbCount').hidden = !nNew; $('fbCount').textContent = nNew + ' new';
+  $('actIssues').hidden = !(repoInfo && repoInfo.has_issues === false);
+  const note = (t, c) => Object.assign(document.createElement('div'), {className: 'note ' + (c || ''), textContent: t});
+  if (fbErr) {
+    el.replaceChildren(note(fbErr === 'issues' ? 'Issues are turned off for the repository, so the app cannot send feedback (and device limits cannot work). On GitHub: the repository → Settings → General → Features → tick Issues, then tap Reload.'
+      : fbErr === 'acc' ? 'Feedback is sent with the device-limit token. Save that token under Device limits first.'
+      : fbErr === 'key' ? 'The feedback key is not in the repository yet: it comes with the app update that added feedback.' : fbErr, 'bad'));
+    return;
+  }
+  if (!fbItems) { el.replaceChildren(Object.assign(document.createElement('div'), {className: 'empty', textContent: 'Loading…'})); return; }
+  const list = fbItems.filter(x => fbF === 'all' || (fbF === 'open') === x.open);
+  if (!list.length) { el.replaceChildren(Object.assign(document.createElement('div'), {className: 'empty', textContent: fbF === 'open' ? 'No new feedback.' : 'Nothing here.'})); return; }
+  el.replaceChildren(...list.map(x => {
+    const d = x.d, e = d && log ? log.find(v => v.id === d.id) : null, ok = !!(e && e.key === d.key);
+    const box = document.createElement('div'); box.className = 'fbitem' + (x.open ? '' : ' done');
+    const who = document.createElement('div'); who.className = 'who';
+    who.append(Object.assign(document.createElement('b'), {textContent: ok ? e.name : d ? (d.name || 'Unknown') : 'Could not be read'}));
+    if (d) who.append(Object.assign(document.createElement('span'), {className: 'st ' + (d.kind === 'problem' ? 'bad' : 'ok'), textContent: KIND[d.kind] || 'Other'}));
+    if (!x.open) who.append(Object.assign(document.createElement('span'), {className: 'st', textContent: 'Done'}));
+    box.append(who);
+    box.append(Object.assign(document.createElement('div'), {className: 'meta', textContent: `License ${x.t.id} · device ${x.t.dev} · ${stWhen(x.at)}`}));
+    if (d && !ok) box.append(Object.assign(document.createElement('div'), {className: 'unv', textContent: 'The name is as the app gave it: the key that sent it is not in your list.'}));
+    if (!d) box.append(Object.assign(document.createElement('div'), {className: 'unv', textContent: 'This message could not be opened with your feedback key.'}));
+    if (d) box.append(Object.assign(document.createElement('div'), {className: 'txt', textContent: d.text}));
+    if (d && d.ctx) { const det = document.createElement('details'); det.append(Object.assign(document.createElement('summary'), {textContent: 'Calculation sent with it'}), Object.assign(document.createElement('pre'), {textContent: fbCtxText(d.ctx)})); box.append(det); }
+    if (d) { const det = document.createElement('details'); det.append(Object.assign(document.createElement('summary'), {textContent: 'Device'}), Object.assign(document.createElement('pre'), {textContent: `App version: ${d.app || '–'}\nSent: ${d.at || '–'}\n${d.ua || ''}`})); box.append(det); }
+    const act = document.createElement('div'); act.className = 'row';
+    act.append(Object.assign(document.createElement('button'), {className: 'btn', type: 'button', textContent: x.open ? 'Mark as done' : 'Reopen', onclick: async ev => {
+      const b = ev.target; b.disabled = true;
+      try { const r = await ghIssues(acc, '/issues/' + x.n, 'PATCH', {state: x.open ? 'closed' : 'open'}); if (!r.ok) throw new Error(); x.open = !x.open; }
+      catch (e2) { b.disabled = false; b.textContent = 'Not changed: try again'; return; }
+      renderFb();
+    }}));
+    box.append(act);
+    return box;
+  }));
+}
+document.querySelectorAll('#fbSeg button').forEach(b => b.onclick = () => { fbF = b.dataset.f; renderFb(); });
+$('fbReload').onclick = async () => { fbItems = null; renderFb(); await loadRepoInfo(); await loadFbKey(); await loadFeedback(); renderFb(); };
+
 /* ---- app status: status.json, signed; phones show a notice or pause the calculations at their next sync ---- */
 async function loadStatus() {
   const f = await getFile('status.json');
@@ -632,7 +771,7 @@ $('actGo').onclick = async () => {
     if (r.status !== 403 && r.status !== 404) throw new Error('This token can change the app\'s files. Make a new token with only Issues: Read and write, so licensed apps cannot change the app.');
     const bytes = await GRFLicense.sealAccess(a, kf.contentKey);
     accSha = await putFile('act.bin', bytes, accSha, 'Device activation access');
-    acc = a; $('actTok').value = ''; await loadActs(); renderAct(); renderLog();
+    acc = a; $('actTok').value = ''; await loadActs(); renderAct(); renderLog(); await loadFeedback(); renderFb();
   } catch (e) { actMsg(e.message || 'Could not reach GitHub.'); }
   finally { $('actGo').disabled = false; }
 };
@@ -664,6 +803,7 @@ function renderSetup() {
     Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Remove from this device', onclick: () => { store.del('grf-signing-key-v2'); store.del('grf-gh-token'); kf = null; tok = ''; log = null; acc = null; acts = null; renderSetup(); renderLog(); }}));
   $('iGo').disabled = !ready;
   $('pStatus').hidden = !ready; if (ready) renderStatus();
+  $('pFb').hidden = !ready; if (ready) renderFb();
   renderAct();
 }
 async function connect() {
@@ -675,6 +815,7 @@ async function connect() {
     $('stText').value = stPublished && stPublished.text ? stPublished.text : (ST_TEXT[stPick] || '');
     if (!logSha) await saveLog('Create key list');   /* also proves the token may write */
     await loadAccess(); await loadActs();
+    await loadRepoInfo(); await loadFbKey(); await loadFeedback();
   }
   catch (e) { log = null; setMsg(e.name === 'OperationError' ? 'The key list in the repository could not be opened with this signing key.' : (e.message || 'Could not reach GitHub.')); }
   renderSetup(); renderLog();
@@ -938,7 +1079,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = '71c5506e1b';
+const ADMIN_VER = '9acb869e91';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

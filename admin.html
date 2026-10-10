@@ -103,6 +103,7 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 .devs { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:4px; font-size:13px; color:var(--muted); }
 .devs .mono { font-size:12.5px; color:var(--ink); }
 .devs .ghost { min-height:24px; font-size:13px; }
+.btn.danger, #stSeg button[data-s="pause"][aria-pressed="true"] { background:#B3261E; border-color:#B3261E; color:#FFFFFF; }
 /* light/dark switch */
 .themesw { position:relative; display:inline-flex; align-items:center; justify-content:space-between; width:62px; height:32px; padding:0 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface2); color:var(--muted); cursor:pointer; flex:none; }
 .themesw svg { position:relative; z-index:1; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; transition:color .2s; }
@@ -145,6 +146,28 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
       </div>
       <div id="actMsg" class="note bad" hidden></div>
     </div>
+  </section>
+
+  <section class="panel" id="pStatus" hidden>
+    <h2>App status</h2>
+    <div id="stNow" class="note"></div>
+    <div class="field">
+      <span class="lbl">Set to</span>
+      <div class="seg" id="stSeg" role="group" aria-label="App status">
+        <button type="button" data-s="ok">Normal</button><button type="button" data-s="warn">Notice</button><button type="button" data-s="pause">Pause calculations</button>
+      </div>
+      <p class="disc" id="stHint"></p>
+    </div>
+    <div class="field" id="stTextF"><label for="stText">Message shown in the app</label><textarea id="stText" maxlength="600" style="font-family:var(--f-ui);font-size:15px;min-height:96px"></textarea></div>
+    <div class="field" id="stScopeF">
+      <span class="lbl">Applies to</span>
+      <div class="seg" id="stScope" role="group" aria-label="Applies to">
+        <button type="button" data-c="all">All app versions</button><button type="button" data-c="older">Until the app is updated</button>
+      </div>
+      <p class="disc" id="stScopeHint"></p>
+    </div>
+    <div class="row"><button class="btn fill" type="button" id="stGo">Publish</button></div>
+    <div id="stMsg" class="note" hidden></div>
   </section>
 
   <section class="panel" id="pIssue">
@@ -361,8 +384,26 @@ const GRFLicense = (() => {
     const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, licMsg(obj.issued, list));
     return ok ? {issued: obj.issued, rules: list} : null;
   }
+  /* App status (status.json), set by the issuer: "ok", "warn" (a notice above the app) or "pause" (no calculations).
+     before = 0: for every app version; otherwise only for app versions built before that time, so an updated app
+     lifts it by itself. Signed like the lists above; the newest (by issue time) wins. */
+  const ST_MODES = ['ok', 'warn', 'pause'];
+  const stMsg = (issued, mode, before, text) => new TextEncoder().encode(`GRF-STATUS-1|${issued}|${mode}|${before}|${text}`);
+  async function signStatus({mode, before, text}, privJwk, issuedMs) {
+    if (!ST_MODES.includes(mode)) throw new Error('Unknown status');
+    const issued = Math.floor(issuedMs ?? Date.now()), b = Math.max(0, Math.floor(Number(before) || 0)), t = String(text || '').trim().slice(0, 600);
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), stMsg(issued, mode, b, t)));
+    return {v:1, issued, mode, before:b, text:t, sig: b64u.enc(sig)};
+  }
+  async function verifyStatus(obj, pubJwk) {
+    if (!obj || obj.v !== 1 || !Number.isFinite(obj.issued) || !ST_MODES.includes(obj.mode) || !Number.isInteger(obj.before) || obj.before < 0
+      || typeof obj.text !== 'string' || obj.text.length > 600 || typeof obj.sig !== 'string') return null;
+    let sig; try { sig = b64u.dec(obj.sig); } catch (e) { return null; }
+    const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, stMsg(obj.issued, obj.mode, obj.before, obj.text));
+    return ok ? {issued: obj.issued, mode: obj.mode, before: obj.before, text: obj.text} : null;
+  }
   const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
-  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -378,6 +419,7 @@ let kf = null, logKey = null, tok = store.get('grf-gh-token') || '', log = null,
 let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = false, nCustom = false;
 let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
 let licSha = null, licPublished = null, editing = null;
+let stSha = null, stPublished = null, stPick = 'ok', stScope = 'all', appInfo = null;
 
 /* ---- where the app lives: owner.github.io/repo ---- */
 const GH = (() => {
@@ -437,6 +479,75 @@ async function loadLicenses() {
   licSha = f ? f.sha : null;
   licPublished = f ? await GRFLicense.verifyLicenses(JSON.parse(new TextDecoder().decode(f.bytes)), PUB) : null;
 }
+/* ---- app status: status.json, signed; phones show a notice or pause the calculations at their next sync ---- */
+async function loadStatus() {
+  const f = await getFile('status.json');
+  stSha = f ? f.sha : null;
+  stPublished = f ? await GRFLicense.verifyStatus(JSON.parse(new TextDecoder().decode(f.bytes)), PUB) : null;
+}
+async function loadAppInfo() {
+  try { const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'}); appInfo = r.ok ? await r.json() : null; } catch (e) { appInfo = null; }
+}
+async function publishStatus(mode, scope, text) {
+  const obj = await GRFLicense.signStatus({mode, before: mode !== 'ok' && scope === 'older' ? Date.now() : 0, text: mode === 'ok' ? '' : text}, kf.key);
+  if (!(await GRFLicense.verifyStatus(JSON.parse(JSON.stringify(obj)), PUB))) throw new Error('The status did not pass its own check.');
+  for (let i = 0; i < 2; i++) {
+    try { stSha = await putFile('status.json', new TextEncoder().encode(JSON.stringify(obj)), stSha, `App status: ${mode}`); stPublished = {issued: obj.issued, mode, before: obj.before, text: obj.text}; return; }
+    catch (e) { if (e.message !== 'conflict' || i) throw e; await loadStatus(); }
+  }
+}
+const ST_TEXT = {
+  warn: 'The GRF flowcharts have been revised. Check every result against the current Performance Manual until this app is updated.',
+  pause: 'The GRF flowcharts have been revised and this version of the app does not have them yet. Use the Performance Manual and the approved performance software.'
+};
+const stWhen = t => new Date(t).toLocaleString('en-GB', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+function renderStatus() {
+  const p = stPublished, mode = p ? p.mode : 'ok', el = $('stNow');
+  const appLine = appInfo && appInfo.v ? `The app on GitHub now is v${appInfo.v}${appInfo.built ? `, published ${stWhen(appInfo.built)}` : ''}.` : '';
+  if (mode === 'ok') { el.className = 'note ok'; el.textContent = 'Now: Normal. The calculations are open on all phones.' + (p ? ` Set ${stWhen(p.issued)}.` : ''); }
+  else {
+    const hit = !p.before || !appInfo || !appInfo.built || appInfo.built < p.before;
+    el.className = 'note ' + (mode === 'pause' ? 'bad' : 'warn');
+    el.textContent = `Now: ${mode === 'pause' ? 'Calculations paused' : 'Notice shown'} since ${stWhen(p.issued)}, `
+      + (p.before ? `for app versions published before then. ${appLine} ${hit ? 'It is affected.' : 'It was published after, so phones with it are not affected.'}` : 'for all app versions.')
+      + (p.text ? ` Message: “${p.text}”` : '');
+  }
+  document.querySelectorAll('#stSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === stPick)));
+  document.querySelectorAll('#stScope button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === stScope)));
+  $('stHint').textContent = stPick === 'ok' ? 'The app works as usual: no notice, calculations open.'
+    : stPick === 'warn' ? 'A notice with your message stands above the inputs. The calculations can still be used.'
+    : 'The inputs and the results are hidden on every phone, and your message is shown instead.';
+  $('stTextF').hidden = $('stScopeF').hidden = stPick === 'ok';
+  $('stScopeHint').textContent = stScope === 'all' ? 'Holds until you set the status again here.'
+    : 'Holds for the app versions published until now, and lifts by itself on each phone that installs the next version of the app (the one with the new flowcharts). Any new version lifts it, so choose this only when the next one is the update.' + (appLine ? ' ' + appLine : '');
+  $('stGo').textContent = stPick === 'ok' ? 'Publish: back to normal' : stPick === 'warn' ? 'Publish the notice' : 'Pause calculations';
+  $('stGo').classList.toggle('danger', stPick === 'pause');
+}
+function pickStatus(m) {
+  const t = $('stText').value.trim();
+  if (!t || Object.values(ST_TEXT).includes(t)) $('stText').value = ST_TEXT[m] || '';
+  stPick = m; renderStatus();
+}
+document.querySelectorAll('#stSeg button').forEach(b => b.onclick = () => pickStatus(b.dataset.s));
+document.querySelectorAll('#stScope button').forEach(b => b.onclick = () => { stScope = b.dataset.c; renderStatus(); });
+$('stGo').onclick = async () => {
+  const b = $('stGo'), el = $('stMsg');
+  if (stPick === 'pause' && !b.dataset.sure) {
+    b.dataset.sure = '1'; b.textContent = 'Tap again to pause on all phones';
+    setTimeout(() => { delete b.dataset.sure; renderStatus(); }, 5000); return;
+  }
+  delete b.dataset.sure;
+  const text = $('stText').value.trim();
+  if (stPick !== 'ok' && !text) { el.hidden = false; el.className = 'note bad'; el.textContent = 'Write the message the pilots will see.'; return; }
+  b.disabled = true; el.hidden = false; el.className = 'note'; el.textContent = 'Signing and publishing…';
+  try {
+    await publishStatus(stPick, stScope, text);
+    el.className = 'note ok';
+    el.textContent = 'Published. In about a minute, phones pick it up when the app is opened online, or within 10 minutes if it is open. A phone that stays offline gets it at its next connection; the app needs one at least once a week.';
+  } catch (e) { el.className = 'note bad'; el.textContent = 'Not published: ' + (e.message || 'GitHub could not be reached.') + ' Tap again.'; }
+  b.disabled = false; renderStatus();
+};
+
 /* what the key itself says, before any edit */
 const origOf = v => { const k = GRFLicense.decode(v.key); return k && !k.old ? {expires: k.expiresDate, devices: k.device ? null : k.maxDevices} : {expires: v.expires, devices: null}; };
 function rulesFromLog() {
@@ -552,13 +663,16 @@ function renderSetup() {
   if (ready) $('setOk').replaceChildren(`Ready: signing key and GitHub connected (${GH.owner}/${GH.repo}). `,
     Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Remove from this device', onclick: () => { store.del('grf-signing-key-v2'); store.del('grf-gh-token'); kf = null; tok = ''; log = null; acc = null; acts = null; renderSetup(); renderLog(); }}));
   $('iGo').disabled = !ready;
+  $('pStatus').hidden = !ready; if (ready) renderStatus();
   renderAct();
 }
 async function connect() {
   setMsg('');
   if (!kf || !tok) { renderSetup(); return; }
   try {
-    await loadLog(); await loadRevoked(); await loadLicenses();
+    await loadLog(); await loadRevoked(); await loadLicenses(); await loadStatus(); await loadAppInfo();
+    stPick = stPublished ? stPublished.mode : 'ok'; stScope = stPublished && stPublished.before ? 'older' : 'all';
+    $('stText').value = stPublished && stPublished.text ? stPublished.text : (ST_TEXT[stPick] || '');
     if (!logSha) await saveLog('Create key list');   /* also proves the token may write */
     await loadAccess(); await loadActs();
   }
@@ -824,7 +938,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = '05d8024811';
+const ADMIN_VER = '86d559da7a';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

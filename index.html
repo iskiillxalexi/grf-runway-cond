@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1791651177265;</script>
+<script>window.GRF_BUILD=1791651692009;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -324,7 +324,8 @@ html.paused .wrap, html.paused .bar, html.paused .top .seg.modes { display:none 
 .stbox h2 { color:inherit; font-size:17px; letter-spacing:.06em; }
 .stbox p { margin:6px 0 0; color:var(--ink); line-height:1.45; overflow-wrap:anywhere; white-space:pre-line; }
 .stbox p.fine { font-size:13.5px; color:inherit; }
-.stbox .btn { margin-top:12px; }
+.stbox .stacts { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+.stbox .stacts .btn { min-width:120px; }
 @media (min-width:860px) { .stbox { width:calc(100% - 48px); margin-top:20px; } }
 .lock .brandrow .themesw { margin-left:auto; }
 .status { align-items:center; }
@@ -433,8 +434,8 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
   <svg class="ic p" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>
   <svg class="ic w" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4M12 17.5v.5"/></svg>
   <div><h2 id="stTitle"></h2><p id="stText"></p><p class="fine" id="stWhen"></p>
-  <button class="btn" type="button" id="stCheck" data-check-version>Check for an update</button>
-  <button class="btn fill" type="button" id="stAck" hidden>Understood</button></div>
+  <div class="stacts"><button class="btn" type="button" id="stCheck" data-check-version>Check for an update</button>
+  <button class="btn fill" type="button" id="stAck" hidden>Understood</button><button class="btn fill" type="button" id="stClose" hidden>Close</button><button class="btn" type="button" id="stClear" hidden>Clear</button></div></div>
 </section>
 
 <script>
@@ -620,7 +621,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_KEY = 'grf-license', K_DEV = 'grf-device', K_SEEN = 'grf-last-seen';
   const K_SYNC = 'grf-last-sync', K_REV = 'grf-revoked', K_REVI = 'grf-revoked-issued', K_ACT = 'grf-activation';
   const K_LIC = 'grf-licenses', K_LICI = 'grf-licenses-issued', K_OKID = 'grf-unlocked-id';
-  const K_ST = 'grf-status', K_STACK = 'grf-status-ack';   /* a notice the pilot has acknowledged (its issue time) */   /* the issuer's app status: notice or paused calculations (status.json) */
+  const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
+  let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
   const K_TERMS = 'grf-terms', TERMS_V = '1';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
@@ -696,11 +698,14 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     document.documentElement.classList.toggle('paused', on === 'pause');
     const box = $('stBox'), top = document.querySelector('#app .top'), chip = $('stChip');
     if (!box) return;
-    /* a notice can be acknowledged on this device: it then folds into a chip in the header until a new one is published.
-       A pause cannot be dismissed. */
-    const acked = on === 'warn' && store.get(K_STACK) === String(st.issued);
-    if (chip) chip.hidden = !acked;
-    if (!on || acked) { box.hidden = true; return; }
+    /* a notice can be acknowledged on this device: it folds into a symbol in the header, which opens it again and can be
+       cleared too. Both hold until a new notice is published. A pause cannot be dismissed. */
+    const iss = on === 'warn' ? String(st.issued) : '';
+    const cleared = on === 'warn' && store.get(K_STCLR) === iss;
+    const acked = on === 'warn' && !cleared && store.get(K_STACK) === iss;
+    if (!acked) stReview = false;
+    if (chip) chip.hidden = !(acked && !stReview);
+    if (!on || cleared || (acked && !stReview)) { box.hidden = true; return; }
     if (top && box.previousElementSibling !== top) top.after(box);
     box.hidden = false; box.className = 'stbox ' + on;
     $('stTitle').textContent = on === 'pause' ? 'Calculations paused' : 'Notice from the issuer';
@@ -709,7 +714,9 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       ? (st.before ? 'Calculations open again when an updated version of the app is installed.' : 'Calculations open again when the issuer lifts the pause.')
       : 'The calculations can be used.');
     $('stCheck').hidden = on !== 'pause';
-    $('stAck').hidden = on !== 'warn';
+    $('stAck').hidden = on !== 'warn' || stReview;
+    $('stClose').hidden = $('stClear').hidden = !(on === 'warn' && stReview);
+    if (stReview) $('stWhen').textContent += ' Clear removes the symbol from the header until a new notice is published.';
     if (!$('stCheck').disabled) $('stCheck').textContent = st.before ? 'Check for an update' : 'Check again';
   }
   function daysSinceSync() { const t = Number(store.get(K_SYNC)) || 0; return t ? (trustedNow() - t) / DAY : null; }
@@ -994,8 +1001,10 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (ok) window.GRFLock.recheck();
     });
     $('ldChange').addEventListener('click', () => { closeLicense(); $('licKey').value = ''; lock('', true); });
-    $('stAck').addEventListener('click', () => { const st = stStored(); if (st) store.set(K_STACK, String(st.issued)); applyStatus(); });
-    document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#stChip')) { store.del(K_STACK); applyStatus(); $('stBox').scrollIntoView({block:'nearest'}); } });
+    $('stAck').addEventListener('click', () => { const st = stStored(); if (st) store.set(K_STACK, String(st.issued)); stReview = false; applyStatus(); });
+    $('stClose').addEventListener('click', () => { stReview = false; applyStatus(); });
+    $('stClear').addEventListener('click', () => { const st = stStored(); if (st) store.set(K_STCLR, String(st.issued)); stReview = false; applyStatus(); });
+    document.addEventListener('click', e => { if (e.target.closest && e.target.closest('#stChip')) { stReview = true; applyStatus(); $('stBox').scrollIntoView({block:'nearest'}); } });
     $('devCopy').addEventListener('click', () => {
       navigator.clipboard && navigator.clipboard.writeText(devCode).then(() => { $('devCopy').textContent = 'Copied'; }, () => {});
     });
@@ -1016,7 +1025,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '56950bb05c', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '76dbfa3fed', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

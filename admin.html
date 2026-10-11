@@ -473,7 +473,7 @@ let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = fa
 let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
 let licSha = null, licPublished = null, editing = null;
 let stSha = null, stPublished = null, stPick = 'ok', stScope = 'all', appInfo = null;
-let fbPriv = null, fbItems = null, fbErr = '', fbF = 'open', repoInfo = null;
+let fbPriv = null, fbKeyState = '', fbItems = null, fbErr = '', fbF = 'open', repoInfo = null;
 
 /* ---- where the app lives: owner.github.io/repo ---- */
 const GH = (() => {
@@ -482,7 +482,7 @@ const GH = (() => {
   return {owner: m ? m[1] : (window.GRF_OWNER || ''), repo: m ? repo : (window.GRF_REPO || ''), api: window.GRF_API || 'https://api.github.com'};
 })();
 async function gh(method, path, body) {
-  const res = await fetch(`${GH.api}/repos/${GH.owner}/${GH.repo}/contents/${path}`, {method,
+  const res = await fetch(`${GH.api}/repos/${GH.owner}/${GH.repo}/${path.startsWith('git/') ? '' : 'contents/'}${path}`, {method,
     headers: {'Authorization': 'Bearer ' + tok, 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(body ? {'Content-Type': 'application/json'} : {})},
     body: body ? JSON.stringify(body) : undefined, cache: 'no-store'});
   if (res.status === 404 && method === 'GET') return null;
@@ -495,7 +495,23 @@ async function gh(method, path, body) {
   }
   return res.json();
 }
-async function getFile(path) { const r = await gh('GET', path + '?t=' + Date.now()); return r ? {sha: r.sha, bytes: b64.dec(r.content)} : null; }
+/* GitHub's contents API guesses a text encoding for some binary files and hands back converted bytes
+   (fb-key.bin, 204 bytes, came back as 300). The bytes are checked against the file's git checksum and,
+   when they differ, read again from the git blob, which is always exact. */
+async function gitSha(u8) {
+  const h = new TextEncoder().encode(`blob ${u8.length}\0`), all = new Uint8Array(h.length + u8.length); all.set(h); all.set(u8, h.length);
+  return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1', all)), b => b.toString(16).padStart(2, '0')).join('');
+}
+async function getFile(path) {
+  const r = await gh('GET', path + '?t=' + Date.now()); if (!r) return null;
+  let bytes = b64.dec(r.content || '');
+  if (await gitSha(bytes) !== r.sha) {
+    const b = await gh('GET', 'git/blobs/' + r.sha);
+    if (!b || !b.content) throw new Error(`${path} could not be read from GitHub.`);
+    bytes = b64.dec(b.content);
+  }
+  return {sha: r.sha, bytes};
+}
 async function putFile(path, bytes, sha, message) { const r = await gh('PUT', path, {message, content: b64.enc(bytes), ...(sha ? {sha} : {})}); return r.content.sha; }
 
 /* ---- the key list, kept in the repository encrypted with a key derived from the signing key ---- */
@@ -548,18 +564,19 @@ async function loadRepoInfo() {
   catch (e) { repoInfo = null; }
 }
 async function loadFbKey() {
-  fbPriv = null;
+  fbPriv = null; fbKeyState = 'missing';
   const f = await getFile('fb-key.bin'); if (!f) return;
   try {
     const k = await crypto.subtle.importKey('raw', await crypto.subtle.digest('SHA-256', new TextEncoder().encode('GRF-FB-1|' + kf.key.d)), 'AES-GCM', false, ['decrypt']);
     fbPriv = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM', iv: f.bytes.slice(0, 12)}, k, f.bytes.slice(12))));
-  } catch (e) { fbPriv = null; }
+    fbKeyState = 'ok';
+  } catch (e) { fbPriv = null; fbKeyState = 'bad'; }
 }
 async function loadFeedback() {
   fbItems = null; fbErr = '';
   if (repoInfo && repoInfo.has_issues === false) { fbErr = 'issues'; return; }
   if (!acc) { fbErr = 'acc'; return; }
-  if (!fbPriv) { fbErr = 'key'; return; }
+  if (!fbPriv) { fbErr = fbKeyState === 'bad' ? 'keybad' : 'key'; return; }
   try {
     const out = [];
     for (let page = 1; page <= 10; page++) {
@@ -593,7 +610,8 @@ function renderFb() {
   if (fbErr) {
     el.replaceChildren(note(fbErr === 'issues' ? 'Issues are turned off for the repository, so the app cannot send feedback (and device limits cannot work). On GitHub: the repository → Settings → General → Features → tick Issues, then tap Reload.'
       : fbErr === 'acc' ? 'Feedback is sent with the device-limit token. Save that token under Device limits first.'
-      : fbErr === 'key' ? 'The feedback key is not in the repository yet: it comes with the app update that added feedback.' : fbErr, 'bad'));
+      : fbErr === 'key' ? 'The feedback key (fb-key.bin) is not in the repository yet: it comes with the app update that added feedback.'
+      : fbErr === 'keybad' ? 'The feedback key (fb-key.bin) is in the repository but could not be opened with this signing key. Tap Reload. If it stays, the file is damaged and a new app build writes it again.' : fbErr, 'bad'));
     return;
   }
   if (!fbItems) { el.replaceChildren(Object.assign(document.createElement('div'), {className: 'empty', textContent: 'Loading…'})); return; }
@@ -625,7 +643,11 @@ function renderFb() {
   }));
 }
 document.querySelectorAll('#fbSeg button').forEach(b => b.onclick = () => { fbF = b.dataset.f; renderFb(); });
-$('fbReload').onclick = async () => { fbItems = null; renderFb(); await loadRepoInfo(); await loadFbKey(); await loadFeedback(); renderFb(); };
+$('fbReload').onclick = async () => {
+  fbItems = null; fbErr = ''; renderFb();
+  try { await loadRepoInfo(); await loadFbKey(); await loadFeedback(); } catch (e) { fbErr = e.message || 'Feedback could not be read.'; }
+  renderFb();
+};
 
 /* ---- app status: status.json, signed; phones show a notice or pause the calculations at their next sync ---- */
 async function loadStatus() {
@@ -1092,7 +1114,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = '1eef677401';
+const ADMIN_VER = 'ab9d29bd61';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1791681211447;</script>
+<script>window.GRF_BUILD=1791687596838;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -708,6 +708,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     sync: 'The app needs an internet connection once a week to stay unlocked. Connect, then tap Sync now.',
     act_online: 'This license is activated online the first time it is used on a device. Connect to the internet, then tap Activate.',
     act_setup: 'This license is limited to a number of devices, but device activation is not set up yet. Contact the person who issued it.',
+    act_off: 'This license is activated online on each device, but activation is switched off on the issuer\'s side right now. Your key is fine and no device limit has been reached: contact the person who issued it, then tap Activate again.',
     act_removed: 'This device has been removed from the license. Paste the key and tap Activate to use it here again, if a place is free.'
   };
   const actFull = n => `This license is already in use on ${n === 1 ? 'one device' : n + ' devices'}. Ask the person who issued it to free a place.`;
@@ -814,7 +815,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const out = [];
     for (let page = 1; page <= 10; page++) {
       let res; try { res = await ghApi(acc, `/issues?state=open&per_page=100&page=${page}`); } catch (e) { throw 'act_online'; }
-      if (res.status === 401 || res.status === 403 || res.status === 404 || res.status === 410) throw 'act_setup';
+      if (res.status === 410) throw 'act_off';
+      if (res.status === 401 || res.status === 403 || res.status === 404) throw 'act_setup';
       if (!res.ok) throw 'act_online';
       const list = await res.json();
       for (const it of list) { const a = !it.pull_request && GRFLicense.actParse(it.title); if (a && a.id === id) out.push({dev: a.dev, n: it.number}); }
@@ -847,7 +849,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       try { res = await ghApi(acc, '/issues', 'POST', {title: GRFLicense.actTitle(id, devCode),
         body: `Made by the GRF Runway Cond app when the license was activated on a device. Terms of use version ${TERMS_V} accepted ${store.get(K_TERMS + '-at') || ''}.\n\nClose this issue to free the place: that device is logged out at its next check.`}); }
       catch (e) { return WHY.act_online; }
-      if (!res.ok) return res.status === 401 || res.status === 403 || res.status === 404 || res.status === 410 ? WHY.act_setup : WHY.act_online;
+      if (!res.ok) return res.status === 410 ? WHY.act_off : res.status === 401 || res.status === 403 || res.status === 404 ? WHY.act_setup : WHY.act_online;
       const mine = (await res.json()).number;
       /* two devices at the same moment: the first ones keep the places, a place taken too late is given back.
          GitHub's list can lag a moment behind a new issue, so wait until this device's issue shows in it. */
@@ -1137,7 +1139,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'e04c10a64a', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '67092d9142', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

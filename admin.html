@@ -130,6 +130,7 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 <header class="top"><div class="top-in"><h1><span>GRF</span> License keys</h1><p>Issue and withdraw keys for the Runway Cond app</p><button class="themesw" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="knob"></span><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
   <div class="verrow"><span id="admVer"></span><button class="vbtn" type="button" id="admUpd">Check for updates</button></div></div></header>
 <main class="wrap">
+  <div id="issuesBanner" class="note bad" hidden></div>
   <section class="panel">
     <h2>Set up this device</h2>
     <div id="setOk" class="note ok" hidden></div>
@@ -534,6 +535,14 @@ async function loadLicenses() {
 }
 /* ---- feedback from the app: issues "GRF feedback <license id> <device>", the body encrypted to the feedback key.
    The private feedback key is in the repository as fb-key.bin, encrypted with a key derived from the signing key. ---- */
+function issuesOff() { return !!(typeof repoInfo !== "undefined" && repoInfo && repoInfo.has_issues === false); }
+function renderIssuesBanner() {
+  const el = $('issuesBanner'); el.hidden = !issuesOff(); if (el.hidden) return;
+  const a = Object.assign(document.createElement('a'), {href: `https://github.com/${GH.owner}/${GH.repo}/settings`, target: '_blank', rel: 'noopener', textContent: 'Open the repository settings'});
+  a.style.color = 'inherit'; a.style.fontWeight = '600';
+  el.replaceChildren('Issues are turned off in the GitHub repository. Keys limited to a number of devices cannot be activated (the app says activation is switched off), and feedback cannot arrive. ',
+    a, ' → General → Features → tick Issues. Then tap Reload under Issued keys. Keys already sent start working by themselves.');
+}
 async function loadRepoInfo() {
   try { const r = await fetch(`${GH.api}/repos/${GH.owner}/${GH.repo}`, {headers: {'Authorization': 'Bearer ' + tok, 'Accept': 'application/vnd.github+json'}, cache: 'no-store'}); repoInfo = r.ok ? await r.json() : null; }
   catch (e) { repoInfo = null; }
@@ -749,7 +758,8 @@ function renderAct() {
     Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Change token', onclick: () => { $('actOk').hidden = true; $('actNeed').hidden = false; $('actTok').focus(); }}));
   if (actErr) $('actOk').className = 'note warn'; else $('actOk').className = 'note ok';
   document.querySelectorAll('#nSeg button').forEach(b => { b.disabled = b.dataset.n !== '0' && !acc; });
-  if (!nUser || (!acc && nDev)) setDevices(acc ? 1 : 0);   /* default: 1 device when limits are set up */
+  if (!nUser || (!acc && nDev)) setDevices(acc && !issuesOff() ? 1 : 0);   /* default: 1 device when limits are set up and can work */
+  else setDevices(nDev || 0, nCustom);
 }
 $('actGo').onclick = async () => {
   actMsg('');
@@ -804,6 +814,7 @@ function renderSetup() {
   $('iGo').disabled = !ready;
   $('pStatus').hidden = !ready; if (ready) renderStatus();
   $('pFb').hidden = !ready; if (ready) renderFb();
+  renderIssuesBanner();
   renderAct();
 }
 async function connect() {
@@ -850,6 +861,8 @@ function setDevices(n, custom) {
   $('nCustomRow').hidden = !nCustom;
   if (nCustom && !n) { $('nHint').textContent = 'Enter how many devices the key may be activated on.'; return; }
   const bound = !!$('iDev').value.trim();
+  $('nHint').className = n && !bound && issuesOff() ? 'note bad' : 'disc';
+  if (n && !bound && issuesOff()) { $('nHint').textContent = `Issues are turned off in the GitHub repository, so a key limited to ${n === 1 ? 'one device' : n + ' devices'} cannot be activated yet: the app says activation is switched off. Turn Issues on (see the red note at the top), or choose Any number. A key made now starts working as soon as Issues are on.`; return; }
   $('nHint').textContent = bound ? 'Locked to the device code below: the number of devices does not apply.'
     : !acc ? 'Set up Device limits above to choose a number.'
     : n ? `The key is activated online the first time on each phone or iPad. When ${n === 1 ? 'that place is' : `all ${n} places are`} used, it does not open on more devices. You can free a place in the list below.`
@@ -1079,7 +1092,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = '9acb869e91';
+const ADMIN_VER = '1eef677401';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

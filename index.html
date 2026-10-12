@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1791687596838;</script>
+<script>window.GRF_BUILD=1791801566708;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -408,6 +408,7 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
       <dt>Works on</dt><dd id="ldDev">–</dd>
       <dt>Last sync</dt><dd id="ldSync">–</dd>
       <dt>App version</dt><dd id="ldVer">–</dd>
+      <dt>Issuer sees</dt><dd>When this device was last online and last showed a result</dd>
     </dl>
     <div style="display:grid;gap:6px">
       <span class="lbl">License key</span>
@@ -444,6 +445,7 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
       <p>It <b>never replaces</b> the Operations Manual, the Performance Manual, the RCAM or the approved performance software, and it is not an approved operational tool. Where they differ, the manuals apply.</p>
       <p>Results can be wrong, for example when a report is read incorrectly, a value is missing, or a condition is not covered. Check every input and every result against the report and the approved documentation before use.</p>
       <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation and the safe conduct of the flight.</p>
+      <p>When it is online, the app tells the issuer when this device last synced and last showed a result, with the app version and the device code. This is encrypted on the way. Nothing you enter is sent, except in feedback you choose to send.</p>
       <p class="fine">The app is provided "as is", without warranty of any kind. To the extent permitted by law, its author accepts no liability for any loss or damage arising from its use.</p>
     </div>
     <div class="acts"><button class="btn fill" type="button" id="tmAccept">I accept</button><button class="btn" type="button" id="tmDecline">Decline</button><button class="btn" type="button" id="tmClose">Close</button></div>
@@ -662,8 +664,13 @@ const GRFLicense = (() => {
     const m = /^GRF feedback (\d{1,10}) ([0-9A-Z]{4}-[0-9A-Z]{4})$/.exec(String(title || '').trim());
     return m ? {id: Number(m[1]) >>> 0, dev: m[2]} : null;
   }
+  /* "last seen" reports: one closed issue per device, its body (encrypted like feedback) replaced at each report.
+     The title carries nothing about the license: who it is, is only inside the encrypted body. */
+  const SEEN = 'GRF seen';
+  const seenTitle = () => SEEN;
+  const seenParse = title => String(title || '').trim() === SEEN;
   const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
-  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, seenTitle, seenParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -677,6 +684,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_LIC = 'grf-licenses', K_LICI = 'grf-licenses-issued', K_OKID = 'grf-unlocked-id';
   const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
   let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
+  const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000;   /* last-seen report to the issuer */
   const K_TERMS = 'grf-terms', TERMS_V = '1';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
@@ -916,6 +924,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const ff = $('ftFeedback');
     if (ff) ff.addEventListener('click', openFeedbackDlg);
     if (window.GRFOffline) window.GRFOffline();
+    watchCalc();
     showSync(); applyStatus();
     return true;
   }
@@ -1019,6 +1028,46 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
         : 'It could not be sent: no connection to GitHub. Your text is kept here: try again when you are online.', 'bad');
     }
   }
+  /* ---- last seen: when online, tell the issuer (encrypted, like feedback) when this device last synced and last
+     showed a result. At most every 30 minutes; the same closed issue is updated each time. ---- */
+  let pinging = false;
+  async function reportSeen() {
+    if (pinging || navigator.onLine === false) return;
+    const key = store.get(K_KEY), info = key && GRFLicense.decode(key);
+    if (!info || info.old) return;
+    let p = null; try { p = JSON.parse(store.get(K_PING) || 'null'); } catch (e) {}
+    if (p && p.id !== info.id) p = null;                       /* another key on this device: a report of its own */
+    const now = Date.now();
+    if (p && now - (p.at || 0) < PING_EVERY && now >= (p.at || 0)) return;
+    pinging = true;
+    try {
+      let acc; try { acc = await access(info.ck); } catch (e) { return; }
+      const payload = {v:1, type:'seen', at:new Date().toISOString(), id:info.id, key, name:info.name || '', dev:devCode,
+        app:window.GRF_VER || '', sync:Number(store.get(K_SYNC)) || 0, calc:Number(store.get(K_CALC)) || 0};
+      const body = 'When the GRF Runway Cond app on one device was last online. It is encrypted: only the key tool can read it.\n\n' + await GRFLicense.sealFeedback(payload, FBPUB);
+      let n = p && p.n;
+      if (n) {
+        const r = await ghApi(acc, '/issues/' + n, 'PATCH', {body});
+        if (r.status === 404) n = null;                           /* the issue was deleted: start a new one */
+        else if (!r.ok) return;
+      }
+      if (!n) {
+        const r = await ghApi(acc, '/issues', 'POST', {title: GRFLicense.seenTitle(), body});
+        if (!r.ok) return;
+        n = (await r.json()).number;
+        try { await ghApi(acc, '/issues/' + n, 'PATCH', {state: 'closed'}); } catch (e) {}   /* kept out of the open issues */
+      }
+      store.set(K_PING, JSON.stringify({id: info.id, n, at: now}));
+    } catch (e) {} finally { pinging = false; }
+  }
+  /* a result on the screen counts as use (the app keeps no report between starts, so this is always the pilot's own input) */
+  function watchCalc() {
+    const box = $('result'); if (!box || !window.MutationObserver) return;
+    new MutationObserver(() => {
+      if (!box.querySelector('.hero')) return;
+      const t = Date.now(); if (t - (Number(store.get(K_CALC)) || 0) > 60000) store.set(K_CALC, String(t));
+    }).observe(box, {childList: true});
+  }
   function closeLicense() { const d = $('licDlg'); if (!d) return; if (d.close) d.close(); else d.removeAttribute('open'); }
   async function check(key, fromForm) {
     let r;
@@ -1054,7 +1103,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     } else lock(fromForm ? WHY[r.reason] : (r.reason === 'device' ? WHY.device : r.reason === 'old' ? WHY.old : 'Enter your license key.'));
     return false;
   }
-  window.GRFLock = {recheck() { const k = store.get(K_KEY); if (k) check(k, false); else lock(''); },
+  window.GRFLock = {recheck(synced) { const k = store.get(K_KEY); if (k) check(k, false).then(ok => { if (ok && synced) reportSeen(); }); else lock(''); },
     /* called when the version check reached GitHub: fetch the withdrawn-license list too, so "Synced" is current */
     syncNow(force) { return syncAndCheck(force); },
     refreshSnow() { return refreshSnow(); }};
@@ -1066,8 +1115,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     if (running) return running;
     if (!force && Date.now() - lastOk < 3000) return Promise.resolve();
     running = (async () => {
-      if (await sync()) lastOk = Date.now();
-      const k = store.get(K_KEY); if (k) await check(k, false);
+      const synced = await sync(); if (synced) lastOk = Date.now();
+      const k = store.get(K_KEY); if (k && await check(k, false) && synced) reportSeen();
     })().finally(() => { running = null; });
     return running;
   }
@@ -1076,13 +1125,13 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       const k = $('licKey').value.trim();
       if (!k) return lock('Paste your license key first.', !$('licCancel').hidden);
       const b = $('licGo'); b.disabled = true; b.textContent = 'Checking…';
-      sync().finally(() => check(k, true).finally(() => { b.disabled = false; b.textContent = 'Activate'; }));
+      sync().then(synced => check(k, true).then(ok => { if (ok && synced) reportSeen(); })).finally(() => { b.disabled = false; b.textContent = 'Activate'; });
     });
     $('licSync').addEventListener('click', async () => {
       $('licSync').disabled = true; $('licSync').textContent = 'Syncing…';
       const ok = await sync();
       $('licSync').disabled = false; $('licSync').textContent = 'Sync now';
-      if (ok) window.GRFLock.recheck(); else lock('Could not reach the app\'s web address. ' + WHY.sync, false, true);
+      if (ok) window.GRFLock.recheck(true); else lock('Could not reach the app\'s web address. ' + WHY.sync, false, true);
     });
     $('licCancel').addEventListener('click', () => window.GRFLock.recheck());
     $('ldClose').addEventListener('click', closeLicense);
@@ -1106,7 +1155,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       const ok = await sync();
       b.disabled = false; b.textContent = ok ? 'Synced' : 'No connection';
       setTimeout(() => { b.textContent = 'Sync now'; }, 2500);
-      if (ok) window.GRFLock.recheck();
+      if (ok) window.GRFLock.recheck(true);
     });
     $('ldChange').addEventListener('click', () => { closeLicense(); $('licKey').value = ''; lock('', true); });
     $('ldFeedback').addEventListener('click', openFeedbackDlg);
@@ -1139,7 +1188,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '67092d9142', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'fcdf170561', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

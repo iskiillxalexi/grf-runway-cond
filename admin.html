@@ -103,6 +103,9 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 .devs { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:4px; font-size:13px; color:var(--muted); }
 .devs .mono { font-size:12.5px; color:var(--ink); }
 .devs .ghost { min-height:24px; font-size:13px; }
+.devs.seen { display:block; }
+.devs.seen b { color:var(--ink); font-weight:600; }
+.devs .tm, .devs .when { white-space:nowrap; }
 .fbitem { border:1px solid var(--line); border-radius:10px; padding:12px 14px; display:grid; gap:6px; }
 .fbitem.done { opacity:.72; }
 .fbitem .who { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
@@ -455,8 +458,13 @@ const GRFLicense = (() => {
     const m = /^GRF feedback (\d{1,10}) ([0-9A-Z]{4}-[0-9A-Z]{4})$/.exec(String(title || '').trim());
     return m ? {id: Number(m[1]) >>> 0, dev: m[2]} : null;
   }
+  /* "last seen" reports: one closed issue per device, its body (encrypted like feedback) replaced at each report.
+     The title carries nothing about the license: who it is, is only inside the encrypted body. */
+  const SEEN = 'GRF seen';
+  const seenTitle = () => SEEN;
+  const seenParse = title => String(title || '').trim() === SEEN;
   const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
-  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, seenTitle, seenParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -473,6 +481,7 @@ let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = fa
 let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
 let licSha = null, licPublished = null, editing = null;
 let stSha = null, stPublished = null, stPick = 'ok', stScope = 'all', appInfo = null;
+let seen = null;   /* license id → [{dev, at, d}]: when each device was last online ("GRF seen" issues) */
 let fbPriv = null, fbKeyState = '', fbItems = null, fbErr = '', fbF = 'open', repoInfo = null;
 
 /* ---- where the app lives: owner.github.io/repo ---- */
@@ -573,25 +582,60 @@ async function loadFbKey() {
   } catch (e) { fbPriv = null; fbKeyState = 'bad'; }
 }
 async function loadFeedback() {
-  fbItems = null; fbErr = '';
+  fbItems = null; fbErr = ''; seen = null;
   if (repoInfo && repoInfo.has_issues === false) { fbErr = 'issues'; return; }
   if (!acc) { fbErr = 'acc'; return; }
   if (!fbPriv) { fbErr = fbKeyState === 'bad' ? 'keybad' : 'key'; return; }
   try {
-    const out = [];
+    const out = [], sm = new Map();
     for (let page = 1; page <= 10; page++) {
       const r = await ghIssues(acc, `/issues?state=all&per_page=100&page=${page}`);
       if (!r.ok) throw new Error(r.status === 410 ? 'issues' : r.status === 401 ? 'The device-limit token is not accepted any more. Save a new one under Device limits.' : `GitHub answered ${r.status} for the feedback.`);
       const list = await r.json();
       for (const it of list) {
-        const t = !it.pull_request && GRFLicense.fbParse(it.title); if (!t) continue;
+        if (it.pull_request) continue;
+        if (GRFLicense.seenParse(it.title)) {
+          /* who it is, is only in the encrypted body; the time is GitHub's own (the last time the device updated it) */
+          let d = null; try { d = await GRFLicense.openFeedback(it.body, fbPriv); } catch (e) { d = null; }
+          const k = d && d.type === 'seen' && d.key ? GRFLicense.decode(d.key) : null;
+          if (!k || k.old || k.id !== d.id) continue;
+          if (!sm.has(d.id)) sm.set(d.id, []);
+          sm.get(d.id).push({dev: d.dev, at: Date.parse(it.updated_at), d});
+          continue;
+        }
+        const t = GRFLicense.fbParse(it.title); if (!t) continue;
         let d = null; try { d = await GRFLicense.openFeedback(it.body, fbPriv); } catch (e) { d = null; }
         out.push({n: it.number, open: it.state === 'open', at: it.created_at, t, d});
       }
       if (list.length < 100) break;
     }
+    /* one line per device: the newest report */
+    for (const [id, v] of sm) { const by = new Map(); v.forEach(x => { if (!by.has(x.dev) || by.get(x.dev).at < x.at) by.set(x.dev, x); }); sm.set(id, [...by.values()].sort((a, b) => b.at - a.at)); }
+    seen = sm;
     fbItems = out.sort((a, b) => b.n - a.n);
   } catch (e) { fbErr = e.message || 'Feedback could not be read.'; }
+}
+/* "today 14:05", "yesterday 09:12", "3 days ago", "12 Sep" */
+function agoText(t) {
+  if (!t) return '';
+  const d = new Date(t), now = new Date(), hm = d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+  const n = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+  if (n <= 0) return 'today ' + hm;
+  if (n === 1) return 'yesterday ' + hm;
+  if (n < 14) return n + ' days ago';
+  return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', ...(d.getFullYear() !== now.getFullYear() ? {year:'numeric'} : {})});
+}
+/* the "last online" line under a key's name */
+function seenLine(v) {
+  if (!seen) return null;
+  const list = seen.get(v.id) || [];
+  const el = document.createElement('div'); el.className = 'devs seen';
+  if (!list.length) { el.textContent = 'Online: no report yet'; el.title = 'Phones report when they sync online, from the app version that added this.'; return el; }
+  const top = list[0], calc = Math.max(...list.map(x => x.d.calc || 0));
+  const tm = (t, b) => Object.assign(document.createElement(b ? 'b' : 'span'), {className: 'tm', textContent: agoText(t)});
+  el.append('Online ', tm(top.at, true), list.length > 1 ? ` (${list.length} devices)` : '', ' · ', ...(calc ? ['result ', tm(calc)] : ['no result yet']));
+  el.title = list.map(x => `${x.dev}: online ${stWhen(x.at)}${x.d.calc ? ', result ' + stWhen(x.d.calc) : ''}${x.d.app ? ', app v' + x.d.app : ''}`).join('\n');
+  return el;
 }
 const KIND = {problem: 'Problem', idea: 'Idea', other: 'Other'};
 function fbCtxText(c) {
@@ -646,7 +690,7 @@ document.querySelectorAll('#fbSeg button').forEach(b => b.onclick = () => { fbF 
 $('fbReload').onclick = async () => {
   fbItems = null; fbErr = ''; renderFb();
   try { await loadRepoInfo(); await loadFbKey(); await loadFeedback(); } catch (e) { fbErr = e.message || 'Feedback could not be read.'; }
-  renderFb();
+  renderFb(); renderLog();
 };
 
 /* ---- app status: status.json, signed; phones show a notice or pause the calculations at their next sync ---- */
@@ -1062,6 +1106,8 @@ function renderLog() {
         d.append(`${used.length} of ${mx} device${mx === 1 ? '' : 's'} used${used.length ? ':' : ''}`);
         used.forEach(dev => {
           const s = document.createElement('span'); s.append(Object.assign(document.createElement('span'), {className:'mono', textContent: dev}), ' ');
+          const sx = seen && (seen.get(v.id) || []).find(x => x.dev === dev);
+          if (sx) s.append(Object.assign(document.createElement('span'), {className:'when', textContent: agoText(sx.at)}), ' ');
           s.append(Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Free',
             onclick: async e => { const b = e.target; if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Tap again to free'; b.style.color = 'var(--bad)'; setTimeout(() => { delete b.dataset.sure; b.textContent = 'Free'; b.style.color = ''; }, 4000); return; }
               b.disabled = true; b.textContent = 'Freeing…'; try { await freeDevice(v.id, dev); } catch (err) { b.textContent = 'Not freed: ' + err.message; } }}));
@@ -1070,6 +1116,7 @@ function renderLog() {
       }
       nameTd.append(d);
     }
+    if (!v.revoked) { const sl = seenLine(v); if (sl) nameTd.append(sl); }
     tr.append(nameTd, td(fmt(v.expires), 'mono'), stTd, td(v.device || (mx ? (used ? `${used.length}/${mx}` : `max ${mx}`) : 'any'), 'mono'), act);
     tb.append(tr);
     if (editing === v.id) { const er = document.createElement('tr'); er.className = 'editrow'; const c = document.createElement('td'); c.colSpan = 5; c.append(editor(v)); er.append(c); tb.append(er); }
@@ -1091,7 +1138,8 @@ $('cGo').onclick = async () => {
   const r = await GRFLicense.verify($('cKey').value, PUB, Date.now(), k.device, licPublished ? GRFLicense.ruleFor(licPublished.rules, k.id) : null);
   const used = k.maxDevices && acts ? GRFLicense.actHolders(acts.get(k.id) || [], 0) : null;
   const facts = `${k.name || 'No name'} · issued ${fmt(k.issuedDate)} · valid until ${fmt(k.expiresDate)} · ${k.deviceCode ? 'device ' + k.deviceCode : devText(k.maxDevices)}`
-    + (used ? ` (${used.length} used${used.length ? ': ' + used.join(', ') : ''})` : '');
+    + (used ? ` (${used.length} used${used.length ? ': ' + used.join(', ') : ''})` : '')
+    + (seen ? ((seen.get(k.id) || [])[0] ? ` · last online ${agoText(seen.get(k.id)[0].at)}` : ' · no online report yet') : '');
   const isRev = (log && log.some(e => e.id === k.id && e.revoked)) || (revPublished && revPublished.ids.includes(k.id));
   if (r.ok || r.reason === 'expired') checked = k;
   $('cRevoke').hidden = !checked || isRev || !log;
@@ -1114,7 +1162,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = 'ab9d29bd61';
+const ADMIN_VER = '334f0ade23';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

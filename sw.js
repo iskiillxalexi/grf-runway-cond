@@ -1,8 +1,8 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-a8c74f9d70';
+const CACHE = 'grf-de4fe1386a';
 const FILES = {
-"./": "993c0974fe7ec352",
-"app.bin": "bf653cd62daacbb4",
+"./": "274e1a0a1eda4a1f",
+"app.bin": "1a0f6f39c40e9f79",
 "fonts/Barlow-Medium.woff": "a7ab5c7e54c3c38d",
 "fonts/Barlow-Regular.woff": "bee61e0690d27f46",
 "fonts/Barlow-SemiBold.woff": "bfe69e7af9279ad8",
@@ -15,7 +15,7 @@ const FILES = {
 "icon-192.png": "2160ef544412cde2",
 "icon-512.png": "019c91474f53a9a4",
 "icon-maskable-512.png": "00ffe0a4fa864efc",
-"index.html": "993c0974fe7ec352",
+"index.html": "274e1a0a1eda4a1f",
 "manifest.webmanifest": "59ecacf939c7aa24",
 "ocr-client.js": "6adfcb06c827d565",
 "ocr/eng.traineddata": "906538558589e563",

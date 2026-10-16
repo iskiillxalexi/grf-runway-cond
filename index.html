@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1792152339054;</script>
+<script>window.GRF_BUILD=1792164311816;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -242,6 +242,16 @@ details.how li::marker { color:var(--muted); }
 .snow dd a { color:inherit; }
 .snow pre { margin:0; font-family:var(--f-mono); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--bg); border-radius:8px; padding:9px 11px; }
 .snow .row .btn { min-height:40px; }
+.snowhd { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+.snowhd b { font-family:var(--f-head); font-weight:700; font-size:14px; letter-spacing:.08em; text-transform:uppercase; }
+.aptsrc { border:1px solid var(--line); border-radius:10px; padding:10px 14px; background:var(--surface); display:grid; grid-template-columns:minmax(0, 1fr); gap:8px; font-size:13.5px; }
+.aptsrc > b { font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.aptsrc ul { margin:0; padding:0; list-style:none; display:grid; gap:6px; }
+.aptsrc li { display:grid; gap:1px; overflow-wrap:anywhere; }
+.aptsrc li a { color:inherit; }
+.aptsrc li { color:var(--muted); }
+.aptsrc .has { font-family:var(--f-mono); font-size:12.5px; color:var(--ink); }
+.aptsrc .has.none { color:var(--muted); }
 /* runway picture */
 .rv { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px 14px; display:grid; gap:8px; --rv-asph:#4A5059; --rv-mark:#F2F4F6; }
 @media (prefers-color-scheme:dark) { :root:not([data-theme="light"]) .rv { --rv-asph:#353B43; } }
@@ -1188,7 +1198,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'a8c74f9d70', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'de4fe1386a', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

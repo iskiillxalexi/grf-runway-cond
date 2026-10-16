@@ -7,25 +7,13 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: plain fetches
-        run: |
-          mkdir -p out
-          for u in "" "atis/EKCH" "atis/ESSA" "robots.txt" "stats" "api/atis/EKCH" "api/airports"; do
-            n=$(echo "x_$u" | tr '/' '_')
-            curl -sS -m 20 -A "Mozilla/5.0 (probe)" -D "out/$n.headers" -o "out/$n.body" "https://atis.guru/$u" || true
-          done
-          grep -ho 'src="[^"]*"' out/*.body | sort -u > out/scripts.txt || true
-          for s in $(sed 's/src="//;s/"$//' out/scripts.txt | grep -v '^http' | head -12); do
-            curl -sS -m 20 -o "out/js_$(echo $s | tr '/?=&' '____')" "https://atis.guru/${s#/}" || true
-          done
-          curl -sS -m 20 -I -H "Origin: https://iskiillxalexi.github.io" https://atis.guru/atis/EKCH > out/cors.headers || true
-      - name: browser
-        run: |
-          pip install -q playwright==1.47.0 && python -m playwright install --with-deps chromium >/dev/null 2>&1
-          python .github/probe.py
+      - name: PDF reader
+        run: (command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)) >/dev/null 2>&1 || pip install --quiet pypdf
+      - name: Read the bulletins
+        run: time python3 .github/scripts/snowtam.py out
       - name: publish
         run: |
           cd out && git init -q -b probe && git config user.name "github-actions[bot]" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

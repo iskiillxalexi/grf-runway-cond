@@ -5,12 +5,14 @@ Sources (public, refreshed by their publishers every 30 min or every hour):
   - LFV (Sweden) AROWeb "NOTAM Sweden" / "NOTAM Other" PDF bulletins
   - Fintraffic ANS (Finland) www.ais.fi bulletins: Finland, Sweden, Norway and the Baltic states
   - Naviair (Denmark) AIS Briefing, briefing.naviair.dk: the only public source with EKCH and EKBI (live, per airport)
+  - ATIS Guru, atis.guru: D-ATIS (arrival and departure) collected from aircraft ACARS requests, for the Nordic and
+    Baltic airports it has. Each ATIS keeps its own time (the HHMMZ in its header) and the time ATIS Guru received it.
 Every SNOWTAM keeps its own observation time (item B) and the issue time of the bulletin it came from, so the
 app can show how old it is and whether it is still within the 8-hour SNOWTAM validity.
 Usage: snowtam.py OUTDIR
 """
 import html, json, os, re, subprocess, sys, tempfile, time, urllib.parse, urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 UA = 'GRF-Runway-Cond bulletin reader (low volume, every 15 min; github.com/iskiillxalexi/grf-runway-cond)'
 MON = {m: i + 1 for i, m in enumerate('JAN FEB MAR APR MAY JUN JUL AUG SEP OCT NOV DEC'.split())}
@@ -199,6 +201,79 @@ def naviair_source():
     if errors: src['error'] = '; '.join(errors)[:300]
     return src, names, found
 
+AG_BASE = 'https://atis.guru/'
+AG_PREFIXES = ['ES', 'EF', 'EN', 'EK', 'EE', 'EV', 'EY', 'BI']
+
+def atis_time(text, received):
+    """The ATIS's own time: the HHMMZ in its header. Its date is taken from the text when the text has one (a METAR
+    group DDHHMMZ, or a runway condition report MMDDHHMM), because ATIS Guru can show an old ATIS with a recent
+    "received" time. Without a date in the text, the day it was received (or the day before) is used.
+    Returns (time, how the date was found: 'metar', 'rcr' or 'received')."""
+    m = re.search(r'(?<![0-9])([01][0-9]|2[0-3])([0-5][0-9])Z(?![A-Z0-9])', text[:120])
+    if not m or not received: return None, None
+    hh, mi = int(m.group(1)), int(m.group(2))
+    def on_day(day, month=None):          # the latest date on or before the day received with this day (and month)
+        for back in range(0, 400):
+            d = received - timedelta(days=back)
+            if d.day == day and (month is None or d.month == month): return d
+        return None
+    anchor, how = None, 'received'
+    g = re.search(r'(?<![0-9])(0[1-9]|[12][0-9]|3[01])([01][0-9]|2[0-3])([0-5][0-9])Z(?![A-Z0-9])', text)
+    if g:
+        d = on_day(int(g.group(1)))
+        if d: anchor, how = d.replace(hour=int(g.group(2)), minute=int(g.group(3)), second=0, microsecond=0), 'metar'
+    if not anchor:
+        r = re.search(r'\b[A-Z]{4}\s+(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])([01][0-9]|2[0-3])([0-5][0-9])(?![0-9])', text)
+        if r:
+            d = on_day(int(r.group(2)), int(r.group(1)))
+            if d: anchor, how = d.replace(hour=int(r.group(3)), minute=int(r.group(4)), second=0, microsecond=0), 'rcr'
+    if anchor:
+        # the header time on the anchor's day or the day next to it, whichever is closest (an RCR comes before its ATIS)
+        cands = [anchor.replace(hour=hh, minute=mi) + timedelta(days=k) for k in (-1, 0, 1)]
+        if how == 'rcr': cands = [c for c in cands if c >= anchor - timedelta(minutes=30)] or cands
+        t = min(cands, key=lambda c: abs((c - anchor).total_seconds()))
+        return min(t, received + timedelta(minutes=15)), how
+    t = received.replace(hour=hh, minute=mi, second=0, microsecond=0)
+    if (t - received).total_seconds() > 15 * 60: t -= timedelta(days=1)
+    return t, how
+
+def atisguru_source():
+    """ATIS Guru: one page per airport, rendered on the server: Arrival ATIS / Departure ATIS cards, each with the
+    time it was received (card subtitle) and the D-ATIS text. Low volume: the airport list, then one page per airport."""
+    now = datetime.now(timezone.utc)
+    src = {'id': 'atisguru', 'kind': 'atis', 'name': 'ATIS Guru D-ATIS (from aircraft requests)',
+           'host': 'atis.guru', 'url': AG_BASE, 'prefixes': AG_PREFIXES, 'ok': False, 'live': True, 'issued': iso(now)}
+    names, found, errors = {}, {}, []
+    try:
+        home = get(AG_BASE)
+    except Exception as e:
+        src['error'] = str(e)[:200]; src['aerodromes'] = []; return src, names, found
+    codes = sorted(c for c in set(re.findall(r'aria-label="([A-Z0-9]{4})"', home)) if c[:2] in AG_PREFIXES)
+    for icao in codes:
+        time.sleep(0.4)
+        try:
+            page = get(AG_BASE + 'atis/' + icao)
+        except Exception as e:
+            errors.append(f'{icao}: {str(e)[:60]}'); continue
+        nm = re.search(r'Live digital ATIS for ([^<]+)<', page)
+        names[icao] = html.unescape(nm.group(1)).strip().upper() if nm else ''
+        for m in re.finditer(r'<h5 class="card-title"[^>]*>\s*([^<]*ATIS[^<]*?)\s*</h5>(.*?)<div class="atis">(.*?)</div>', page, re.S):
+            title = m.group(1).strip()
+            kind = 'arr' if title.startswith('Arr') else 'dep' if title.startswith('Dep') else 'atis'
+            sub = re.search(r'card-subtitle[^>]*>\s*(\d{4}-\d\d-\d\d \d\d:\d\d) UTC', m.group(2))
+            received = datetime.strptime(sub.group(1), '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc) if sub else None
+            text = '\n'.join(l.strip() for l in html.unescape(m.group(3)).replace('\r', '').split('\n') if l.strip())
+            if not text: continue
+            letter = re.search(r'\bATIS\s+(?:INFO(?:RMATION)?\s+)?([A-Z])(?![A-Z])', text[:80])
+            t, dated = atis_time(text, received)
+            found.setdefault(icao, []).append({'kind': kind, 'letter': letter.group(1) if letter else None,
+                'time': iso(t), 'dated': dated, 'received': iso(received), 'text': text})
+    src['ok'] = bool(names)
+    src['aerodromes'] = sorted(names)
+    src['atis'] = sum(len(v) for v in found.values())
+    if errors: src['error'] = '; '.join(errors)[:300]
+    return src, names, found
+
 def add(airports, src, names, found):
     src['aerodromes'] = sorted(names)
     src['snowtams'] = len(found)
@@ -231,6 +306,12 @@ def main(outdir):
     src, names, found = naviair_source()
     add(airports, src, names, found)
     sources.append(src)
+    src, names, found = atisguru_source()
+    for icao, nm in names.items():
+        a = airports.setdefault(icao, {'name': nm, 'snowtams': []})
+        if not a['name']: a['name'] = nm
+        if found.get(icao): a['atis'] = found[icao]
+    sources.append(src)
     for a in airports.values():
         a['snowtams'].sort(key=lambda x: x['observed'] or '', reverse=True)
     data = {'v': 1, 'generated': iso(now), 'validity_hours': 8, 'sources': sources,
@@ -238,7 +319,7 @@ def main(outdir):
     json.dump(data, open(os.path.join(outdir, 'snowtam.json'), 'w'), separators=(',', ':'))
     n = sum(len(a['snowtams']) for a in airports.values())
     print(f"{len([s for s in sources if s['ok']])}/{len(sources)} sources, {len(airports)} aerodromes, {n} SNOWTAMs")
-    for s in sources: print(' ', s['id'], s.get('issued'), s.get('snowtams'), s.get('error', ''))
+    for s in sources: print(' ', s['id'], s.get('issued'), s.get('snowtams', s.get('atis')), s.get('error', ''))
 
 if __name__ == '__main__':
     main(sys.argv[1] if len(sys.argv) > 1 else 'out')

@@ -169,7 +169,7 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
       <button type="button" data-f="open">New</button><button type="button" data-f="closed">Done</button><button type="button" data-f="all">All</button>
     </div>
     <div id="fbList"><div class="empty">Loading…</div></div>
-    <p class="disc">Pilots send feedback from the app (Send feedback at the bottom, or in the license window). It is stored as an encrypted issue in the repository and can only be read here, with your signing key. The name is checked against your key list. Done closes the issue.</p>
+    <p class="disc">Pilots send feedback from the app (Send feedback at the bottom, or in the license window). It is stored as an encrypted issue in the repository and can only be read here, with your signing key. The name is checked against your key list. Delete empties the issue on GitHub and removes it from this list. Done closes the issue.</p>
   </section>
 
   <section class="panel" id="pStatus" hidden>
@@ -638,6 +638,21 @@ function seenLine(v) {
   return el;
 }
 const KIND = {problem: 'Problem', idea: 'Idea', other: 'Other'};
+/* GitHub only lets an admin token delete an issue, and the device-limit token must never be one. So a deleted feedback
+   issue is emptied instead: a new title and body (the text was encrypted all along), closed. It is gone from this list. */
+async function deleteFb(x) {
+  const r = await ghIssues(acc, '/issues/' + x.n, 'PATCH', {title: 'GRF feedback deleted', body: 'Deleted in the key tool.', state: 'closed'});
+  if (!r.ok && r.status !== 404) throw new Error(r.status === 410 ? 'Issues are turned off for the repository.' : `GitHub answered ${r.status}.`);
+  fbItems = fbItems.filter(y => y !== x);
+}
+/* a button that asks for a second tap before it acts */
+function sureBtn(text, sure, act) {
+  return Object.assign(document.createElement('button'), {className: 'ghost', type: 'button', textContent: text, onclick: async ev => {
+    const b = ev.target;
+    if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = sure; b.style.color = 'var(--bad)'; setTimeout(() => { if (b.dataset.sure === '1') { delete b.dataset.sure; b.textContent = text; b.style.color = ''; } }, 4000); return; }
+    b.dataset.sure = '2'; b.disabled = true; await act(b);
+  }});
+}
 function fbCtxText(c) {
   if (!c) return '';
   const th = Array.isArray(c.thirds) ? c.thirds.map((t, i) => `  ${i + 1}: ${t.type}${t.cov != null ? ' ' + t.cov + '%' : ''}${t.depth != null ? ' ' + t.depth + 'mm' : ''}${t.rep != null ? ' RWYCC ' + t.rep : ''}`).join('\n') : '';
@@ -661,7 +676,18 @@ function renderFb() {
   if (!fbItems) { el.replaceChildren(Object.assign(document.createElement('div'), {className: 'empty', textContent: 'Loading…'})); return; }
   const list = fbItems.filter(x => fbF === 'all' || (fbF === 'open') === x.open);
   if (!list.length) { el.replaceChildren(Object.assign(document.createElement('div'), {className: 'empty', textContent: fbF === 'open' ? 'No new feedback.' : 'Nothing here.'})); return; }
-  el.replaceChildren(...list.map(x => {
+  /* clearing out old feedback: everything marked as done, in one go */
+  const done = fbItems.filter(x => !x.open), bulk = [];
+  if (fbF === 'closed' && done.length > 1) {
+    const row = document.createElement('div'); row.className = 'row fbbulk';
+    row.append(sureBtn(`Delete all ${done.length} done`, `Tap again to delete ${done.length}`, async b => {
+      let k = 0;
+      try { for (const x of done) { b.textContent = `Deleting ${++k} of ${done.length}…`; await deleteFb(x); } renderFb(); }
+      catch (e) { renderFb(); const n = document.createElement('div'); n.className = 'note bad'; n.textContent = `Stopped after ${k - 1} of ${done.length}: ${e.message} Tap Reload and try again.`; el.prepend(n); }
+    }));
+    bulk.push(row);
+  }
+  el.replaceChildren(...bulk, ...list.map(x => {
     const d = x.d, e = d && log ? log.find(v => v.id === d.id) : null, ok = !!(e && e.key === d.key);
     const box = document.createElement('div'); box.className = 'fbitem' + (x.open ? '' : ' done');
     const who = document.createElement('div'); who.className = 'who';
@@ -682,6 +708,10 @@ function renderFb() {
       catch (e2) { b.disabled = false; b.textContent = 'Not changed: try again'; return; }
       renderFb();
     }}));
+    act.append(sureBtn('Delete', 'Tap again to delete', async b => {
+      b.textContent = 'Deleting…';
+      try { await deleteFb(x); renderFb(); } catch (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Not deleted: try again'; }
+    }));
     box.append(act);
     return box;
   }));
@@ -1162,7 +1192,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = '334f0ade23';
+const ADMIN_VER = 'b5eaf6c331';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1792164311816;</script>
+<script>window.GRF_BUILD=1792337478659;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -694,7 +694,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_LIC = 'grf-licenses', K_LICI = 'grf-licenses-issued', K_OKID = 'grf-unlocked-id';
   const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
   let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
-  const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000;   /* last-seen report to the issuer */
+  const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000, CALC_EVERY = 3 * 60000;   /* last-seen report to the issuer */
   const K_TERMS = 'grf-terms', TERMS_V = '1';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
@@ -1039,21 +1039,27 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     }
   }
   /* ---- last seen: when online, tell the issuer (encrypted, like feedback) when this device last synced and last
-     showed a result. At most every 30 minutes; the same closed issue is updated each time. ---- */
-  let pinging = false;
+     showed a result. At a sync at most every 30 minutes; a result not reported yet goes at once (at most every 3 minutes),
+     so the key tool shows it within a minute or two. The same closed issue is updated each time. ---- */
+  let pinging = false, pingLater = null;
   async function reportSeen() {
     if (pinging || navigator.onLine === false) return;
     const key = store.get(K_KEY), info = key && GRFLicense.decode(key);
     if (!info || info.old) return;
     let p = null; try { p = JSON.parse(store.get(K_PING) || 'null'); } catch (e) {}
     if (p && p.id !== info.id) p = null;                       /* another key on this device: a report of its own */
-    const now = Date.now();
-    if (p && now - (p.at || 0) < PING_EVERY && now >= (p.at || 0)) return;
+    const now = Date.now(), calc = Number(store.get(K_CALC)) || 0, since = p ? now - (p.at || 0) : Infinity;
+    const newCalc = calc > ((p && p.calc) || 0);
+    if (since >= 0 && since < PING_EVERY && !(newCalc && since >= CALC_EVERY)) {
+      /* a new result inside the 3 minutes: report it when they are over (while the app is open) */
+      if (newCalc && !pingLater) pingLater = setTimeout(() => { pingLater = null; if (!document.hidden) reportSeen(); }, CALC_EVERY - since + 1000);
+      return;
+    }
     pinging = true;
     try {
       let acc; try { acc = await access(info.ck); } catch (e) { return; }
       const payload = {v:1, type:'seen', at:new Date().toISOString(), id:info.id, key, name:info.name || '', dev:devCode,
-        app:window.GRF_VER || '', sync:Number(store.get(K_SYNC)) || 0, calc:Number(store.get(K_CALC)) || 0};
+        app:window.GRF_VER || '', sync:Number(store.get(K_SYNC)) || 0, calc};
       const body = 'When the GRF Runway Cond app on one device was last online. It is encrypted: only the key tool can read it.\n\n' + await GRFLicense.sealFeedback(payload, FBPUB);
       let n = p && p.n;
       if (n) {
@@ -1067,15 +1073,18 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
         n = (await r.json()).number;
         try { await ghApi(acc, '/issues/' + n, 'PATCH', {state: 'closed'}); } catch (e) {}   /* kept out of the open issues */
       }
-      store.set(K_PING, JSON.stringify({id: info.id, n, at: now}));
+      store.set(K_PING, JSON.stringify({id: info.id, n, at: now, calc}));
     } catch (e) {} finally { pinging = false; }
   }
   /* a result on the screen counts as use (the app keeps no report between starts, so this is always the pilot's own input) */
+  let calcTimer = null;
   function watchCalc() {
     const box = $('result'); if (!box || !window.MutationObserver) return;
     new MutationObserver(() => {
       if (!box.querySelector('.hero')) return;
       const t = Date.now(); if (t - (Number(store.get(K_CALC)) || 0) > 60000) store.set(K_CALC, String(t));
+      /* report about a minute after the last change of the result, so a series of edits makes one report */
+      clearTimeout(calcTimer); calcTimer = setTimeout(reportSeen, 60000);
     }).observe(box, {childList: true});
   }
   function closeLicense() { const d = $('licDlg'); if (!d) return; if (d.close) d.close(); else d.removeAttribute('open'); }
@@ -1198,7 +1207,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'de4fe1386a', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '83080a4540', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

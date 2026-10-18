@@ -482,6 +482,7 @@ let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
 let licSha = null, licPublished = null, editing = null;
 let stSha = null, stPublished = null, stPick = 'ok', stScope = 'all', appInfo = null;
 let seen = null;   /* license id → [{dev, at, d}]: when each device was last online ("GRF seen" issues) */
+let inboxAt = 0;   /* when the issues (last online, feedback) were last read */
 let fbPriv = null, fbKeyState = '', fbItems = null, fbErr = '', fbF = 'open', repoInfo = null;
 
 /* ---- where the app lives: owner.github.io/repo ---- */
@@ -611,7 +612,7 @@ async function loadFeedback() {
     }
     /* one line per device: the newest report */
     for (const [id, v] of sm) { const by = new Map(); v.forEach(x => { if (!by.has(x.dev) || by.get(x.dev).at < x.at) by.set(x.dev, x); }); sm.set(id, [...by.values()].sort((a, b) => b.at - a.at)); }
-    seen = sm;
+    seen = sm; inboxAt = Date.now();
     fbItems = out.sort((a, b) => b.n - a.n);
   } catch (e) { fbErr = e.message || 'Feedback could not be read.'; }
 }
@@ -717,6 +718,13 @@ function renderFb() {
   }));
 }
 document.querySelectorAll('#fbSeg button').forEach(b => b.onclick = () => { fbF = b.dataset.f; renderFb(); });
+/* back to the key tool after a while: read last online, results and feedback again */
+document.addEventListener('visibilitychange', async () => {
+  if (document.hidden || !acc || !log || Date.now() - inboxAt < 120000) return;
+  inboxAt = Date.now();
+  try { await loadFeedback(); } catch (e) {}
+  renderFb(); renderLog();
+});
 $('fbReload').onclick = async () => {
   fbItems = null; fbErr = ''; renderFb();
   try { await loadRepoInfo(); await loadFbKey(); await loadFeedback(); } catch (e) { fbErr = e.message || 'Feedback could not be read.'; }
@@ -1192,7 +1200,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = 'b5eaf6c331';
+const ADMIN_VER = 'cee72d898c';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

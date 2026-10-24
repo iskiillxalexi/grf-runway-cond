@@ -1,17 +1,25 @@
-# Every 15 minutes: read the public AIS bulletins (LFV, Fintraffic AIS, Naviair), ATIS Guru and the SIGMETs (NOAA AWC,
-# MET Norway); publish snowtam.json and sigmet.json on the "data" branch. The app reads it from raw.githubusercontent.com (no server, no keys).
+# Read the public AIS bulletins (LFV, Fintraffic AIS, Naviair), ATIS Guru and the SIGMETs (NOAA AWC, MET Norway);
+# publish snowtam.json and sigmet.json on the "data" branch. The app reads it from raw.githubusercontent.com (no server, no keys).
+# GitHub runs the schedule only every few hours in practice, so the apps also ask for a reading when the data is old:
+# they write a comment on the issue "GRF data refresh" (their token may only handle issues). Only comments by the
+# repository owner start a reading; each comment is deleted again.
 name: SNOWTAM bulletins
 on:
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
+  issue_comment:
+    types: [created]
 permissions:
   contents: write
-concurrency:
-  group: snowtam
-  cancel-in-progress: false
+  issues: write
 jobs:
   fetch:
+    if: github.event_name != 'issue_comment' || (github.event.issue.title == 'GRF data refresh' && github.event.comment.user.login == github.repository_owner)
+    # one reading at a time (on the job, so that comments on other issues, which skip the job, cannot cancel a waiting reading)
+    concurrency:
+      group: snowtam
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -36,3 +44,12 @@ jobs:
           git add -A
           git commit -q -m "SNOWTAM bulletins $(date -u +%Y-%m-%dT%H:%MZ)"
           git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+      - name: Tidy the request
+        if: always() && github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # every request comment on the issue goes, also those of readings GitHub merged into this one
+          for c in $(gh api "repos/${GITHUB_REPOSITORY}/issues/${{ github.event.issue.number }}/comments?per_page=100" --jq '.[].id'); do
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/$c" || true
+          done

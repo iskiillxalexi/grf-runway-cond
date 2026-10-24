@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1792833527290;</script>
+<script>window.GRF_BUILD=1792842392443;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -1088,17 +1088,35 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     store.set(K_ACT, JSON.stringify({id, dev: devCode, at: trustedNow(), checked: trustedNow()}));
     return null;
   }
-  /* ask GitHub to read the SNOWTAM bulletins now, when GitHub's own schedule is late. Uses the device-limit
-     token from act.bin; it needs "Actions: Read and write" for this (it still cannot change files). */
+  /* ask GitHub to read the bulletins and the SIGMETs now, when GitHub's own schedule is late (in practice it runs only
+     every few hours). The device-limit token may only handle issues, so the app writes a comment on the issue
+     "GRF data refresh": that starts the data job, which answers only the repository owner and deletes the comment. */
+  const K_REFISSUE = 'grf-refresh-issue', REF_TITLE = 'GRF data refresh';
+  async function refreshIssue(acc, fresh) {
+    const n = !fresh && Number(store.get(K_REFISSUE));
+    if (n) return n;
+    for (let page = 1; page <= 5; page++) {
+      const r = await ghApi(acc, `/issues?state=all&per_page=100&page=${page}&sort=created&direction=asc`);
+      if (!r.ok) throw r.status;
+      const list = await r.json(), it = list.find(i => !i.pull_request && i.title === REF_TITLE);
+      if (it) { store.set(K_REFISSUE, String(it.number)); return it.number; }
+      if (list.length < 100) break;
+    }
+    const r = await ghApi(acc, '/issues', 'POST', {title: REF_TITLE, body: 'Apps write a short comment here to ask for a new reading of the SNOWTAM bulletins, the ATIS and the SIGMETs when GitHub\'s own schedule is late. The data job only answers comments from the repository owner and deletes each comment again. Leave this issue open and as it is.'});
+    if (r.status !== 201) throw r.status;
+    const j = await r.json(); store.set(K_REFISSUE, String(j.number)); return j.number;
+  }
   async function refreshSnow() {
     const k = store.get(K_KEY), info = k && GRFLicense.decode(k);
     if (!info || info.old) return {ok: false, why: 'nokey'};
     let acc;
     try { acc = await access(info.ck); } catch (e) { return {ok: false, why: 'setup'}; }
+    const ask = n => ghApi(acc, `/issues/${n}/comments`, 'POST', {body: `New reading, please (app v${window.GRF_VER || '?'}, ${new Date().toISOString().slice(0, 16)}Z)`});
     try {
-      const r = await ghApi(acc, '/actions/workflows/snowtam.yml/dispatches', 'POST', {ref: 'main'});
-      return r.status === 204 ? {ok: true} : {ok: false, why: r.status === 403 || r.status === 404 ? 'permission' : 'net', status: r.status};
-    } catch (e) { return {ok: false, why: 'net'}; }
+      let r = await ask(await refreshIssue(acc));
+      if (r.status === 404 || r.status === 410 || r.status === 422) r = await ask(await refreshIssue(acc, true));   /* the issue is gone: find or make it again */
+      return r.status === 201 ? {ok: true} : {ok: false, why: r.status === 403 || r.status === 401 ? 'permission' : 'net', status: r.status};
+    } catch (e) { return {ok: false, why: e === 403 || e === 401 ? 'permission' : 'net', status: typeof e === 'number' ? e : 0}; }
   }
   let actRun = null;
   function activate(r) { if (!actRun) actRun = activateOnce(r).finally(() => { actRun = null; }); return actRun; }
@@ -1417,7 +1435,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'b7a5270b4e', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '848b400cec', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

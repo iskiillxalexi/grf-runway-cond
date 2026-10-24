@@ -5,7 +5,7 @@
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>GRF License Keys</title>
+<title>GRF Keys</title>
 <link rel="icon" href="icon-192.png">
 <style>
 @font-face{font-family:'Barlow';font-weight:400;src:url(fonts/Barlow-Regular.woff) format('woff')}
@@ -15,11 +15,14 @@
 @font-face{font-family:'IBM Plex Mono';font-weight:500;src:url(fonts/IBMPlexMono-Medium.woff) format('woff')}
 </style>
 <style>
-/* Layout: one working column, same look as the app: white header, orange actions, mono for keys and codes */
+/* Structure (after NN/g, Apple HIG, Stripe): an overview first, then one section at a time.
+   Sections in a tab bar at the bottom on a phone and a sidebar on a wide screen. A key opens its details beside the list
+   (wide) or as its own screen (phone). Creating a key is a sheet. Actions that cannot be undone sit apart, in red, and ask
+   first, naming what happens. One freshness line in the header reads everything again. */
 :root {
   --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#E9ECF0; --ink:#1E2329; --muted:#626B77; --line:#DADEE4;
   --brand:#E99435; --brand-ink:#2A1703; --brand-soft:#FCEBD6; --focus:#1E2329;
-  --ok:#1E7A42; --okbg:#E3F3E8; --warn:#7A4E00; --warnbg:#FFF1CF; --bad:#C62828; --badbg:#FBE4E4;
+  --ok:#1E7A42; --okbg:#E3F3E8; --warn:#7A4E00; --warnbg:#FFF1CF; --bad:#C62828; --badbg:#FBE4E4; --red:#B3261E;
   --f-ui:'Barlow',-apple-system,'Helvetica Neue',Arial,sans-serif;
   --f-head:'Barlow Condensed','Arial Narrow',-apple-system,sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
@@ -31,23 +34,68 @@
   --bg:#111418; --surface:#1A1E23; --surface2:#262B32; --ink:#ECEFF3; --muted:#A0A8B3; --line:#2E343C; --brand-soft:#3A2A14; --focus:#F4B466;
   --ok:#7FD69C; --okbg:#173022; --warn:#FFD27A; --warnbg:#3A2C0C; --bad:#FF8A8A; --badbg:#3B1A1E; color-scheme:dark; }
 * { box-sizing:border-box; }
+html { -webkit-text-size-adjust:100%; }
 body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:16px; line-height:1.4; }
-h1,h2 { font-family:var(--f-head); font-weight:700; margin:0; letter-spacing:.02em; text-wrap:balance; }
+h1,h2,h3 { font-family:var(--f-head); font-weight:700; margin:0; letter-spacing:.02em; text-wrap:balance; }
 h2 { font-size:15px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); }
-button, input, textarea { font:inherit; color:inherit; }
+h3 { font-size:24px; line-height:1.1; }
+button, input, textarea, select { font:inherit; color:inherit; }
 :focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
-.top { background:var(--surface); border-bottom:1px solid var(--line); padding:16px; }
-.top-in, .wrap { max-width:760px; margin-inline:auto; }
-.top-in { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
-.top h1 { font-size:24px; text-transform:uppercase; }
+[hidden] { display:none !important; }
+.ic { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+
+/* ---- header: name, how fresh the data is (tap = read again), the one primary action ---- */
+.top { position:sticky; top:0; z-index:30; background:var(--surface); border-bottom:1px solid var(--line); padding:calc(8px + env(safe-area-inset-top, 0px)) 16px 8px; }
+.top-in { max-width:1240px; margin:0 auto; display:flex; align-items:center; gap:10px; min-height:44px; }
+.top h1 { font-size:22px; text-transform:uppercase; white-space:nowrap; }
 .top h1 span { color:var(--brand); }
-.top p { margin:0; color:var(--muted); font-size:14px; }
-.wrap { padding:16px; display:grid; gap:14px; }
-.panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:14px; min-width:0; }
+.fresh { margin-left:auto; display:inline-flex; align-items:center; gap:7px; min-height:40px; padding:0 12px; border:1px solid var(--line); border-radius:20px; background:transparent; color:var(--muted); font-size:13.5px; cursor:pointer; white-space:nowrap; }
+.fresh .dot { width:8px; height:8px; border-radius:50%; background:var(--ok); flex:none; }
+.fresh[data-s="busy"] .dot { background:var(--brand); }
+.fresh[data-s="bad"] { color:var(--bad); border-color:currentColor; } .fresh[data-s="bad"] .dot { background:var(--bad); }
+.fresh .ic { width:16px; height:16px; }
+.view { display:grid; gap:14px; align-content:start; min-width:0; }
+.fresh[data-s="busy"] .ic { animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .fresh[data-s="busy"] .ic { animation:none; } }
+.newkey { display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:0 14px; }
+.newkey .ic { width:18px; height:18px; stroke-width:2.4; }
+@media (max-width:420px) { .fresh .fl { display:none; } .top h1 { font-size:20px; } }
+html:not(.ready) .fresh, html:not(.ready) .newkey, html:not(.ready) .tabs { display:none !important; }
+
+/* ---- sections: tab bar at the bottom (phone), sidebar (wide) ---- */
+.tabs { position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid; grid-template-columns:repeat(5, 1fr); background:var(--surface); border-top:1px solid var(--line); padding:4px 4px calc(4px + env(safe-area-inset-bottom, 0px)); }
+.tabs a { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:50px; color:var(--muted); text-decoration:none; font-size:11.5px; font-weight:600; border-radius:10px; -webkit-tap-highlight-color:transparent; }
+.tabs a .ic { width:24px; height:24px; }
+.tabs a[aria-current="page"] { color:var(--ink); }
+.tabs a[aria-current="page"] .ic { color:var(--brand); }
+.badge { position:absolute; top:2px; left:calc(50% + 5px); min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--red); color:#fff; font-family:var(--f-mono); font-size:11px; line-height:18px; text-align:center; }
+.badge.dot { min-width:0; width:10px; height:10px; padding:0; top:6px; left:calc(50% + 8px); border:2px solid var(--surface); box-sizing:content-box; }
+.badge.dot.warn { background:#D99A00; }
+html.ready body { padding-bottom:calc(76px + env(safe-area-inset-bottom, 0px)); }
+.layout { max-width:1240px; margin:0 auto; }
+.wrap { padding:16px; display:grid; gap:14px; max-width:820px; margin:0 auto; min-width:0; }
+@media (min-width:860px) {
+  .layout { display:grid; grid-template-columns:200px minmax(0, 1fr); gap:20px; padding:0 16px; }
+  html:not(.ready) .layout { grid-template-columns:minmax(0, 1fr); }
+  .tabs { position:sticky; top:61px; align-self:start; display:flex; flex-direction:column; gap:2px; background:transparent; border:0; padding:16px 0; }
+  .tabs a { flex-direction:row; justify-content:flex-start; gap:12px; min-height:44px; padding:0 12px; font-size:16px; }
+  .tabs a:hover { background:var(--surface2); }
+  .tabs a[aria-current="page"] { background:var(--surface); box-shadow:inset 3px 0 0 var(--brand), 0 0 0 1px var(--line); }
+  .badge { position:static; margin-left:auto; }
+  .badge.dot { margin-right:4px; }
+  .wrap { padding:16px 0 40px; max-width:none; margin:0; }
+  html.ready body { padding-bottom:0; }
+}
+
+/* ---- building blocks ---- */
+.card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:14px; min-width:0; }
+.head { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
 .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
 .field { display:grid; gap:5px; flex:1 1 200px; min-width:0; }
 .lbl, label { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-input[type=text], input[type=date], input[type=number], input[type=search], textarea { width:100%; min-height:46px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px 12px; }
+input[type=text], input[type=date], input[type=number], input[type=search], textarea, select { width:100%; min-height:46px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px 12px; }
+select { width:auto; padding-right:28px; }
 textarea { font-family:var(--f-mono); font-size:13px; min-height:84px; resize:vertical; }
 /* iOS gives date fields a fixed inner width and centred text: let them shrink to the column */
 input[type=date] { -webkit-appearance:none; appearance:none; display:block; min-width:0; max-width:100%; text-align:left; line-height:24px; }
@@ -55,68 +103,200 @@ input[type=date]::-webkit-date-and-time-value { text-align:left; margin:0; }
 input[type=date]::-webkit-calendar-picker-indicator { margin-left:auto; }
 .btn { min-height:44px; border:1.5px solid var(--ink); background:transparent; border-radius:9px; padding:0 16px; font-weight:600; cursor:pointer; }
 .btn.fill { background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
+.btn.sm { min-height:36px; padding:0 12px; font-size:14.5px; }
 .btn:disabled { opacity:.5; cursor:default; }
+.btn.danger, #stSeg button[data-s="pause"][aria-pressed="true"] { background:var(--red); border-color:var(--red); color:#FFFFFF; }
+.btn.dangerline { border-color:var(--bad); color:var(--bad); }
 .ghost { border:0; background:none; color:var(--muted); font-weight:600; cursor:pointer; min-height:36px; padding:0 4px; text-decoration:underline; text-underline-offset:3px; }
 .seg { display:flex; flex-wrap:wrap; background:var(--surface2); border-radius:10px; padding:3px; gap:3px; }
 .seg button { flex:1 1 auto; min-height:42px; border:0; background:transparent; border-radius:8px; font-weight:600; cursor:pointer; padding:0 12px; }
 .seg button[aria-pressed="true"] { background:var(--brand); color:var(--brand-ink); }
-.disc { color:var(--muted); font-size:13px; margin:0; }
-.note { border-radius:9px; padding:10px 12px; font-size:14px; background:var(--surface2); }
-.note.ok { background:var(--okbg); color:var(--ok); } .note.warn { background:var(--warnbg); color:var(--warn); } .note.bad { background:var(--badbg); color:var(--bad); }
-.keyout { border:2px solid var(--brand); border-radius:12px; padding:14px; display:grid; gap:10px; background:var(--brand-soft); }
-.keytxt { font-family:var(--f-mono); font-size:14px; overflow-wrap:anywhere; user-select:all; background:var(--surface); border-radius:8px; padding:10px; }
-.facts { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:14px; }
-.facts b { font-weight:600; }
-.log { width:100%; border-collapse:collapse; font-size:14px; }
-.log th { text-align:left; font-family:var(--f-head); font-weight:600; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:6px 8px; border-bottom:1px solid var(--line); }
-.log td { padding:9px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-.log td.mono { font-family:var(--f-mono); font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.tbl { overflow-x:auto; }
-.st { font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:6px; white-space:nowrap; }
-.st.ok { background:var(--okbg); color:var(--ok); } .st.warn { background:var(--warnbg); color:var(--warn); } .st.bad { background:var(--badbg); color:var(--bad); }
-.empty { color:var(--muted); font-size:14px; text-align:center; padding:18px 8px; border:1.5px dashed var(--line); border-radius:10px; }
-[hidden] { display:none !important; }
-.small { font-size:13px; }
-@media (max-width:520px) { .log th:nth-child(4), .log td:nth-child(4) { display:none; } .log td, .log th { padding-left:4px; padding-right:4px; } .log td:last-child { text-align:right; } .log td:last-child .ghost { display:block; margin-left:auto; } }
-.mono { font-family:var(--f-mono); }
-.verrow { flex-basis:100%; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-family:var(--f-mono); font-size:12px; color:var(--muted); }
-.vbtn { min-height:28px; padding:0 11px; border:1px solid var(--line); border-radius:14px; background:transparent; color:var(--muted); font-family:var(--f-mono); font-size:12px; cursor:pointer; }
-.vbtn:hover { color:var(--ink); border-color:var(--muted); }
-.vbtn:disabled { cursor:default; opacity:.8; }
-.updbar { position:fixed; left:12px; right:12px; top:calc(10px + env(safe-area-inset-top, 0px)); z-index:50; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:520px; margin-inline:auto; padding:10px 12px 10px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); box-shadow:0 6px 24px rgba(0,0,0,.18); font-size:15px; }
 .seg button:disabled { opacity:.45; cursor:default; }
+.seg.sm button { min-height:38px; font-size:14.5px; padding:0 10px; }
+.seg.sm button .n { font-family:var(--f-mono); font-size:12px; opacity:.75; margin-left:5px; }
 #nSeg { display:grid; grid-template-columns:repeat(3, 1fr); }
 #nSeg button { padding:0 6px; white-space:nowrap; }
-@media (min-width:600px) { #nSeg { grid-template-columns:repeat(6, 1fr); } }
-.filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-.filters .seg { flex:1 1 300px; }
-.filters input[type=search] { flex:1 1 160px; min-height:40px; }
-.seg.sm button { min-height:36px; font-size:14px; padding:0 10px; }
-.editrow td { background:var(--bg); }
-.editbox { display:grid; gap:12px; padding:6px 2px 4px; }
+@media (min-width:520px) { #nSeg { grid-template-columns:repeat(6, 1fr); } }
+.disc { color:var(--muted); font-size:13.5px; margin:0; }
+.note { border-radius:9px; padding:10px 12px; font-size:14.5px; background:var(--surface2); }
+.note.ok { background:var(--okbg); color:var(--ok); } .note.warn { background:var(--warnbg); color:var(--warn); } .note.bad { background:var(--badbg); color:var(--bad); }
+.note .ghost { color:inherit; }
+.st { font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:6px; white-space:nowrap; background:var(--surface2); }
+.st.ok { background:var(--okbg); color:var(--ok); } .st.warn { background:var(--warnbg); color:var(--warn); } .st.bad { background:var(--badbg); color:var(--bad); }
+.empty { color:var(--muted); font-size:14.5px; text-align:center; padding:22px 12px; border:1.5px dashed var(--line); border-radius:10px; }
+.empty b { display:block; color:var(--ink); font-weight:600; margin-bottom:2px; }
+.mono { font-family:var(--f-mono); }
+.small { font-size:13px; }
+details.more summary { cursor:pointer; color:var(--muted); font-weight:600; min-height:32px; }
+
+/* ---- overview: four figures, then what needs attention, then who was online ---- */
+.kpis { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; }
+@media (min-width:1100px) { .kpis { grid-template-columns:repeat(4, minmax(0, 1fr)); } }
+.kpi { text-align:left; display:grid; gap:3px; align-content:start; padding:14px; min-height:104px; border:1px solid var(--line); border-radius:12px; background:var(--surface); color:inherit; font:inherit; cursor:pointer; min-width:0; }
+.kpi:hover { border-color:var(--muted); }
+.kpi .k { font-family:var(--f-head); font-weight:600; font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.kpi .v { display:flex; align-items:center; gap:7px; font-family:var(--f-head); font-weight:700; font-size:30px; line-height:1.1; overflow-wrap:anywhere; }
+.kpi .v .ic { width:22px; height:22px; stroke-width:2.6; }
+.kpi .s { font-size:13.5px; color:var(--muted); }
+.kpi.ok .v { color:var(--ok); } .kpi.warn { background:var(--warnbg); border-color:transparent; } .kpi.warn .v, .kpi.warn .s { color:var(--warn); }
+.kpi.bad { background:var(--badbg); border-color:transparent; } .kpi.bad .v, .kpi.bad .s { color:var(--bad); }
+.alist { display:grid; }
+.aitem { display:flex; align-items:center; gap:12px; width:100%; padding:12px 2px; border:0; border-top:1px solid var(--line); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; min-height:56px; }
+.aitem:first-child { border-top:0; padding-top:2px; }
+.aitem .ai { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; flex:none; background:var(--surface2); color:var(--muted); }
+.aitem .ai .ic { width:17px; height:17px; stroke-width:2.4; }
+.aitem.bad .ai { background:var(--badbg); color:var(--bad); } .aitem.warn .ai { background:var(--warnbg); color:var(--warn); } .aitem.ok .ai { background:var(--okbg); color:var(--ok); }
+.aitem .t { flex:1; min-width:0; } .aitem .t b { display:block; font-weight:600; } .aitem .t span { color:var(--muted); font-size:14px; }
+.aitem > .ic { color:var(--muted); width:18px; height:18px; }
+.aitem:hover .t b { text-decoration:underline; text-underline-offset:3px; }
+
+/* ---- keys: toolbar, list (a table when there is room), details ---- */
+#vKeys { display:grid; gap:14px; align-items:start; }
+.kmain { display:grid; gap:12px; min-width:0; }
+.ktools { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.ktools .seg { flex:1 1 330px; }
+.ktools .kq { flex:1 1 300px; display:flex; gap:10px; min-width:0; }
+.ktools input[type=search] { flex:1 1 auto; width:auto; min-width:0; min-height:42px; }
+.ktools select { flex:none; min-height:42px; }
+.kfoot { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; justify-content:space-between; }
+.klist { background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; container-type:inline-size; }
+.khead { display:none; }
+.krow { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:3px 10px; align-items:center; width:100%; min-height:58px; padding:11px 14px; border:0; border-top:1px solid var(--line); background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.krow:first-of-type { border-top:0; }
+.krow:hover { background:var(--bg); }
+.krow[aria-current="true"] { background:var(--brand-soft); box-shadow:inset 3px 0 0 var(--brand); }
+.krow .kn { font-weight:600; font-size:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.krow .ks { justify-self:end; }
+.krow .km { grid-column:1 / -1; display:flex; flex-wrap:wrap; font-size:13.5px; color:var(--muted); }
+.krow .km > span + span::before { content:'·'; margin:0 7px; }
+.krow .km .mono { font-size:12.5px; }
+.krow .km .on { color:var(--ink); }
+@container (min-width:700px) {
+  .khead, .krow { grid-template-columns:minmax(150px, 1.5fr) 150px 112px 74px minmax(130px, 1fr); gap:10px; }
+  .khead { display:grid; padding:9px 14px; border-bottom:1px solid var(--line); font-family:var(--f-head); font-weight:600; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .krow { min-height:50px; padding:9px 14px; }
+  .krow .ks { justify-self:start; }
+  .krow .km { display:contents; font-size:14px; }
+  .krow .km > span + span::before { content:none; }
+  .krow .km .mono { font-size:13px; }
+}
+.kdetail { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:18px; align-content:start; min-width:0; }
+.kdbar { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.back { display:inline-flex; align-items:center; gap:2px; min-height:40px; padding:0 8px 0 2px; border:0; background:none; color:var(--ink); font-weight:600; font-size:16px; cursor:pointer; }
+.xbtn { width:40px; height:40px; display:grid; place-items:center; border:0; border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; flex:none; }
+.xbtn:hover { background:var(--surface2); color:var(--ink); }
+.kdtitle { display:grid; gap:8px; }
+.facts { display:grid; grid-template-columns:max-content minmax(0, 1fr); gap:7px 14px; margin:0; font-size:15px; }
+.facts dt { color:var(--muted); } .facts dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.facts .was { display:block; color:var(--muted); font-size:13.5px; }
+.sub { display:grid; gap:8px; }
+.devl { display:grid; border:1px solid var(--line); border-radius:10px; }
+.devl .dev { display:flex; align-items:center; gap:10px; padding:9px 12px; border-top:1px solid var(--line); flex-wrap:wrap; }
+.devl .dev:first-child { border-top:0; }
+.devl .dev .mono { font-size:14px; }
+.devl .dev .when { color:var(--muted); font-size:13.5px; flex:1; }
+.devl .dev.free { color:var(--muted); }
+.kacts { display:flex; flex-wrap:wrap; gap:10px; }
+.zone { border:1px solid var(--line); border-radius:12px; padding:14px; display:grid; gap:10px; }
+.zone.danger { border-color:color-mix(in srgb, var(--bad) 45%, var(--line)); }
+.zone h2 { color:var(--bad); }
+.zone .row { justify-content:space-between; }
+.devs { font-size:15px; } .devs.seen { display:block; } .devs b { font-weight:600; } .devs .tm { white-space:nowrap; }
+/* phone words vs table words */
+.krow .w { display:none; }
+@container (min-width:700px) { .krow .u { display:none; } .krow .w { display:inline; } }
+@media (min-width:860px) {
+  #vKeys.split { grid-template-columns:minmax(0, 1fr) minmax(340px, 400px); }
+  #vKeys.split .kdetail { position:sticky; top:77px; max-height:calc(100vh - 93px); overflow:auto; }
+  .kdetail .back { display:none; }
+  .kdetail .kdbar { position:absolute; top:8px; right:8px; } .kdetail .kdtitle { padding-right:40px; }
+}
+@media (max-width:859px) {
+  .kdetail { position:fixed; inset:0; z-index:45; border:0; border-radius:0; overflow:auto; background:var(--bg); padding:0 16px calc(24px + env(safe-area-inset-bottom, 0px)); gap:16px; }
+  .kdetail .kdbar { position:sticky; top:0; z-index:1; margin:0 -16px; padding:calc(6px + env(safe-area-inset-top, 0px)) 8px 6px; background:var(--surface); border-bottom:1px solid var(--line); }
+  .kdetail .kdbar .xbtn { display:none; }
+  .kdetail > .card, .kdetail > .zone { background:var(--surface); }
+  html.kopen body { overflow:hidden; }
+}
+.editbox { display:grid; gap:12px; }
 .editbox .field { flex:none; }
 .editbox .quick { gap:4px 14px; }
 .editbox .quick .ghost { min-height:32px; font-size:14px; }
-@media (max-width:520px) { .editrow td { display:table-cell !important; text-align:left !important; } .editrow td .ghost { display:inline-flex !important; margin-left:0 !important; } }
-.seg.sm button .n { font-family:var(--f-mono); font-size:12px; opacity:.75; margin-left:5px; }
-details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
-.devs { display:flex; flex-wrap:wrap; gap:2px 10px; margin-top:4px; font-size:13px; color:var(--muted); }
-.devs .mono { font-size:12.5px; color:var(--ink); }
-.devs .ghost { min-height:24px; font-size:13px; }
-.devs.seen { display:block; }
-.devs.seen b { color:var(--ink); font-weight:600; }
-.devs .tm, .devs .when { white-space:nowrap; }
-.fbitem { border:1px solid var(--line); border-radius:10px; padding:12px 14px; display:grid; gap:6px; }
-.fbitem.done { opacity:.72; }
-.fbitem .who { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; }
-.fbitem .who b { font-size:16px; }
-.fbitem .meta { font-family:var(--f-mono); font-size:12.5px; color:var(--muted); }
-.fbitem .txt { white-space:pre-wrap; overflow-wrap:anywhere; font-size:15.5px; }
-.fbitem pre { margin:6px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; font-family:var(--f-mono); font-size:12.5px; background:var(--bg); border-radius:8px; padding:8px 10px; }
-.fbitem details summary { cursor:pointer; color:var(--muted); font-weight:600; font-size:14px; }
-.fbitem .unv { color:var(--warn); font-size:13px; }
+
+/* ---- feedback ---- */
 #fbList { display:grid; gap:10px; }
-.btn.danger, #stSeg button[data-s="pause"][aria-pressed="true"] { background:#B3261E; border-color:#B3261E; color:#FFFFFF; }
+.fbitem { border:1px solid var(--line); border-radius:12px; padding:14px; display:grid; gap:7px; background:var(--surface); }
+.fbitem.done { opacity:.75; }
+.fbitem .who { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; }
+.fbitem .who b { font-size:17px; }
+.fbitem .meta { font-family:var(--f-mono); font-size:12.5px; color:var(--muted); }
+.fbitem .txt { white-space:pre-wrap; overflow-wrap:anywhere; font-size:16px; }
+.fbitem pre { margin:6px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; font-family:var(--f-mono); font-size:12.5px; background:var(--bg); border-radius:8px; padding:8px 10px; }
+.fbitem details summary { cursor:pointer; color:var(--muted); font-weight:600; font-size:14px; min-height:28px; }
+.fbitem .unv { color:var(--warn); font-size:13.5px; }
+.fbitem .acts { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:4px; }
+.fbitem .acts .del { color:var(--bad); }
+.fbbulk { display:flex; justify-content:flex-end; }
+.fbbulk .ghost { color:var(--bad); }
+
+/* ---- app status ---- */
+.stnow { display:flex; gap:14px; align-items:flex-start; border-radius:12px; padding:16px; background:var(--okbg); color:var(--ok); }
+.stnow.warn { background:var(--warnbg); color:var(--warn); } .stnow.bad { background:var(--badbg); color:var(--bad); }
+.stnow .big { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; background:var(--surface); flex:none; }
+.stnow .big .ic { width:22px; height:22px; stroke-width:2.6; }
+.stnow .t { display:grid; gap:4px; min-width:0; } .stnow .t b { font-family:var(--f-head); font-size:22px; letter-spacing:.02em; }
+.stnow .t span { font-size:14.5px; overflow-wrap:anywhere; }
+
+/* ---- settings ---- */
+.steps { display:grid; gap:16px; }
+.step { display:grid; grid-template-columns:30px minmax(0, 1fr); gap:4px 12px; }
+.step .n { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; background:var(--surface2); font-family:var(--f-head); font-weight:700; }
+.step.done .n { background:var(--okbg); color:var(--ok); }
+.step .n .ic { width:16px; height:16px; stroke-width:2.8; }
+.step > div { display:grid; gap:8px; min-width:0; }
+.onb { display:grid; gap:6px; padding:4px 2px; }
+.onb h3 { font-size:28px; }
+.setrow { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.verrow { font-family:var(--f-mono); font-size:13px; color:var(--muted); }
+
+/* ---- the key just made ---- */
+.keyout { border:2px solid var(--brand); border-radius:12px; padding:14px; display:grid; gap:10px; background:var(--brand-soft); }
+.keytxt { font-family:var(--f-mono); font-size:14px; overflow-wrap:anywhere; user-select:all; -webkit-user-select:all; background:var(--surface); border-radius:8px; padding:10px; }
+.okline { display:flex; align-items:center; gap:10px; font-weight:600; color:var(--ok); }
+.okline .ic { width:22px; height:22px; stroke-width:2.6; }
+.factl { display:flex; flex-wrap:wrap; gap:6px 18px; font-size:14.5px; } .factl b { font-weight:600; }
+
+/* ---- sheets and questions ---- */
+dialog { color:var(--ink); }
+dialog.sheet { border:0; padding:0; border-radius:16px; background:var(--surface); width:min(580px, calc(100vw - 32px)); max-height:calc(100dvh - 48px); box-shadow:0 20px 60px rgba(0,0,0,.35); overscroll-behavior:contain; }
+dialog::backdrop { background:rgba(10,12,15,.45); }
+.shead { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 10px 10px 18px; background:var(--surface); border-bottom:1px solid var(--line); }
+.shead h2 { color:var(--ink); font-size:18px; letter-spacing:.06em; }
+.sbody { padding:16px 18px 20px; display:grid; gap:16px; }
+.sacts { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+dialog.sheet { overflow:auto; }
+/* the main button of a long sheet stays in view at the bottom */
+.sbody > .sacts.stick { position:sticky; bottom:0; z-index:2; margin:0 -18px -20px; padding:12px 18px 14px; background:var(--surface); border-top:1px solid var(--line); }
+@media (max-width:559px) {
+  .sbody > .sacts.stick { margin-bottom:calc(-20px - env(safe-area-inset-bottom, 0px)); padding-bottom:calc(14px + env(safe-area-inset-bottom, 0px)); }
+  dialog.sheet { width:100vw; max-width:100vw; margin:auto 0 0; border-radius:16px 16px 0 0; max-height:94dvh; }
+  dialog.sheet .sbody { padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .sacts .btn.fill { flex:1 1 auto; }
+}
+dialog.ask { border:0; padding:22px; border-radius:14px; background:var(--surface); width:min(430px, calc(100vw - 32px)); box-shadow:0 20px 60px rgba(0,0,0,.35); }
+dialog.ask h2 { color:var(--ink); font-size:21px; letter-spacing:.02em; text-transform:none; }
+dialog.ask p { margin:10px 0 18px; font-size:15.5px; }
+dialog.ask .row { justify-content:flex-end; }
+
+/* ---- short messages (with Undo where it can be undone) ---- */
+.snack { position:fixed; left:12px; right:12px; bottom:calc(84px + env(safe-area-inset-bottom, 0px)); z-index:70; max-width:540px; margin:0 auto; display:flex; align-items:center; gap:12px; padding:10px 8px 10px 16px; border-radius:12px; background:var(--ink); color:var(--bg); box-shadow:0 8px 28px rgba(0,0,0,.28); font-size:15px; }
+.snack .t { flex:1; min-width:0; }
+.snack .act { border:0; background:none; color:var(--brand); font-weight:700; cursor:pointer; min-height:40px; padding:0 8px; }
+.snack .x { border:0; background:none; color:inherit; opacity:.75; cursor:pointer; width:36px; height:36px; display:grid; place-items:center; flex:none; }
+.snack.bad { background:var(--red); color:#fff; } .snack.bad .act { color:#fff; text-decoration:underline; }
+@media (min-width:860px) { .snack { bottom:24px; } }
+html:not(.ready) .snack { bottom:16px; }
+.updbar { position:fixed; left:12px; right:12px; top:calc(10px + env(safe-area-inset-top, 0px)); z-index:80; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; max-width:520px; margin-inline:auto; padding:10px 12px 10px 16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); box-shadow:0 6px 24px rgba(0,0,0,.18); font-size:15px; }
 /* light/dark switch */
 .themesw { position:relative; display:inline-flex; align-items:center; justify-content:space-between; width:62px; height:32px; padding:0 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface2); color:var(--muted); cursor:pointer; flex:none; }
 .themesw svg { position:relative; z-index:1; width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; transition:color .2s; }
@@ -125,77 +305,166 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
 .themesw[aria-checked="true"] .knob { transform:translateX(28px); }
 .themesw[aria-checked="true"] .sun { color:var(--muted); } .themesw[aria-checked="true"] .moon { color:var(--ink); }
 @media (prefers-reduced-motion:reduce) { .themesw .knob, .themesw svg { transition:none; } }
-.top { position:relative; } .top h1, .top p { padding-right:76px; }
-.top-in .themesw { position:absolute; top:14px; right:max(16px, calc(50% - 380px)); }
 </style>
 </head>
 <body>
-<header class="top"><div class="top-in"><h1><span>GRF</span> License keys</h1><p>Issue and withdraw keys for the Runway Cond app</p><button class="themesw" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="knob"></span><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button>
-  <div class="verrow"><span id="admVer"></span><button class="vbtn" type="button" id="admUpd">Check for updates</button></div></div></header>
-<main class="wrap">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-over" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L20 3M16 7l3 3M13.5 9.5l2 2"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.5L3.5 20.5l1.1-4.4A8.5 8.5 0 1 1 20.5 12z"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <symbol id="i-ref" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-ok" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 6.5v7M12 17.5h.01"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></symbol>
+</svg>
+<header class="top"><div class="top-in">
+  <h1><span>GRF</span> Keys</h1>
+  <button class="fresh" type="button" id="logReload" data-s="ok" aria-label="Read everything again"><span class="dot" aria-hidden="true"></span><span><span class="fl" id="freshL">Updated </span><span id="freshT">–</span></span><svg class="ic"><use href="#i-ref"/></svg></button>
+  <button class="btn fill newkey" type="button" id="iOpen" aria-haspopup="dialog"><svg class="ic"><use href="#i-plus"/></svg>New key</button>
+</div></header>
+<div class="layout">
+<nav class="tabs" id="tabs" aria-label="Sections">
+  <a href="#overview" data-t="overview"><svg class="ic"><use href="#i-over"/></svg><span>Overview</span></a>
+  <a href="#keys" data-t="keys"><svg class="ic"><use href="#i-key"/></svg><span>Keys</span></a>
+  <a href="#feedback" data-t="feedback"><svg class="ic"><use href="#i-msg"/></svg><span>Feedback</span><span class="badge" id="fbCount" hidden></span></a>
+  <a href="#status" data-t="status"><svg class="ic"><use href="#i-pulse"/></svg><span>Status</span><span class="badge dot" id="tbStatus" hidden></span></a>
+  <a href="#settings" data-t="settings"><svg class="ic"><use href="#i-set"/></svg><span>Settings</span><span class="badge dot" id="tbSet" hidden></span></a>
+</nav>
+<main class="wrap" id="main">
   <div id="issuesBanner" class="note bad" hidden></div>
-  <section class="panel">
-    <h2>Set up this device</h2>
-    <div id="setOk" class="note ok" hidden></div>
-    <div id="setNeed" style="display:grid;gap:12px">
-      <div class="field"><span class="lbl">1. Signing key file</span>
-        <div class="row"><button class="btn" type="button" id="kFile">Choose GRF-signing-key-v2.json</button><input type="file" id="kFileIn" accept=".json,application/json" hidden><span id="kState" class="disc"></span></div>
-      </div>
-      <div class="field"><label for="ghTok">2. GitHub token (Contents: read and write on this repo)</label>
-        <div class="row"><input type="text" id="ghTok" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1 1 260px"><button class="btn" type="button" id="ghGo">Connect</button></div>
-        <span id="ghState" class="disc"></span>
-      </div>
-      <p class="disc">Both stay in this browser on this device only. Nothing secret is stored in the repository: the key list there is encrypted with your signing key.</p>
+
+  <section class="view" data-v="loading" hidden><div class="empty"><b>Reading the keys from GitHub…</b>This takes a few seconds.</div></section>
+
+  <!-- overview -->
+  <section class="view" data-v="overview" id="vOverview" hidden>
+    <div class="kpis">
+      <button type="button" class="kpi" id="kpiStatus" data-go="#status"><span class="k">App status</span><span class="v"></span><span class="s"></span></button>
+      <button type="button" class="kpi" id="kpiFb" data-go="#feedback"><span class="k">New feedback</span><span class="v"></span><span class="s"></span></button>
+      <button type="button" class="kpi" id="kpiKeys" data-go="#keys"><span class="k">Active keys</span><span class="v"></span><span class="s"></span></button>
+      <button type="button" class="kpi" id="kpiOnline" data-go="#keys"><span class="k">Online, last 24 h</span><span class="v"></span><span class="s"></span></button>
     </div>
-    <div id="setMsg" class="note bad" hidden></div>
+    <section class="card"><h2>Needs attention</h2><div class="alist" id="ovAttn"></div></section>
+    <section class="card"><div class="head"><h2>Recently online</h2><a class="ghost" href="#keys" id="ovAll">All keys</a></div><div class="alist" id="ovSeen"></div></section>
   </section>
 
-  <section class="panel" id="pAct" hidden>
-    <h2>Device limits</h2>
-    <div id="actIssues" class="note bad" hidden>Issues are turned off for the repository. Device limits and feedback both use issues, so they cannot work: a key limited to a number of devices cannot be activated. On GitHub: the repository → Settings → General → Features → tick Issues. Then tap Reload under Issued keys.</div>
-    <div id="actOk" class="note ok" hidden></div>
-    <div id="actNeed" style="display:grid;gap:10px">
-      <p class="disc">To limit a key to a number of devices, the app records each activation as an issue in the repository. For that it needs a second GitHub token that can only handle issues. It is stored in the repository encrypted, readable only by licensed apps.</p>
-      <div class="field"><label for="actTok">Token with Issues: read and write (nothing else) on this repo</label>
-        <div class="row"><input type="text" id="actTok" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1 1 260px"><button class="btn" type="button" id="actGo">Save</button></div>
+  <!-- keys -->
+  <section class="view" data-v="keys" id="vKeys" hidden>
+    <div class="kmain">
+      <div class="ktools">
+        <div class="seg sm" id="fSeg" role="group" aria-label="Show">
+          <button type="button" data-f="active">Active</button><button type="button" data-f="expired">Expired</button>
+          <button type="button" data-f="withdrawn">Withdrawn</button><button type="button" data-f="all">All</button>
+        </div>
+        <div class="kq"><input type="search" id="fQ" placeholder="Search name" aria-label="Search by name" autocomplete="off">
+        <select id="fSort" aria-label="Sort">
+          <option value="new">Newest first</option><option value="seen">Last online</option><option value="end">Ends soonest</option><option value="name">Name A–Z</option>
+        </select></div>
       </div>
-      <div id="actMsg" class="note bad" hidden></div>
+      <div id="revState" class="note" hidden></div>
+      <div id="logBody"><div class="empty">Set up this device to see the keys.</div></div>
+      <div class="kfoot"><p class="disc">Tap a key for its devices, last online, edit and withdraw.</p><button class="ghost" type="button" id="cOpen" aria-haspopup="dialog">Check a key</button></div>
     </div>
+    <aside class="kdetail" id="kDetail" aria-label="Key details" hidden>
+      <div class="kdbar"><button class="back" type="button" id="kBack"><svg class="ic"><use href="#i-left"/></svg>Keys</button><span></span><button class="xbtn" type="button" id="kClose" aria-label="Close the details"><svg class="ic"><use href="#i-x"/></svg></button></div>
+      <div id="kBody" style="display:grid;gap:18px"></div>
+    </aside>
   </section>
 
-  <section class="panel" id="pFb" hidden>
-    <div class="row" style="justify-content:space-between"><h2>Feedback <span class="st warn" id="fbCount" hidden></span></h2><button class="ghost" type="button" id="fbReload">Reload</button></div>
+  <!-- feedback -->
+  <section class="view" data-v="feedback" id="vFeedback" hidden>
     <div class="seg sm" id="fbSeg" role="group" aria-label="Show">
       <button type="button" data-f="open">New</button><button type="button" data-f="closed">Done</button><button type="button" data-f="all">All</button>
     </div>
     <div id="fbList"><div class="empty">Loading…</div></div>
-    <p class="disc">Pilots send feedback from the app (Send feedback at the bottom, or in the license window). It is stored as an encrypted issue in the repository and can only be read here, with your signing key. The name is checked against your key list. Delete empties the issue on GitHub and removes it from this list. Done closes the issue.</p>
+    <p class="disc">Pilots send feedback from the app. It is an encrypted issue in the repository, readable only here with your signing key. The name is checked against your key list.</p>
   </section>
 
-  <section class="panel" id="pStatus" hidden>
-    <h2>App status</h2>
-    <div id="stNow" class="note"></div>
-    <div class="field">
-      <span class="lbl">Set to</span>
-      <div class="seg" id="stSeg" role="group" aria-label="App status">
-        <button type="button" data-s="ok">Normal</button><button type="button" data-s="warn">Notice</button><button type="button" data-s="pause">Pause calculations</button>
+  <!-- app status -->
+  <section class="view" data-v="status" id="vStatus" hidden>
+    <div id="stNow" class="stnow" role="status"></div>
+    <section class="card" id="pStatus">
+      <h2>Change the status</h2>
+      <div class="field">
+        <span class="lbl">Set to</span>
+        <div class="seg" id="stSeg" role="group" aria-label="App status">
+          <button type="button" data-s="ok">Normal</button><button type="button" data-s="warn">Notice</button><button type="button" data-s="pause">Pause calculations</button>
+        </div>
+        <p class="disc" id="stHint"></p>
       </div>
-      <p class="disc" id="stHint"></p>
-    </div>
-    <div class="field" id="stTextF"><label for="stText">Message shown in the app</label><textarea id="stText" maxlength="600" style="font-family:var(--f-ui);font-size:15px;min-height:96px"></textarea></div>
-    <div class="field" id="stScopeF">
-      <span class="lbl">Applies to</span>
-      <div class="seg" id="stScope" role="group" aria-label="Applies to">
-        <button type="button" data-c="all">All app versions</button><button type="button" data-c="older">Until the app is updated</button>
+      <div class="field" id="stTextF"><label for="stText">Message shown in the app</label><textarea id="stText" maxlength="600" style="font-family:var(--f-ui);font-size:15px;min-height:96px"></textarea></div>
+      <div class="field" id="stScopeF">
+        <span class="lbl">Applies to</span>
+        <div class="seg" id="stScope" role="group" aria-label="Applies to">
+          <button type="button" data-c="all">All app versions</button><button type="button" data-c="older">Until the app is updated</button>
+        </div>
+        <p class="disc" id="stScopeHint"></p>
       </div>
-      <p class="disc" id="stScopeHint"></p>
-    </div>
-    <div class="row"><button class="btn fill" type="button" id="stGo">Publish</button></div>
-    <div id="stMsg" class="note" hidden></div>
+      <div class="row"><button class="btn fill" type="button" id="stGo">Publish</button></div>
+      <div id="stMsg" class="note" hidden></div>
+    </section>
+    <p class="disc">Applies to Runway Cond only. SIGMET always works.</p>
   </section>
 
-  <section class="panel" id="pIssue">
-    <h2>New license key</h2>
+  <!-- settings (and the first set-up) -->
+  <section class="view" data-v="settings" id="vSettings" hidden>
+    <div class="onb" id="onb" hidden><h3>Set up this device</h3><p class="disc" style="font-size:15.5px">Two steps. Both stay in this browser on this device only: nothing secret is stored in the repository, the key list there is encrypted with your signing key.</p></div>
+    <section class="card" id="pSetup">
+      <h2>This device</h2>
+      <div id="setOk" class="note ok" hidden></div>
+      <div id="setNeed" class="steps">
+        <div class="step" id="step1"><span class="n">1</span><div>
+          <span class="lbl">Signing key file</span>
+          <div class="row"><button class="btn" type="button" id="kFile">Choose GRF-signing-key-v2.json</button><input type="file" id="kFileIn" accept=".json,application/json" hidden><span id="kState" class="disc"></span></div>
+        </div></div>
+        <div class="step" id="step2"><span class="n">2</span><div>
+          <label for="ghTok">GitHub token (Contents: read and write on this repo)</label>
+          <div class="row"><input type="text" id="ghTok" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1 1 240px;width:auto"><button class="btn fill" type="button" id="ghGo">Connect</button></div>
+          <span id="ghState" class="disc"></span>
+        </div></div>
+      </div>
+      <div id="setMsg" class="note bad" hidden></div>
+    </section>
+
+    <section class="card" id="pAct" hidden>
+      <h2>Device limits</h2>
+      <div id="actIssues" class="note bad" hidden>Issues are turned off for the repository. Device limits and feedback both use issues, so they cannot work: a key limited to a number of devices cannot be activated. On GitHub: the repository → Settings → General → Features → tick Issues. Then tap ↻ at the top.</div>
+      <div id="actOk" class="note ok" hidden></div>
+      <div id="actNeed" style="display:grid;gap:10px">
+        <p class="disc">To limit a key to a number of devices, the app records each activation as an issue in the repository. For that it needs a second GitHub token that can only handle issues. It is stored in the repository encrypted, readable only by licensed apps. The same token carries feedback and last online.</p>
+        <div class="field"><label for="actTok">Token with Issues: read and write (nothing else) on this repo</label>
+          <div class="row"><input type="text" id="actTok" placeholder="github_pat_…" autocomplete="off" autocapitalize="off" spellcheck="false" style="flex:1 1 240px;width:auto"><button class="btn" type="button" id="actGo">Save</button></div>
+        </div>
+        <div id="actMsg" class="note bad" hidden></div>
+      </div>
+    </section>
+
+    <section class="card" id="pLook"><div class="setrow"><h2>Appearance</h2><button class="themesw" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="knob"></span><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button></div></section>
+
+    <section class="card" id="pAbout">
+      <h2>About</h2>
+      <div class="setrow"><span class="verrow" id="admVer"></span><button class="btn sm" type="button" id="admUpd">Check for updates</button></div>
+      <p class="disc">Withdrawals, edits and the app status are signed here and published to the repository. Phones pick them up when the app is opened online, and the app needs a connection at least once a week.</p>
+    </section>
+
+    <section class="zone danger" id="pRemove" hidden>
+      <h2>Remove from this device</h2>
+      <div class="row"><p class="disc" style="flex:1 1 240px">Deletes the signing key and the GitHub token from this browser. Nothing changes in the repository or for the pilots.</p><button class="btn dangerline" type="button" id="setRemove">Remove</button></div>
+    </section>
+  </section>
+</main>
+</div>
+
+<!-- new key -->
+<dialog class="sheet" id="dNew" aria-labelledby="dNewH">
+  <div class="shead"><h2 id="dNewH">New license key</h2><button class="xbtn" type="button" data-close aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+  <div class="sbody" id="pIssue">
     <div class="field"><label for="iName">Name on the license</label><input type="text" id="iName" placeholder="e.g. Erik Andersson" autocomplete="off"></div>
     <div class="field">
       <span class="lbl">Valid for</span>
@@ -222,39 +491,39 @@ details.more summary { cursor:pointer; color:var(--muted); font-weight:600; }
       <div class="field" style="margin-top:10px"><label for="iDev">Device code</label><input type="text" id="iDev" placeholder="e.g. 7K3M-Q9TB" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>
       <p class="disc">The key then only opens the app on that phone or iPad, with no online activation. The code is shown on the app's lock screen.</p>
     </details>
-    <div class="row"><button class="btn fill" type="button" id="iGo">Create key</button></div>
     <div id="iMsg" class="note bad" hidden></div>
-    <div id="iOut" class="keyout" hidden>
-      <div class="facts" id="iFacts"></div>
+    <div class="sacts stick"><button class="btn fill" type="button" id="iGo">Create key</button><button class="btn" type="button" data-close>Cancel</button></div>
+  </div>
+  <div class="sbody" id="iOut" hidden>
+    <div class="okline"><svg class="ic"><use href="#i-ok"/></svg><span>Key created and added to the list</span></div>
+    <div class="keyout">
+      <div class="factl" id="iFacts"></div>
       <div class="keytxt" id="iKey"></div>
-      <div class="row">
-        <button class="btn fill" type="button" id="iCopy">Copy key</button>
-        <button class="btn" type="button" id="iCopyMsg">Copy message with key</button>
-      </div>
+      <div class="row"><button class="btn fill" type="button" id="iCopyMsg">Copy message with key</button><button class="btn" type="button" id="iCopy">Copy key only</button></div>
     </div>
-  </section>
+    <div id="iOutMsg" class="note bad" hidden></div>
+    <div class="sacts"><button class="btn" type="button" id="iDone">Done</button><button class="ghost" type="button" id="iAgain">New key for someone else</button></div>
+  </div>
+</dialog>
 
-  <section class="panel">
-    <div class="row" style="justify-content:space-between"><h2>Issued keys</h2><button class="ghost" type="button" id="logReload">Reload</button></div>
-    <div class="filters">
-      <div class="seg sm" id="fSeg" role="group" aria-label="Show">
-        <button type="button" data-f="active">Active</button><button type="button" data-f="expired">Expired</button>
-        <button type="button" data-f="withdrawn">Withdrawn</button><button type="button" data-f="all">All</button>
-      </div>
-      <input type="search" id="fQ" placeholder="Search name" aria-label="Search by name" autocomplete="off">
-    </div>
-    <div id="revState" class="note" hidden></div>
-    <div id="logBody"><div class="empty">Set up this device to see the keys.</div></div>
-    <p class="disc">Withdraw publishes the change by itself: phones pick it up the next time they are online, and the app needs a connection at least once a week. A withdrawn key cannot be restored; issue a new key instead.</p>
-  </section>
-
-  <section class="panel">
-    <h2>Check a key</h2>
+<!-- check a key -->
+<dialog class="sheet" id="dCheck" aria-labelledby="dCheckH">
+  <div class="shead"><h2 id="dCheckH">Check a key</h2><button class="xbtn" type="button" data-close aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+  <div class="sbody">
+    <p class="disc">Paste a key someone sent you: it shows who it is for, how long it is valid, its devices and last online.</p>
     <textarea id="cKey" aria-label="Key to check" placeholder="Paste a key starting with GRF-"></textarea>
-    <div class="row"><button class="btn" type="button" id="cGo">Check</button><button class="btn" type="button" id="cAdd" hidden>Add to the list</button><button class="btn" type="button" id="cRevoke" hidden>Withdraw this key</button></div>
+    <div class="sacts"><button class="btn fill" type="button" id="cGo">Check</button><button class="btn" type="button" id="cAdd" hidden>Add to the list</button><button class="btn dangerline" type="button" id="cRevoke" hidden>Withdraw this key</button></div>
     <div id="cOut" class="note" hidden></div>
-  </section>
-</main>
+  </div>
+</dialog>
+
+<!-- a question before something that cannot be undone -->
+<dialog class="ask" id="dAsk" aria-labelledby="askH" aria-describedby="askT">
+  <h2 id="askH"></h2><p id="askT"></p>
+  <div class="row"><button class="btn" type="button" id="askNo">Cancel</button><button class="btn danger" type="button" id="askYes">OK</button></div>
+</dialog>
+
+<div class="snack" id="snack" role="status" aria-live="polite" hidden><span class="t"></span><button class="act" type="button" hidden></button><button class="x" type="button" aria-label="Close"><svg class="ic" style="width:18px;height:18px"><use href="#i-x"/></svg></button></div>
 <script>
 /* GRF license keys: ECDSA P-256 signed, checked on the device with no network.
    Key = "GRF-" + base64url(payload + 64-byte signature)
@@ -484,6 +753,16 @@ let stSha = null, stPublished = null, stPick = 'ok', stScope = 'all', appInfo = 
 let seen = null;   /* license id → [{dev, at, d}]: when each device was last online ("GRF seen" issues) */
 let inboxAt = 0;   /* when the issues (last online, feedback) were last read */
 let fbPriv = null, fbKeyState = '', fbItems = null, fbErr = '', fbF = 'open', repoInfo = null;
+let fSort = store.get('grf-admin-sort') || 'new';
+let view = '', selId = null, readAt = 0, busy = false;
+/* building elements: h('div', {className: 'x', 'aria-label': 'y'}, child, …) */
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) { if (v == null) continue; if (k.includes('-')) e.setAttribute(k, v); else e[k] = v; }
+  e.append(...kids.flat(2).filter(x => x != null && x !== false).map(x => typeof x === 'number' ? String(x) : x));
+  return e;
+}
+function icon(id) { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'), u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); s.setAttribute('class', 'ic'); s.setAttribute('aria-hidden', 'true'); u.setAttribute('href', '#' + id); s.append(u); return s; }
 
 /* ---- where the app lives: owner.github.io/repo ---- */
 const GH = (() => {
@@ -567,7 +846,7 @@ function renderIssuesBanner() {
   const a = Object.assign(document.createElement('a'), {href: `https://github.com/${GH.owner}/${GH.repo}/settings`, target: '_blank', rel: 'noopener', textContent: 'Open the repository settings'});
   a.style.color = 'inherit'; a.style.fontWeight = '600';
   el.replaceChildren('Issues are turned off in the GitHub repository. Keys limited to a number of devices cannot be activated (the app says activation is switched off), and feedback cannot arrive. ',
-    a, ' → General → Features → tick Issues. Then tap Reload under Issued keys. Keys already sent start working by themselves.');
+    a, ' → General → Features → tick Issues. Then tap ↻ at the top. Keys already sent start working by themselves.');
 }
 async function loadRepoInfo() {
   try { const r = await fetch(`${GH.api}/repos/${GH.owner}/${GH.repo}`, {headers: {'Authorization': 'Bearer ' + tok, 'Accept': 'application/vnd.github+json'}, cache: 'no-store'}); repoInfo = r.ok ? await r.json() : null; }
@@ -591,7 +870,7 @@ async function loadFeedback() {
     const out = [], sm = new Map();
     for (let page = 1; page <= 10; page++) {
       const r = await ghIssues(acc, `/issues?state=all&per_page=100&page=${page}`);
-      if (!r.ok) throw new Error(r.status === 410 ? 'issues' : r.status === 401 ? 'The device-limit token is not accepted any more. Save a new one under Device limits.' : `GitHub answered ${r.status} for the feedback.`);
+      if (!r.ok) throw new Error(r.status === 410 ? 'issues' : r.status === 401 ? 'The device-limit token is not accepted any more. Save a new one under Settings → Device limits.' : `GitHub answered ${r.status} for the feedback.`);
       const list = await r.json();
       for (const it of list) {
         if (it.pull_request) continue;
@@ -631,10 +910,10 @@ function seenLine(v) {
   if (!seen) return null;
   const list = seen.get(v.id) || [];
   const el = document.createElement('div'); el.className = 'devs seen';
-  if (!list.length) { el.textContent = 'Online: no report yet'; el.title = 'Phones report when they sync online, from the app version that added this.'; return el; }
+  if (!list.length) { el.textContent = 'No report yet'; el.title = 'Phones report when they sync online, from the app version that added this.'; return el; }
   const top = list[0], calc = Math.max(...list.map(x => x.d.calc || 0));
   const tm = (t, b) => Object.assign(document.createElement(b ? 'b' : 'span'), {className: 'tm', textContent: agoText(t)});
-  el.append('Online ', tm(top.at, true), list.length > 1 ? ` (${list.length} devices)` : '', ' · ', ...(calc ? ['result ', tm(calc)] : ['no result yet']));
+  el.append(tm(top.at, true), list.length > 1 ? ` (${list.length} devices)` : '', ' · ', ...(calc ? ['result ', tm(calc)] : ['no result yet']));
   el.title = list.map(x => `${x.dev}: online ${stWhen(x.at)}${x.d.calc ? ', result ' + stWhen(x.d.calc) : ''}${x.d.app ? ', app v' + x.d.app : ''}`).join('\n');
   return el;
 }
@@ -646,14 +925,6 @@ async function deleteFb(x) {
   if (!r.ok && r.status !== 404) throw new Error(r.status === 410 ? 'Issues are turned off for the repository.' : `GitHub answered ${r.status}.`);
   fbItems = fbItems.filter(y => y !== x);
 }
-/* a button that asks for a second tap before it acts */
-function sureBtn(text, sure, act) {
-  return Object.assign(document.createElement('button'), {className: 'ghost', type: 'button', textContent: text, onclick: async ev => {
-    const b = ev.target;
-    if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = sure; b.style.color = 'var(--bad)'; setTimeout(() => { if (b.dataset.sure === '1') { delete b.dataset.sure; b.textContent = text; b.style.color = ''; } }, 4000); return; }
-    b.dataset.sure = '2'; b.disabled = true; await act(b);
-  }});
-}
 function fbCtxText(c) {
   if (!c) return '';
   if (c.tool === 'sigmet') { const g = c.sigmet || {};
@@ -662,60 +933,69 @@ function fbCtxText(c) {
   return [`Mode: ${c.mode === 'inflight' ? 'in-flight landing' : 'dispatch ' + (c.phase === 'to' ? 'take-off' : 'landing')} · ${c.ac || ''}${c.narrow ? ' · narrow' : ''}${c.oat ? ' · OAT ' + c.oat : ''} · source ${c.src || ''}`,
     c.line ? 'Result line: ' + c.line : '', c.result ? 'Result:\n' + c.result : '', th ? 'Thirds:\n' + th : '', c.msg ? 'Message shown:\n' + c.msg : '', c.report ? 'Report text:\n' + c.report : ''].filter(Boolean).join('\n\n');
 }
+/* why feedback cannot be read, in words */
+function fbErrText(e) {
+  return e === 'issues' ? 'Issues are turned off for the repository, so the app cannot send feedback (and device limits cannot work). On GitHub: the repository → Settings → General → Features → tick Issues, then tap ↻ at the top.'
+    : e === 'acc' ? 'Feedback is sent with the device-limit token. Save that token under Settings → Device limits first.'
+    : e === 'key' ? 'The feedback key (fb-key.bin) is not in the repository yet: it comes with the app update that added feedback.'
+    : e === 'keybad' ? 'The feedback key (fb-key.bin) is in the repository but could not be opened with this signing key. Tap ↻ at the top. If it stays, the file is damaged and a new app build writes it again.' : e;
+}
+const fbName = x => { const d = x.d, e = d && log ? log.find(v => v.id === d.id) : null; return e && e.key === d.key ? e.name : d ? (d.name || 'Unknown') : 'Unknown'; };
+async function fbState(x, open) {
+  const r = await ghIssues(acc, '/issues/' + x.n, 'PATCH', {state: open ? 'open' : 'closed'});
+  if (!r.ok) throw new Error(`GitHub answered ${r.status}.`);
+  x.open = open;
+}
 function renderFb() {
   const el = $('fbList');
   document.querySelectorAll('#fbSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.f === fbF)));
   const nNew = fbItems ? fbItems.filter(x => x.open).length : 0;
-  $('fbCount').hidden = !nNew; $('fbCount').textContent = nNew + ' new';
+  $('fbCount').hidden = !nNew; $('fbCount').textContent = nNew; $('fbCount').setAttribute('aria-label', nNew + ' new');
   $('actIssues').hidden = !(repoInfo && repoInfo.has_issues === false);
-  const note = (t, c) => Object.assign(document.createElement('div'), {className: 'note ' + (c || ''), textContent: t});
-  if (fbErr) {
-    el.replaceChildren(note(fbErr === 'issues' ? 'Issues are turned off for the repository, so the app cannot send feedback (and device limits cannot work). On GitHub: the repository → Settings → General → Features → tick Issues, then tap Reload.'
-      : fbErr === 'acc' ? 'Feedback is sent with the device-limit token. Save that token under Device limits first.'
-      : fbErr === 'key' ? 'The feedback key (fb-key.bin) is not in the repository yet: it comes with the app update that added feedback.'
-      : fbErr === 'keybad' ? 'The feedback key (fb-key.bin) is in the repository but could not be opened with this signing key. Tap Reload. If it stays, the file is damaged and a new app build writes it again.' : fbErr, 'bad'));
+  if (fbErr) { el.replaceChildren(h('div', {className: 'note bad'}, fbErrText(fbErr))); return; }
+  if (!fbItems) { el.replaceChildren(h('div', {className: 'empty'}, 'Loading…')); return; }
+  const list = fbItems.filter(x => fbF === 'all' || (fbF === 'open') === x.open);
+  if (!list.length) {
+    el.replaceChildren(h('div', {className: 'empty'}, ...(fbF === 'open' ? [h('b', {}, 'No new feedback.'), 'Messages appear here when a pilot sends one from the app.']
+      : fbF === 'closed' ? [h('b', {}, 'Nothing marked as done.'), 'Feedback you mark as done is kept here until you delete it.'] : [h('b', {}, 'No feedback yet.'), 'Messages appear here when a pilot sends one from the app.'])));
     return;
   }
-  if (!fbItems) { el.replaceChildren(Object.assign(document.createElement('div'), {className: 'empty', textContent: 'Loading…'})); return; }
-  const list = fbItems.filter(x => fbF === 'all' || (fbF === 'open') === x.open);
-  if (!list.length) { el.replaceChildren(Object.assign(document.createElement('div'), {className: 'empty', textContent: fbF === 'open' ? 'No new feedback.' : 'Nothing here.'})); return; }
   /* clearing out old feedback: everything marked as done, in one go */
   const done = fbItems.filter(x => !x.open), bulk = [];
   if (fbF === 'closed' && done.length > 1) {
-    const row = document.createElement('div'); row.className = 'row fbbulk';
-    row.append(sureBtn(`Delete all ${done.length} done`, `Tap again to delete ${done.length}`, async b => {
+    bulk.push(h('div', {className: 'fbbulk'}, h('button', {className: 'ghost', type: 'button', onclick: async () => {
+      if (!(await ask({title: `Delete ${done.length} messages marked as done?`, text: 'Each issue is emptied on GitHub and the messages are gone from here. This cannot be undone.', yes: `Delete ${done.length}`}))) return;
       let k = 0;
-      try { for (const x of done) { b.textContent = `Deleting ${++k} of ${done.length}…`; await deleteFb(x); } renderFb(); }
-      catch (e) { renderFb(); const n = document.createElement('div'); n.className = 'note bad'; n.textContent = `Stopped after ${k - 1} of ${done.length}: ${e.message} Tap Reload and try again.`; el.prepend(n); }
-    }));
-    bulk.push(row);
+      try { for (const x of done) { snack(`Deleting ${++k} of ${done.length}…`, 'busy'); await deleteFb(x); } snack(`${done.length} messages deleted.`, 'ok'); }
+      catch (e) { snack(`Stopped after ${k - 1} of ${done.length}: ${e.message} Tap ↻ at the top and try again.`, 'bad'); }
+      renderAll();
+    }}, `Delete all ${done.length} done`)));
   }
   el.replaceChildren(...bulk, ...list.map(x => {
     const d = x.d, e = d && log ? log.find(v => v.id === d.id) : null, ok = !!(e && e.key === d.key);
-    const box = document.createElement('div'); box.className = 'fbitem' + (x.open ? '' : ' done');
-    const who = document.createElement('div'); who.className = 'who';
-    who.append(Object.assign(document.createElement('b'), {textContent: ok ? e.name : d ? (d.name || 'Unknown') : 'Could not be read'}));
-    if (d) who.append(Object.assign(document.createElement('span'), {className: 'st ' + (d.kind === 'problem' ? 'bad' : 'ok'), textContent: KIND[d.kind] || 'Other'}));
-    if (!x.open) who.append(Object.assign(document.createElement('span'), {className: 'st', textContent: 'Done'}));
-    box.append(who);
-    box.append(Object.assign(document.createElement('div'), {className: 'meta', textContent: `License ${x.t.id} · device ${x.t.dev} · ${stWhen(x.at)}`}));
-    if (d && !ok) box.append(Object.assign(document.createElement('div'), {className: 'unv', textContent: 'The name is as the app gave it: the key that sent it is not in your list.'}));
-    if (!d) box.append(Object.assign(document.createElement('div'), {className: 'unv', textContent: 'This message could not be opened with your feedback key.'}));
-    if (d) box.append(Object.assign(document.createElement('div'), {className: 'txt', textContent: d.text}));
-    if (d && d.ctx) { const det = document.createElement('details'); det.append(Object.assign(document.createElement('summary'), {textContent: 'Calculation sent with it'}), Object.assign(document.createElement('pre'), {textContent: fbCtxText(d.ctx)})); box.append(det); }
-    if (d) { const det = document.createElement('details'); det.append(Object.assign(document.createElement('summary'), {textContent: 'Device'}), Object.assign(document.createElement('pre'), {textContent: `App version: ${d.app || '–'}\nSent: ${d.at || '–'}\n${d.ua || ''}`})); box.append(det); }
-    const act = document.createElement('div'); act.className = 'row';
-    act.append(Object.assign(document.createElement('button'), {className: 'btn', type: 'button', textContent: x.open ? 'Mark as done' : 'Reopen', onclick: async ev => {
-      const b = ev.target; b.disabled = true;
-      try { const r = await ghIssues(acc, '/issues/' + x.n, 'PATCH', {state: x.open ? 'closed' : 'open'}); if (!r.ok) throw new Error(); x.open = !x.open; }
-      catch (e2) { b.disabled = false; b.textContent = 'Not changed: try again'; return; }
-      renderFb();
-    }}));
-    act.append(sureBtn('Delete', 'Tap again to delete', async b => {
-      b.textContent = 'Deleting…';
-      try { await deleteFb(x); renderFb(); } catch (e) { b.disabled = false; delete b.dataset.sure; b.textContent = 'Not deleted: try again'; }
-    }));
-    box.append(act);
+    const box = h('div', {className: 'fbitem' + (x.open ? '' : ' done')});
+    const who = h('div', {className: 'who'}, h('b', {}, ok ? e.name : d ? (d.name || 'Unknown') : 'Could not be read'));
+    if (d) who.append(h('span', {className: 'st ' + (d.kind === 'problem' ? 'bad' : 'ok')}, KIND[d.kind] || 'Other'));
+    if (!x.open) who.append(h('span', {className: 'st'}, 'Done'));
+    box.append(who, h('div', {className: 'meta'}, `${stWhen(x.at)} · license ${x.t.id} · device ${x.t.dev}`));
+    if (d && !ok) box.append(h('div', {className: 'unv'}, 'The name is as the app gave it: the key that sent it is not in your list.'));
+    if (!d) box.append(h('div', {className: 'unv'}, 'This message could not be opened with your feedback key.'));
+    if (d) box.append(h('div', {className: 'txt'}, d.text));
+    if (d && d.ctx) box.append(h('details', {}, h('summary', {}, d.ctx.tool === 'sigmet' ? 'The SIGMET on the screen' : 'Calculation sent with it'), h('pre', {}, fbCtxText(d.ctx))));
+    if (d) box.append(h('details', {}, h('summary', {}, 'Device'), h('pre', {}, `App version: ${d.app || '–'}\nSent: ${d.at || '–'}\n${d.ua || ''}`)));
+    box.append(h('div', {className: 'acts'},
+      h('button', {className: 'btn sm', type: 'button', onclick: async ev => {
+        const b = ev.target, was = x.open; b.disabled = true;
+        try { await fbState(x, !was); } catch (e2) { b.disabled = false; snack('Not changed: ' + e2.message + ' Try again.', 'bad'); return; }
+        renderAll();
+        snack(was ? 'Marked as done.' : 'Moved back to New.', 'ok', ['Undo', async () => { try { await fbState(x, was); } catch (e3) { snack('Not changed back: ' + e3.message, 'bad'); } renderAll(); }]);
+      }}, x.open ? 'Mark as done' : 'Reopen'),
+      h('button', {className: 'ghost del', type: 'button', onclick: async () => {
+        if (!(await ask({title: 'Delete this feedback?', text: `From ${fbName(x)}, ${stWhen(x.at)}. The issue is emptied on GitHub and the message is gone from here. This cannot be undone.`, yes: 'Delete'}))) return;
+        snack('Deleting…', 'busy');
+        try { await deleteFb(x); snack('Feedback deleted.', 'ok'); } catch (e) { snack('Not deleted: ' + (e.message || 'GitHub could not be reached.') + ' Try again.', 'bad'); }
+        renderAll();
+      }}, 'Delete')));
     return box;
   }));
 }
@@ -725,13 +1005,8 @@ document.addEventListener('visibilitychange', async () => {
   if (document.hidden || !acc || !log || Date.now() - inboxAt < 120000) return;
   inboxAt = Date.now();
   try { await loadFeedback(); } catch (e) {}
-  renderFb(); renderLog();
+  renderAll();
 });
-$('fbReload').onclick = async () => {
-  fbItems = null; fbErr = ''; renderFb();
-  try { await loadRepoInfo(); await loadFbKey(); await loadFeedback(); } catch (e) { fbErr = e.message || 'Feedback could not be read.'; }
-  renderFb(); renderLog();
-};
 
 /* ---- app status: status.json, signed; phones show a notice or pause the calculations at their next sync ---- */
 async function loadStatus() {
@@ -758,14 +1033,16 @@ const stWhen = t => new Date(t).toLocaleString('en-GB', {day:'numeric', month:'s
 function renderStatus() {
   const p = stPublished, mode = p ? p.mode : 'ok', el = $('stNow');
   const appLine = appInfo && appInfo.v ? `The app on GitHub now is v${appInfo.v}${appInfo.built ? `, published ${stWhen(appInfo.built)}` : ''}.` : '';
-  if (mode === 'ok') { el.className = 'note ok'; el.textContent = 'Now: Normal. The calculations are open on all phones.' + (p ? ` Set ${stWhen(p.issued)}.` : ''); }
+  let text;
+  if (mode === 'ok') text = 'The calculations are open on all phones.' + (p ? ` Set ${stWhen(p.issued)}.` : '');
   else {
     const hit = !p.before || !appInfo || !appInfo.built || appInfo.built < p.before;
-    el.className = 'note ' + (mode === 'pause' ? 'bad' : 'warn');
-    el.textContent = `Now: ${mode === 'pause' ? 'Calculations paused' : 'Notice shown'} since ${stWhen(p.issued)}, `
-      + (p.before ? `for app versions published before then. ${appLine} ${hit ? 'It is affected.' : 'It was published after, so phones with it are not affected.'}` : 'for all app versions.')
+    text = `Since ${stWhen(p.issued)}, ` + (p.before ? `for app versions published before then. ${appLine} ${hit ? 'It is affected.' : 'It was published after, so phones with it are not affected.'}` : 'for all app versions.')
       + (p.text ? ` Message: “${p.text}”` : '');
   }
+  el.className = 'stnow' + (mode === 'pause' ? ' bad' : mode === 'warn' ? ' warn' : '');
+  el.replaceChildren(h('span', {className: 'big'}, icon(mode === 'ok' ? 'i-ok' : mode === 'pause' ? 'i-pause' : 'i-alert')),
+    h('span', {className: 't'}, h('b', {}, mode === 'ok' ? 'Normal' : mode === 'pause' ? 'Calculations paused' : 'Notice shown'), h('span', {}, text)));
   document.querySelectorAll('#stSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.s === stPick)));
   document.querySelectorAll('#stScope button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.c === stScope)));
   $('stHint').textContent = stPick === 'ok' ? 'The app works as usual: no notice, calculations open.'
@@ -786,20 +1063,16 @@ document.querySelectorAll('#stSeg button').forEach(b => b.onclick = () => pickSt
 document.querySelectorAll('#stScope button').forEach(b => b.onclick = () => { stScope = b.dataset.c; renderStatus(); });
 $('stGo').onclick = async () => {
   const b = $('stGo'), el = $('stMsg');
-  if (stPick === 'pause' && !b.dataset.sure) {
-    b.dataset.sure = '1'; b.textContent = 'Tap again to pause on all phones';
-    setTimeout(() => { delete b.dataset.sure; renderStatus(); }, 5000); return;
-  }
-  delete b.dataset.sure;
   const text = $('stText').value.trim();
   if (stPick !== 'ok' && !text) { el.hidden = false; el.className = 'note bad'; el.textContent = 'Write the message the pilots will see.'; return; }
+  if (stPick === 'pause' && !(await ask({title: 'Pause the calculations on all phones?', text: 'At its next sync, every phone hides the inputs and results in Runway Cond and shows your message instead. Pilots cannot dismiss it. You can set Normal again at any time.', yes: 'Pause calculations'}))) return;
   b.disabled = true; el.hidden = false; el.className = 'note'; el.textContent = 'Signing and publishing…';
   try {
     await publishStatus(stPick, stScope, text);
     el.className = 'note ok';
     el.textContent = 'Published. In about a minute, phones pick it up when the app is opened online, or within 10 minutes if it is open. A phone that stays offline gets it at its next connection; the app needs one at least once a week.';
   } catch (e) { el.className = 'note bad'; el.textContent = 'Not published: ' + (e.message || 'GitHub could not be reached.') + ' Tap again.'; }
-  b.disabled = false; renderStatus();
+  b.disabled = false; renderAll();
 };
 
 /* what the key itself says, before any edit */
@@ -846,7 +1119,7 @@ async function loadActs() {
     const m = new Map();
     for (let page = 1; page <= 20; page++) {
       const r = await ghIssues(acc, `/issues?state=open&per_page=100&page=${page}`);
-      if (!r.ok) throw new Error(r.status === 401 ? 'The device-limit token is not accepted any more (expired or deleted). Save a new one under Device limits.' : `GitHub answered ${r.status} for the activations.`);
+      if (!r.ok) throw new Error(r.status === 401 ? 'The device-limit token is not accepted any more (expired or deleted). Save a new one under Settings → Device limits.' : `GitHub answered ${r.status} for the activations.`);
       const list = await r.json();
       for (const it of list) { const a = !it.pull_request && GRFLicense.actParse(it.title); if (a) { if (!m.has(a.id)) m.set(a.id, []); m.get(a.id).push({dev: a.dev, n: it.number, at: it.created_at}); } }
       if (list.length < 100) break;
@@ -887,7 +1160,7 @@ $('actGo').onclick = async () => {
     if (r.status !== 403 && r.status !== 404) throw new Error('This token can change the app\'s files. Make a new token with only Issues: Read and write, so licensed apps cannot change the app.');
     const bytes = await GRFLicense.sealAccess(a, kf.contentKey);
     accSha = await putFile('act.bin', bytes, accSha, 'Device activation access');
-    acc = a; $('actTok').value = ''; await loadActs(); renderAct(); renderLog(); await loadFeedback(); renderFb();
+    acc = a; $('actTok').value = ''; await loadActs(); await loadFeedback(); renderAll(); snack('Device limits are ready: keys can be limited to a number of devices.', 'ok');
   } catch (e) { actMsg(e.message || 'Could not reach GitHub.'); }
   finally { $('actGo').disabled = false; }
 };
@@ -910,22 +1183,42 @@ async function useKeyFile(text) {
   if (h !== APP_KEY_HASH) return 'This key file belongs to another build of the app.';
   kf = j; logKey = await deriveLogKey(j.key.d); store.set('grf-signing-key-v2', JSON.stringify(j)); return null;
 }
+const isReady = () => !!(kf && tok && log);
 function renderSetup() {
-  const ready = kf && tok && log;
+  const ready = isReady();
+  document.documentElement.classList.toggle('ready', ready);
+  const step = (id, done, n) => { $(id).classList.toggle('done', done); $(id).querySelector('.n').replaceChildren(done ? icon('i-ok') : n); };
+  step('step1', !!kf, '1'); step('step2', !!(tok && log), '2');
   $('kState').textContent = kf ? 'Loaded on this device.' : '';
+  $('kFile').textContent = kf ? 'Choose another key file' : 'Choose GRF-signing-key-v2.json';
   $('ghState').textContent = tok ? (log ? `Connected to ${GH.owner}/${GH.repo}.` : 'Token saved.') : '';
-  $('setOk').hidden = !ready; $('setNeed').hidden = !!ready;
-  if (ready) $('setOk').replaceChildren(`Ready: signing key and GitHub connected (${GH.owner}/${GH.repo}). `,
-    Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Remove from this device', onclick: () => { store.del('grf-signing-key-v2'); store.del('grf-gh-token'); kf = null; tok = ''; log = null; acc = null; acts = null; renderSetup(); renderLog(); }}));
+  $('setOk').hidden = !ready; $('setNeed').hidden = ready;
+  if (ready) $('setOk').textContent = `Ready: signing key and GitHub connected (${GH.owner}/${GH.repo}).`;
+  $('onb').hidden = ready; $('pRemove').hidden = !(kf || tok);
   $('iGo').disabled = !ready;
-  $('pStatus').hidden = !ready; if (ready) renderStatus();
-  $('pFb').hidden = !ready; if (ready) renderFb();
   renderIssuesBanner();
   renderAct();
 }
-async function connect() {
+$('setRemove').onclick = async () => {
+  if (!(await ask({title: 'Remove the signing key and token from this device?', text: 'To use the key tool here again you need the key file and a GitHub token. Nothing changes in the repository or for the pilots.', yes: 'Remove'}))) return;
+  store.del('grf-signing-key-v2'); store.del('grf-gh-token'); kf = null; logKey = null; tok = ''; log = null; acc = null; acts = null; seen = null; fbItems = null; readAt = 0;
+  renderAll(); route(); snack('Removed from this device.', 'ok');
+};
+/* the freshness line in the header: when everything was last read; tap to read again */
+const hm = t => new Date(t).toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit'});
+function setFresh(s) {
+  const b = $('logReload'); b.dataset.s = s;
+  $('freshL').textContent = s === 'busy' ? '' : s === 'bad' ? 'Not updated · ' : 'Updated ';
+  $('freshT').textContent = s === 'busy' ? 'Reading…' : s === 'bad' ? 'retry' : readAt ? hm(readAt) : '–';
+  b.setAttribute('aria-label', s === 'busy' ? 'Reading from GitHub' : s === 'bad' ? 'Not updated: tap to read again' : `Updated ${readAt ? hm(readAt) : ''}: tap to read again`);
+}
+let connecting = null;
+function connect() { if (!connecting) connecting = connectOnce().finally(() => { connecting = null; }); return connecting; }
+async function connectOnce() {
   setMsg('');
-  if (!kf || !tok) { renderSetup(); return; }
+  if (!kf || !tok) { renderAll(); route(); return; }
+  const had = !!log; busy = true; setFresh('busy'); if (!had) route();
+  let ok = true;
   try {
     await loadLog(); await loadRevoked(); await loadLicenses(); await loadStatus(); await loadAppInfo();
     stPick = stPublished ? stPublished.mode : 'ok'; stScope = stPublished && stPublished.before ? 'older' : 'all';
@@ -934,14 +1227,20 @@ async function connect() {
     await loadAccess(); await loadActs();
     await loadRepoInfo(); await loadFbKey(); await loadFeedback();
   }
-  catch (e) { log = null; setMsg(e.name === 'OperationError' ? 'The key list in the repository could not be opened with this signing key.' : (e.message || 'Could not reach GitHub.')); }
-  renderSetup(); renderLog();
+  catch (e) {
+    ok = false;
+    const m = e.name === 'OperationError' ? 'The key list in the repository could not be opened with this signing key.' : (e.message || 'Could not reach GitHub.');
+    if (!had) { log = null; setMsg(m); } else snack('Not updated: ' + m, 'bad', ['Retry', connect]);
+  }
+  busy = false;
+  if (ok) readAt = Date.now();
+  setFresh(ok ? 'ok' : 'bad');
+  renderAll(); route();
 }
 $('kFile').onclick = () => $('kFileIn').click();
 $('kFileIn').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; const m = await useKeyFile(await f.text()); setMsg(m); if (!m) connect(); else renderSetup(); };
 $('ghGo').onclick = () => { tok = $('ghTok').value.trim(); if (!tok) return setMsg('Paste the token first.'); store.set('grf-gh-token', tok); $('ghTok').value = ''; connect(); };
 $('logReload').onclick = () => connect();
-/* a key made while the list could not be saved: add it with Check a key → Add to list */
 
 /* ---- validity ---- */
 function endFor(p) {
@@ -970,8 +1269,8 @@ function setDevices(n, custom) {
   $('nHint').className = n && !bound && issuesOff() ? 'note bad' : 'disc';
   if (n && !bound && issuesOff()) { $('nHint').textContent = `Issues are turned off in the GitHub repository, so a key limited to ${n === 1 ? 'one device' : n + ' devices'} cannot be activated yet: the app says activation is switched off. Turn Issues on (see the red note at the top), or choose Any number. A key made now starts working as soon as Issues are on.`; return; }
   $('nHint').textContent = bound ? 'Locked to the device code below: the number of devices does not apply.'
-    : !acc ? 'Set up Device limits above to choose a number.'
-    : n ? `The key is activated online the first time on each phone or iPad. When ${n === 1 ? 'that place is' : `all ${n} places are`} used, it does not open on more devices. You can free a place in the list below.`
+    : !acc ? 'Set up Device limits under Settings to choose a number.'
+    : n ? `The key is activated online the first time on each phone or iPad. When ${n === 1 ? 'that place is' : `all ${n} places are`} used, it does not open on more devices. You can free a place in the key’s details.`
     : 'The key opens the app on any number of devices.';
 }
 const customN = () => { const v = Number($('nCustom').value); return Number.isInteger(v) && v >= 1 && v <= 127 ? v : 0; };
@@ -982,17 +1281,17 @@ document.querySelectorAll('#nSeg button').forEach(b => b.onclick = () => {
 $('nCustom').oninput = () => setDevices(customN(), true);
 $('iDev').oninput = () => setDevices(nDev || 0, nCustom);
 
-/* ---- issue ---- */
+/* ---- issue: a sheet; after Create it shows the key with the message to send ---- */
 const iMsg = m => { $('iMsg').hidden = !m; $('iMsg').textContent = m || ''; };
 $('iGo').onclick = async () => {
   iMsg('');
   const name = $('iName').value.trim();
-  if (!name) return iMsg('Enter the name of the person the key is for.');
+  if (!name) { iMsg('Enter the name of the person the key is for.'); $('iName').focus(); return; }
   if (!$('iEnd').value) return iMsg('Pick the last valid day.');
   const bound = !!$('iDev').value.trim();
   if (!bound && nCustom && !customN()) return iMsg('Enter a number of devices from 1 to 127, or choose Any number.');
   const n = bound ? 0 : (nDev || 0);
-  if (n && !acc) return iMsg('Set up Device limits first, or choose Any number.');
+  if (n && !acc) return iMsg('Set up Device limits under Settings first, or choose Any number.');
   $('iGo').disabled = true;
   try {
     const r = await GRFLicense.sign({name, issuedMs: Date.now(), expiresDate: $('iEnd').value, deviceCode: $('iDev').value, maxDevices: n, contentKey: kf.contentKey}, kf.key);
@@ -1001,20 +1300,31 @@ $('iGo').onclick = async () => {
     lastIssued = {...r, name};
     $('iKey').textContent = r.key;
     $('iFacts').replaceChildren(...[['Name', name], ['Valid', `${fmt(r.issued)} – ${fmt(r.expires)}`], ['Devices', r.device ? 'only ' + r.device : devText(r.maxDevices)]]
-      .map(([k, v]) => { const s = document.createElement('span'); s.append(k + ': '); const b = document.createElement('b'); b.textContent = v; s.append(b); return s; }));
-    $('iOut').hidden = false;
-    try { await changeLog(l => l.unshift({name, key: r.key, issued: r.issued, expires: r.expires, device: r.device || '', devices: r.maxDevices, id: r.id, createdAt: Date.now()}), `Key issued`); renderLog(); }
-    catch (e) { iMsg('The key was created, but it could not be saved in the list: ' + e.message + ' Copy it now.'); }
+      .map(([k, v]) => h('span', {}, k + ': ', h('b', {}, v))));
+    $('pIssue').hidden = true; $('iOut').hidden = false; $('iOutMsg').hidden = true; $('dNewH').textContent = 'Key for ' + name;
+    $('dNew').scrollTop = 0; $('iCopyMsg').focus();
+    try { await changeLog(l => l.unshift({name, key: r.key, issued: r.issued, expires: r.expires, device: r.device || '', devices: r.maxDevices, id: r.id, createdAt: Date.now()}), `Key issued`); renderAll(); }
+    catch (e) { $('iOutMsg').hidden = false; $('iOutMsg').textContent = 'The key was created, but it could not be saved in the list: ' + e.message + ' Copy it now; later add it with Keys → Check a key.'; document.querySelector('#iOut .okline span').textContent = 'Key created'; }
   } catch (e) { iMsg(e.message || 'The key could not be created.'); }
   finally { $('iGo').disabled = false; }
 };
+function resetIssue() {
+  $('iName').value = ''; $('iDev').value = ''; $('nCustom').value = ''; iMsg('');
+  $('pIssue').hidden = false; $('iOut').hidden = true; $('dNewH').textContent = 'New license key';
+  document.querySelector('#iOut .okline span').textContent = 'Key created and added to the list';
+  document.querySelector('#pIssue details').open = false;
+  setPeriod('m3'); nUser = false; renderAct();
+}
+$('iOpen').onclick = () => { if (!$('iOut').hidden) resetIssue(); openDlg('dNew'); setTimeout(() => $('iName').focus(), 30); };
+$('iAgain').onclick = () => { resetIssue(); $('iName').focus(); };
+$('iDone').onclick = () => { closeDlg('dNew'); resetIssue(); };
 async function copy(text, btn) {
   const was = btn.textContent;
   try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; } catch (e) { btn.textContent = 'Copy failed'; }
   setTimeout(() => { btn.textContent = was; }, 1800);
 }
 const appUrl = () => location.href.replace(/admin\.html.*$/, '');
-const message = k => `Your license key for GRF Runway Cond, valid until ${fmt(k.expires)}${k.device ? `, on the device with code ${k.device}` : k.maxDevices ? `, for ${devText(k.maxDevices)}` : ''}:\n\n${k.key}\n\nApp: ${appUrl()}\nOpen it in Safari, choose Share > Add to Home Screen, open it from the home screen, paste the key and tap Activate${k.maxDevices ? ' (with an internet connection: each device you activate uses one of the places)' : ''}. The app works offline, but needs an internet connection at least once a week.`;
+const message = k => `Your license key for the GRF Toolbox (Runway Cond and SIGMET), valid until ${fmt(k.expires)}${k.device ? `, on the device with code ${k.device}` : k.maxDevices ? `, for ${devText(k.maxDevices)}` : ''}:\n\n${k.key}\n\nApp: ${appUrl()}\nOpen it in Safari, choose Share > Add to Home Screen, open it from the home screen, paste the key and tap Activate${k.maxDevices ? ' (with an internet connection: each device you activate uses one of the places)' : ''}. The app works offline, but needs an internet connection at least once a week.`;
 $('iCopy').onclick = () => copy(lastIssued.key, $('iCopy'));
 $('iCopyMsg').onclick = () => copy(message(lastIssued), $('iCopyMsg'));
 
@@ -1027,14 +1337,154 @@ function status(e) {
   return left < 0 ? ['Expired', 'bad'] : left <= 14 ? [`${left} d left`, 'warn'] : ['Active', 'ok'];
 }
 async function withdraw(id, entry) {
-  const el = $('revState'); el.hidden = false; el.className = 'note'; el.textContent = 'Withdrawing and publishing…';
+  const v = (log && log.find(e => e.id === id)) || entry, name = v && v.name ? v.name : 'The key';
+  snack('Withdrawing and publishing…', 'busy');
+  let ok = true;
   try {
     await changeLog(l => { const x = l.find(e => e.id === id); if (x) { x.revoked = true; x.revokedAt = Date.now(); } else if (entry) l.unshift({...entry, revoked: true, revokedAt: Date.now()}); }, 'Key withdrawn');
     await publishRevoked();
-    el.className = 'note ok'; el.textContent = 'Withdrawn and published. In about a minute, phones lock that key when the app is opened online, or within 10 minutes if it is open. Offline phones lock it at the latest within a week.';
-  } catch (e) { el.className = 'note bad'; el.textContent = 'Not finished: ' + (e.message || 'GitHub could not be reached') + ' Tap Withdraw again.'; }
-  renderLog();
+    snack(`${name}: withdrawn and published. In about a minute, phones lock the key when the app is opened online; offline phones at the latest within a week.`, 'ok');
+  } catch (e) { ok = false; snack('Not finished: ' + (e.message || 'GitHub could not be reached.') + ' Try again.', 'bad'); }
+  renderAll();
+  return ok;
 }
+function askWithdraw(v, entry) {
+  return ask({title: `Withdraw ${v.name ? v.name + '’s key' : 'this key'}?`,
+    text: 'The app locks on every device with this key at its next sync (offline phones within a week). A withdrawn key cannot be restored: you would issue a new one.',
+    yes: 'Withdraw key', no: 'Keep key'}).then(y => y ? withdraw(v.id, entry) : false);
+}
+/* ---- what is not published yet ---- */
+function pendingInfo() {
+  if (!log) return {rev: false, lic: false};
+  const rev = log.some(e => e.revoked) && (!revPublished || log.filter(e => e.revoked).some(e => !revPublished.ids.includes(e.id)));
+  const want = JSON.stringify(rulesFromLog().filter(r => r[1] !== null || r[2] !== null).sort((a, b) => a[0] - b[0]));
+  return {rev, lic: want !== JSON.stringify(licPublished ? licPublished.rules : [])};
+}
+async function publishNow() {
+  const p = pendingInfo(); snack('Publishing…', 'busy');
+  try { if (p.rev) await publishRevoked(); if (p.lic) await publishLicenses(); snack('Published. Phones pick it up at their next sync.', 'ok'); }
+  catch (e) { snack('Not published: ' + (e.message || 'GitHub could not be reached.'), 'bad', ['Retry', publishNow]); }
+  renderAll();
+}
+function renderPending() {
+  const el = $('revState'), p = pendingInfo();
+  el.hidden = !(p.rev || p.lic); if (el.hidden) return;
+  el.className = 'note warn';
+  el.replaceChildren(p.rev && p.lic ? 'Some withdrawals and key edits are not published yet. ' : p.rev ? 'Some withdrawals are not published yet. ' : 'Some key edits are not published yet. ',
+    h('button', {className: 'ghost', type: 'button', onclick: publishNow}, 'Publish now'));
+}
+/* ---- the list: one row per key; a table when there is room ---- */
+const lastSeen = v => { const l = seen && seen.get(v.id); return l && l.length ? l[0].at : 0; };
+const daysLeft = e => GRFLicense.dayOf(Date.parse(e.expires + 'T00:00:00Z')) - GRFLicense.dayOf(Date.now());
+const SORTS = {
+  new: null,
+  seen: (a, b) => lastSeen(b) - lastSeen(a),
+  end: (a, b) => (a.revoked - b.revoked) || a.expires.localeCompare(b.expires),
+  name: (a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'sv')
+};
+function keyRow(v) {
+  const [st, cls] = status(v), mx = maxOf(v), used = mx && acts ? GRFLicense.actHolders(acts.get(v.id) || [], 0) : null, ls = lastSeen(v);
+  const b = h('button', {type: 'button', className: 'krow', onclick: () => openKey(v.id)});
+  b.dataset.id = v.id; if (String(v.id) === selId) b.setAttribute('aria-current', 'true');
+  b.append(h('span', {className: 'kn'}, v.name), h('span', {className: 'ks'}, h('span', {className: 'st ' + cls}, st)),
+    h('span', {className: 'km'},
+      h('span', {className: 'mono'}, fmt(v.expires)),
+      h('span', {}, v.device ? h('span', {className: 'mono'}, v.device) : mx ? [used ? `${used.length}/${mx}` : `max ${mx}`, h('span', {className: 'u'}, mx === 1 ? ' device' : ' devices')] : [h('span', {className: 'u'}, 'no device limit'), h('span', {className: 'w'}, 'any')]),
+      h('span', {className: ls ? 'on' : ''}, v.revoked ? '–' : ls ? [h('span', {className: 'u'}, 'online '), agoText(ls)] : seen ? 'not online yet' : '')));
+  return b;
+}
+function renderLog() {
+  const body = $('logBody');
+  document.querySelector('.ktools').hidden = !log || !log.length;
+  $('fSort').value = fSort;
+  renderPending();
+  renderDetail();
+  if (!log) { body.replaceChildren(h('div', {className: 'empty'}, 'Set up this device to see the keys.')); return; }
+  const counts = {active: 0, expired: 0, withdrawn: 0, all: log.length};
+  log.forEach(e => counts[catOf(e)]++);
+  document.querySelectorAll('#fSeg button').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.f === fCat));
+    b.replaceChildren(b.dataset.f[0].toUpperCase() + b.dataset.f.slice(1), h('span', {className: 'n'}, counts[b.dataset.f]));
+  });
+  if (!log.length) { body.replaceChildren(h('div', {className: 'empty'}, h('b', {}, 'No keys yet.'), 'Keys appear here when you create one. ', h('button', {className: 'ghost', type: 'button', onclick: () => $('iOpen').click()}, 'New key'))); return; }
+  const q = fQ.trim().toLowerCase();
+  let rows = log.filter(e => (fCat === 'all' || catOf(e) === fCat) && (!q || String(e.name || '').toLowerCase().includes(q)));
+  if (SORTS[fSort]) rows = rows.slice().sort(SORTS[fSort]);
+  if (!rows.length) {
+    body.replaceChildren(h('div', {className: 'empty'}, q ? `No ${fCat === 'all' ? '' : fCat + ' '}keys match “${fQ.trim()}”. ` : `No ${fCat} keys. `,
+      h('button', {className: 'ghost', type: 'button', onclick: () => { fQ = ''; $('fQ').value = ''; if (!q) { fCat = 'all'; store.set('grf-admin-filter', fCat); } renderLog(); }}, q ? 'Clear the search' : 'Show all keys')));
+    return;
+  }
+  body.replaceChildren(h('div', {className: 'klist'},
+    h('div', {className: 'khead', 'aria-hidden': 'true'}, h('span', {}, 'Name'), h('span', {}, 'Status'), h('span', {}, 'Valid until'), h('span', {}, 'Devices'), h('span', {}, 'Last online')),
+    ...rows.map(keyRow)));
+}
+/* ---- one key: facts, devices, actions; withdrawing sits apart ---- */
+const keyInfo = v => ({key: v.key, expires: v.expires, device: v.device, maxDevices: maxOf(v)});
+let shownId = null;
+function renderDetail() {
+  const box = $('kDetail'), v = selId && log ? log.find(e => String(e.id) === selId) : null;
+  $('vKeys').classList.toggle('split', !!v);
+  document.documentElement.classList.toggle('kopen', !!v);
+  box.hidden = !v;
+  if (!v) { shownId = null; return; }
+  if (shownId !== selId) { box.scrollTop = 0; shownId = selId; }
+  const [st, cls] = status(v), o = origOf(v), mx = maxOf(v), used = mx && acts ? GRFLicense.actHolders(acts.get(v.id) || [], 0) : null;
+  const kids = [h('div', {className: 'kdtitle'}, h('h3', {}, v.name), h('div', {className: 'row'}, h('span', {className: 'st ' + cls}, st)))];
+  const dl = h('dl', {className: 'facts'}), fact = (k, ...vals) => dl.append(h('dt', {}, k), h('dd', {}, ...vals));
+  const was = t => h('span', {className: 'was'}, t);
+  fact('Valid until', fmt(v.expires), v.expires !== o.expires ? was(`Edited: was ${fmt(o.expires)}`) : null);
+  fact('Issued', fmt(v.issued));
+  fact('Devices', v.device ? `Locked to ${v.device}` : mx ? (used ? `${used.length} of ${devText(mx)} used` : `Up to ${devText(mx)}`) : 'Any number',
+    !v.device && mx !== (o.devices || 0) ? was(`Edited: was ${devText(o.devices || 0)}`) : null);
+  if (!v.revoked) fact('Last online', seenLine(v) || h('span', {className: 'disc'}, acc ? 'Loading…' : 'Needs the device-limit token (Settings)'));
+  if (v.revoked) fact('Withdrawn', v.revokedAt ? stWhen(v.revokedAt) : 'Yes');
+  fact('License', h('span', {className: 'mono'}, String(v.id)));
+  kids.push(dl);
+  /* the devices: each place in use, with when it was last online; freeing one asks first */
+  const sl = seen ? (seen.get(v.id) || []) : [];
+  if (!v.revoked && (mx || sl.length)) {
+    const sub = h('div', {className: 'sub'}, h('h2', {}, mx ? `Devices · ${used ? used.length : '?'} of ${mx} used` : 'Devices seen online'));
+    if (mx && !acc) sub.append(h('p', {className: 'disc'}, 'Save the device-limit token under Settings to see the devices.'));
+    else if (mx && !used) sub.append(h('p', {className: 'disc'}, 'The activations could not be read. Tap ↻ at the top.'));
+    else {
+      const list = h('div', {className: 'devl'}), devs = mx ? used : sl.map(x => x.dev);
+      for (const dev of devs) {
+        const sx = sl.find(x => x.dev === dev);
+        const row = h('div', {className: 'dev'}, h('span', {className: 'mono'}, dev),
+          h('span', {className: 'when'}, sx ? `online ${agoText(sx.at)}${sx.d.calc ? ' · result ' + agoText(sx.d.calc) : ''}${sx.d.app ? ' · v' + sx.d.app : ''}` : 'no online report yet'));
+        if (mx) row.append(h('button', {className: 'btn sm', type: 'button', onclick: async e => {
+          if (!(await ask({title: `Free the place used by ${dev}?`, text: 'That device is logged out at its next check, and the key can then be activated on another device.', yes: 'Free place', no: 'Keep'}))) return;
+          const b = e.target; b.disabled = true; b.textContent = 'Freeing…';
+          try { await freeDevice(v.id, dev); snack(`${dev} freed: the place can be used on another device.`, 'ok'); }
+          catch (err) { b.disabled = false; b.textContent = 'Free'; snack('Not freed: ' + err.message, 'bad'); }
+        }}, 'Free'));
+        list.append(row);
+      }
+      if (mx && mx <= 10) for (let i = devs.length; i < mx; i++) list.append(h('div', {className: 'dev free'}, 'Free place'));
+      sub.append(list);
+    }
+    kids.push(sub);
+  }
+  kids.push(h('div', {className: 'kacts'},
+    h('button', {className: 'btn fill', type: 'button', onclick: e => copy(message(keyInfo(v)), e.target)}, 'Copy message with key'),
+    h('button', {className: 'btn', type: 'button', onclick: e => copy(v.key, e.target)}, 'Copy key'),
+    v.revoked ? null : h('button', {className: 'btn', type: 'button', id: 'kEdit', 'aria-expanded': String(editing === v.id), onclick: () => {
+      editing = editing === v.id ? null : v.id; renderDetail();
+      if (editing && acc) loadActs().then(() => { if (editing === v.id) renderDetail(); });
+      if (editing) setTimeout(() => { const e = document.querySelector('#kBody .editbox'); if (e) e.scrollIntoView({block: 'nearest', behavior: 'smooth'}); }, 30);
+    }}, editing === v.id ? 'Close editing' : 'Edit validity or devices')));
+  if (editing === v.id) kids.push(h('div', {className: 'card'}, editor(v)));
+  if (!v.revoked) kids.push(h('section', {className: 'zone danger'}, h('h2', {}, 'Withdraw'),
+    h('div', {className: 'row'}, h('p', {className: 'disc', style: 'flex:1 1 220px'}, 'Locks the app on every device with this key at its next sync. It cannot be undone.'),
+      h('button', {className: 'btn dangerline', type: 'button', id: 'kWithdraw', onclick: () => askWithdraw(v)}, 'Withdraw key'))));
+  $('kBody').replaceChildren(...kids);
+}
+let fromList = false;
+function openKey(id) { fromList = /^#keys/.test(location.hash) || location.hash === ''; location.hash = '#keys/' + id; }
+function closeKey() { if (fromList && /^#keys\/./.test(location.hash)) { fromList = false; history.back(); } else location.hash = '#keys'; }
+$('kBack').onclick = closeKey; $('kClose').onclick = closeKey;
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && selId && !document.querySelector('dialog[open]')) closeKey(); });
 /* ---- edit a key after issue: last valid day and number of devices ---- */
 function addTime(dateStr, p) {
   const base = new Date(Math.max(Date.parse(dateStr + 'T00:00:00Z'), Date.parse(iso(new Date()) + 'T00:00:00Z')));
@@ -1067,7 +1517,7 @@ function editor(v) {
     const bits = [`Originally valid until ${fmt(o.expires)}${bound ? `, locked to device ${v.device}` : `, ${devText(o.devices || 0)}`}.`];
     if (date.value && date.value < iso(new Date())) bits.push('This date has passed: the key stops working at the next sync.');
     if (!bound && d && used !== null && used > d) bits.push(`${used} devices use it now: the last ${used - d === 1 ? 'one' : used - d} activated will be logged out at their next check.`);
-    if (!bound && d && !acc) bits.push('Set up Device limits above to limit the number of devices.');
+    if (!bound && d && !acc) bits.push('Set up Device limits under Settings to limit the number of devices.');
     bits.push('Phones apply the change at their next sync: when the app is opened online, at the latest within a week.');
     info.textContent = bits.join(' ');
   }
@@ -1081,93 +1531,25 @@ function editor(v) {
     try {
       await changeLog(l => { const x = l.find(e => e.id === v.id); if (!x) return; x.expires = date.value; if (!bound) x.devices = d; x.editedAt = Date.now(); }, `Key edited`);
       await publishLicenses();
-      editing = null; renderLog();
-      const st = $('revState'); st.hidden = false; st.className = 'note ok';
-      st.textContent = `${v.name}: saved and published. Phones apply it at their next sync (when the app is opened online, at the latest within a week).`;
+      editing = null; renderAll();
+      snack(`${v.name}: saved and published. Phones apply it at their next sync (when the app is opened online, at the latest within a week).`, 'ok');
     } catch (e) { msg.className = 'note bad'; msg.textContent = 'Not saved: ' + (e.message || 'GitHub could not be reached.'); save.disabled = false; }
   }});
   const reset = el('button', {className: 'ghost', type: 'button', textContent: 'Back to the original', onclick: () => { date.value = o.expires; if (!bound) { n = o.devices || 0; custom = ![0, 1, 2, 3, 5].includes(n); num.value = custom ? n : ''; } paint(); }});
   const box = el('div', {className: 'editbox'},
-    el('b', {textContent: `Edit ${v.name}`}),
+    el('h2', {textContent: 'Edit validity or devices'}),
     el('div', {className: 'field'}, el('span', {className: 'lbl', textContent: 'Last valid day'}), date, quick),
     bound ? el('p', {className: 'disc', textContent: `Locked to device ${v.device}: the number of devices does not apply.`})
           : el('div', {className: 'field'}, el('span', {className: 'lbl', textContent: 'Number of devices'}), seg, numRow),
     info, msg,
-    el('div', {className: 'row'}, save, el('button', {className: 'btn', type: 'button', textContent: 'Cancel', onclick: () => { editing = null; renderLog(); }}), reset));
+    el('div', {className: 'row'}, save, el('button', {className: 'btn', type: 'button', textContent: 'Cancel', onclick: () => { editing = null; renderDetail(); }}), reset));
   paint();
   return box;
 }
 
-function renderLog() {
-  const body = $('logBody');
-  document.querySelector('.filters').hidden = !log || !log.length;
-  if (!log) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent:'Set up this device to see the keys.'})); return; }
-  const pending = log.some(e => e.revoked) && (!revPublished || log.filter(e => e.revoked).some(e => !revPublished.ids.includes(e.id)));
-  if (pending) { const el = $('revState'); el.hidden = false; el.className = 'note warn'; el.replaceChildren('Some withdrawals are not published yet. ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Publish now', onclick: async () => { try { await publishRevoked(); el.className = 'note ok'; el.textContent = 'Published.'; } catch (e) { el.textContent = 'Not published: ' + e.message; } }})); }
-  const wantRules = JSON.stringify(rulesFromLog().filter(r => r[1] !== null || r[2] !== null).sort((a, b) => a[0] - b[0]));
-  if (!pending && wantRules !== JSON.stringify(licPublished ? licPublished.rules : [])) {
-    const el = $('revState'); el.hidden = false; el.className = 'note warn';
-    el.replaceChildren('Some key edits are not published yet. ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Publish now', onclick: async () => { try { await publishLicenses(); el.className = 'note ok'; el.textContent = 'Published.'; } catch (e) { el.textContent = 'Not published: ' + e.message; } }}));
-  }
-  const counts = {active: 0, expired: 0, withdrawn: 0, all: log.length};
-  log.forEach(e => counts[catOf(e)]++);
-  document.querySelectorAll('#fSeg button').forEach(b => {
-    b.setAttribute('aria-pressed', String(b.dataset.f === fCat));
-    b.replaceChildren(b.dataset.f[0].toUpperCase() + b.dataset.f.slice(1), Object.assign(document.createElement('span'), {className:'n', textContent: counts[b.dataset.f]}));
-  });
-  if (!log.length) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent:'No keys issued yet. Keys you create above are listed here with their end dates.'})); return; }
-  const q = fQ.trim().toLowerCase();
-  const rows = log.filter(e => (fCat === 'all' || catOf(e) === fCat) && (!q || String(e.name || '').toLowerCase().includes(q)));
-  if (!rows.length) { body.replaceChildren(Object.assign(document.createElement('div'), {className:'empty', textContent: q ? `No ${fCat === 'all' ? '' : fCat + ' '}keys match "${fQ.trim()}".` : `No ${fCat} keys.`})); return; }
-  const t = document.createElement('table'); t.className = 'log';
-  t.innerHTML = '<thead><tr><th>Name</th><th>Valid until</th><th>Status</th><th>Devices</th><th></th></tr></thead>';
-  const tb = document.createElement('tbody');
-  for (const v of rows) {
-    const [st, cls] = status(v);
-    const tr = document.createElement('tr');
-    const td = (txt, c) => { const e = document.createElement('td'); if (c) e.className = c; e.textContent = txt; return e; };
-    const stTd = document.createElement('td'); stTd.append(Object.assign(document.createElement('span'), {className:'st ' + cls, textContent: st}));
-    const act = document.createElement('td');
-    act.append(Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Copy key', onclick: e => copy(v.key, e.target)}));
-    if (!v.revoked) act.append(' ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent: editing === v.id ? 'Close' : 'Edit',
-      onclick: () => { editing = editing === v.id ? null : v.id; renderLog(); if (editing && acc) loadActs().then(() => { if (editing === v.id) renderLog(); }); }}));
-    if (!v.revoked) act.append(' ', Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Withdraw',
-      onclick: e => { const b = e.target; if (b.dataset.sure) { b.disabled = true; withdraw(v.id); } else { b.dataset.sure = '1'; b.textContent = 'Tap again to withdraw'; b.style.color = 'var(--bad)'; setTimeout(() => { delete b.dataset.sure; b.textContent = 'Withdraw'; b.style.color = ''; }, 4000); } }}));
-    const mx = maxOf(v), used = mx && acts ? GRFLicense.actHolders(acts.get(v.id) || [], 0) : null;
-    const nameTd = td(v.name);
-    const o = origOf(v), changed = !v.revoked && (v.expires !== o.expires || (!v.device && maxOf(v) !== (o.devices || 0)));
-    if (changed) nameTd.append(Object.assign(document.createElement('div'), {className: 'devs', textContent:
-      `Edited${v.expires !== o.expires ? `: was valid until ${fmt(o.expires)}` : ''}${!v.device && maxOf(v) !== (o.devices || 0) ? `${v.expires !== o.expires ? ',' : ':'} was ${devText(o.devices || 0)}` : ''}`}));
-    if (mx && !v.revoked) {
-      const d = document.createElement('div'); d.className = 'devs';
-      if (!acc) d.append(`Limited to ${devText(mx)}`);
-      else if (!used) d.append(`Limited to ${devText(mx)} (activations not loaded)`);
-      else {
-        d.append(`${used.length} of ${mx} device${mx === 1 ? '' : 's'} used${used.length ? ':' : ''}`);
-        used.forEach(dev => {
-          const s = document.createElement('span'); s.append(Object.assign(document.createElement('span'), {className:'mono', textContent: dev}), ' ');
-          const sx = seen && (seen.get(v.id) || []).find(x => x.dev === dev);
-          if (sx) s.append(Object.assign(document.createElement('span'), {className:'when', textContent: agoText(sx.at)}), ' ');
-          s.append(Object.assign(document.createElement('button'), {className:'ghost', type:'button', textContent:'Free',
-            onclick: async e => { const b = e.target; if (!b.dataset.sure) { b.dataset.sure = '1'; b.textContent = 'Tap again to free'; b.style.color = 'var(--bad)'; setTimeout(() => { delete b.dataset.sure; b.textContent = 'Free'; b.style.color = ''; }, 4000); return; }
-              b.disabled = true; b.textContent = 'Freeing…'; try { await freeDevice(v.id, dev); } catch (err) { b.textContent = 'Not freed: ' + err.message; } }}));
-          d.append(s);
-        });
-      }
-      nameTd.append(d);
-    }
-    if (!v.revoked) { const sl = seenLine(v); if (sl) nameTd.append(sl); }
-    tr.append(nameTd, td(fmt(v.expires), 'mono'), stTd, td(v.device || (mx ? (used ? `${used.length}/${mx}` : `max ${mx}`) : 'any'), 'mono'), act);
-    tb.append(tr);
-    if (editing === v.id) { const er = document.createElement('tr'); er.className = 'editrow'; const c = document.createElement('td'); c.colSpan = 5; c.append(editor(v)); er.append(c); tb.append(er); }
-  }
-  t.append(tb);
-  const wrap = document.createElement('div'); wrap.className = 'tbl'; wrap.append(t);
-  body.replaceChildren(wrap);
-}
-
 document.querySelectorAll('#fSeg button').forEach(b => b.onclick = () => { fCat = b.dataset.f; store.set('grf-admin-filter', fCat); renderLog(); });
 $('fQ').oninput = () => { fQ = $('fQ').value; renderLog(); };
+$('fSort').onchange = () => { fSort = $('fSort').value; store.set('grf-admin-sort', fSort); renderLog(); };
 
 /* ---- check ---- */
 $('cGo').onclick = async () => {
@@ -1198,11 +1580,14 @@ $('cAdd').onclick = async () => {
     out.className = 'note ok'; out.textContent = 'Added to the list.'; renderLog();
   } catch (e) { out.className = 'note bad'; out.textContent = 'Not added: ' + e.message; $('cAdd').hidden = false; }
 };
-$('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
-  withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
+$('cRevoke').onclick = async () => {
+  if (!checked) return;
+  const k = checked, entry = {name: k.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: k.issuedDate, expires: k.expiresDate, device: k.deviceCode || '', id: k.id, createdAt: Date.now(), external: true};
+  if (await askWithdraw(entry, entry)) { $('cRevoke').hidden = true; $('cOut').className = 'note bad'; $('cOut').textContent = 'Withdrawn and published.'; }
+};
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = '19f9088e84';
+const ADMIN_VER = '881fed926e';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});
@@ -1235,10 +1620,119 @@ async function autoCheck() {
 document.addEventListener('visibilitychange', autoCheck);
 setTimeout(autoCheck, 1500);
 
+/* ---- overview: the four figures, what needs attention, who was online ---- */
+function kpi(id, cls, v, s) {
+  const b = $(id); b.className = 'kpi' + (cls ? ' ' + cls : '');
+  b.querySelector('.v').replaceChildren(...[].concat(v)); b.querySelector('.s').textContent = s;
+}
+function aitem(lv, ic, t, s, go) {
+  return h('button', {type: 'button', className: 'aitem' + (lv ? ' ' + lv : ''), onclick: () => typeof go === 'function' ? go() : (location.hash = go)},
+    h('span', {className: 'ai'}, icon(ic)), h('span', {className: 't'}, h('b', {}, t), s ? h('span', {}, s) : null), icon('i-right'));
+}
+function renderOverview() {
+  if (!isReady()) return;
+  const mode = stPublished ? stPublished.mode : 'ok';
+  kpi('kpiStatus', mode === 'pause' ? 'bad' : mode === 'warn' ? 'warn' : 'ok', [icon(mode === 'ok' ? 'i-ok' : mode === 'pause' ? 'i-pause' : 'i-alert'), mode === 'ok' ? 'Normal' : mode === 'pause' ? 'Paused' : 'Notice'],
+    mode === 'ok' ? 'Calculations open' : mode === 'pause' ? 'Calculations hidden on phones' : 'Shown above the inputs');
+  const open = fbItems ? fbItems.filter(x => x.open) : null, names = open ? [...new Set(open.map(fbName))] : [];
+  const from = names.length ? 'from ' + (names.length > 2 ? `${names.slice(0, 2).join(', ')} and ${names.length - 2} more` : names.join(' and ')) : '';
+  kpi('kpiFb', open && open.length ? 'warn' : '', open ? String(open.length) : '–', open ? (open.length ? from : 'Nothing new') : fbErr ? 'Cannot be read' : 'Loading…');
+  const act = log.filter(e => catOf(e) === 'active'), soon = act.filter(e => daysLeft(e) <= 14).sort((a, b) => a.expires.localeCompare(b.expires));
+  kpi('kpiKeys', '', String(act.length), soon.length ? `${soon.length} end${soon.length === 1 ? 's' : ''} within 14 days` : `${log.length} issued in all`);
+  const day = Date.now() - 86400000, live = log.filter(e => !e.revoked);
+  if (!seen) kpi('kpiOnline', '', '–', acc ? (fbErr ? 'Cannot be read' : 'Loading…') : 'Needs the device-limit token');
+  else {
+    const on = live.filter(e => lastSeen(e) > day), devs = on.reduce((n, e) => n + (seen.get(e.id) || []).filter(x => x.at > day).length, 0);
+    kpi('kpiOnline', '', String(on.length), `${on.length === 1 ? 'key' : 'keys'} · ${devs} device${devs === 1 ? '' : 's'}`);
+  }
+  /* needs attention: most serious first */
+  const a = [], p = pendingInfo();
+  if (issuesOff()) a.push(aitem('bad', 'i-alert', 'Issues are turned off in the repository', 'Device limits, feedback and last online cannot work.', '#settings'));
+  if (mode === 'pause') a.push(aitem('bad', 'i-pause', 'Calculations are paused on all phones', 'Since ' + stWhen(stPublished.issued), '#status'));
+  else if (mode === 'warn') a.push(aitem('warn', 'i-alert', 'A notice is shown in the app', 'Since ' + stWhen(stPublished.issued), '#status'));
+  if (p.rev || p.lic) a.push(aitem('warn', 'i-alert', p.rev ? 'Withdrawals not published yet' : 'Key edits not published yet', 'Phones do not know about them yet. Tap to publish now.', publishNow));
+  if (!acc) a.push(aitem('warn', 'i-set', 'Device limits are not set up', 'Keys can only be for any number of devices; feedback and last online cannot arrive.', '#settings'));
+  else if (actErr) a.push(aitem('warn', 'i-alert', 'The activations could not be read', actErr, '#settings'));
+  if (fbErr && fbErr !== 'acc' && fbErr !== 'issues') a.push(aitem('warn', 'i-msg', 'Feedback could not be read', fbErrText(fbErr), '#feedback'));
+  if (open && open.length) a.push(aitem('', 'i-msg', `${open.length} new feedback`, from, '#feedback'));
+  for (const e of soon.slice(0, 6)) { const n = daysLeft(e); a.push(aitem('warn', 'i-clock', `${e.name}: ends ${fmt(e.expires)}`, n === 0 ? 'Last valid day today' : `${n} day${n === 1 ? '' : 's'} left. Tap to extend or let it end.`, '#keys/' + e.id)); }
+  if (soon.length > 6) a.push(aitem('warn', 'i-clock', `${soon.length - 6} more keys end within 14 days`, '', () => { fSort = 'end'; store.set('grf-admin-sort', fSort); fCat = 'active'; location.hash = '#keys'; renderLog(); }));
+  $('ovAttn').replaceChildren(...(a.length ? a : [h('div', {className: 'empty'}, h('b', {}, 'Nothing needs attention.'), 'New feedback, keys that end soon and anything not published show here.')]));
+  /* recently online */
+  const ons = live.filter(e => lastSeen(e)).sort((x, y) => lastSeen(y) - lastSeen(x)).slice(0, 5);
+  $('ovSeen').replaceChildren(...(ons.length ? ons.map(e => {
+    const l = seen.get(e.id), calc = Math.max(...l.map(x => x.d.calc || 0));
+    return aitem('', 'i-key', e.name, `online ${agoText(l[0].at)}${calc ? ' · result ' + agoText(calc) : ''}${l.length > 1 ? ` · ${l.length} devices` : ''}`, '#keys/' + e.id);
+  }) : [h('div', {className: 'empty'}, seen ? 'No phone has reported yet. Phones report when they sync online.' : acc ? 'Loading…' : 'Save the device-limit token under Settings: phones report through it.')]));
+}
+document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+  if (b.id === 'kpiOnline') { fSort = 'seen'; store.set('grf-admin-sort', fSort); fCat = 'active'; }
+  if (b.id === 'kpiKeys') fCat = 'active';
+  location.hash = b.dataset.go; renderLog();
+});
+/* small marks on the sections: new feedback, a notice or pause, something to set up */
+function renderBadges() {
+  const mode = stPublished ? stPublished.mode : 'ok', t = $('tbStatus');
+  t.hidden = mode === 'ok'; t.className = 'badge dot' + (mode === 'warn' ? ' warn' : '');
+  t.setAttribute('aria-label', mode === 'pause' ? 'paused' : 'notice shown');
+  const s = $('tbSet'); s.hidden = !(isReady() && (!acc || issuesOff() || actErr)); s.className = 'badge dot warn'; s.setAttribute('aria-label', 'needs setting up');
+}
+function renderAll() { renderSetup(); renderStatus(); renderFb(); renderLog(); renderOverview(); renderBadges(); }
+
+/* ---- sections ---- */
+const TABS = {overview: 'Overview', keys: 'Keys', feedback: 'Feedback', status: 'App status', settings: 'Settings'};
+function route() {
+  const ready = isReady(), [t, id] = decodeURIComponent((location.hash || '').slice(1)).split('/');
+  const nv = ready ? (TABS[t] ? t : 'overview') : (kf && tok && busy) ? 'loading' : 'settings';
+  const ns = ready && nv === 'keys' && id ? id : null;
+  if (ns !== selId) editing = null;
+  const moved = nv !== view; view = nv; selId = ns;
+  document.querySelectorAll('.view').forEach(s => { s.hidden = s.dataset.v !== view; });
+  document.querySelectorAll('#tabs a').forEach(a => { if (a.dataset.t === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  document.title = 'GRF Keys' + (TABS[view] && ready ? ' · ' + TABS[view] : '');
+  renderLog();
+  if (moved) window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+/* ---- short messages; Undo where it can be undone (NN/g: give it time, keep it in view) ---- */
+let snackT = 0;
+function snack(t, kind, action) {
+  const s = $('snack'); clearTimeout(snackT);
+  if (!t) { s.hidden = true; return; }
+  s.className = 'snack' + (kind === 'bad' ? ' bad' : '');
+  s.querySelector('.t').textContent = t;
+  const b = s.querySelector('.act'); b.hidden = !action;
+  if (action) { b.textContent = action[0]; b.onclick = () => { s.hidden = true; action[1](); }; }
+  s.hidden = false;
+  if (kind !== 'busy' && kind !== 'bad') snackT = setTimeout(() => { s.hidden = true; }, action ? 10000 : 6000);
+}
+$('snack').querySelector('.x').onclick = () => snack('');
+/* ---- a question before what cannot be undone: it names the thing and the effect; Cancel has the focus ---- */
+function ask({title, text, yes, no}) {
+  const d = $('dAsk');
+  $('askH').textContent = title; $('askT').textContent = text; $('askYes').textContent = yes || 'OK'; $('askNo').textContent = no || 'Cancel';
+  return new Promise(res => {
+    const done = v => { if (d.open) d.close(); res(v); };
+    $('askYes').onclick = () => done(true); $('askNo').onclick = () => done(false);
+    d.oncancel = e => { e.preventDefault(); done(false); };
+    d.showModal(); $('askNo').focus();
+  });
+}
+function openDlg(id) { const d = $(id); if (!d.open) d.showModal(); }
+function closeDlg(id) { const d = $(id); if (d.open) d.close(); }
+document.querySelectorAll('dialog.sheet').forEach(d => {
+  d.addEventListener('click', e => { if (e.target === d) d.close(); });
+  d.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => d.close()));
+});
+$('cOpen').onclick = () => { openDlg('dCheck'); setTimeout(() => $('cKey').focus(), 30); };
+
 /* ---- start ---- */
 (async () => {
   const s = store.get('grf-signing-key-v2'); if (s) await useKeyFile(s);
-  renderSetup(); if (kf && tok) connect();
+  if (kf && tok) busy = true;
+  renderAll(); route(); setFresh(kf && tok ? 'busy' : 'ok');
+  if (kf && tok) connect();
 })();
 </script>
 <script>

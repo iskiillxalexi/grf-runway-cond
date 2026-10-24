@@ -1,0 +1,50 @@
+== GET https://aviationweather.gov/api/data/isigmet?format=json
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+vary: Accept-Encoding
+cache-control: max-age=180
+bytes 131011
+[{"icaoId":"RJTD","firId":"RJJJ","firName":"RJJJ FUKUOKA","receiptTime":"2026-10-24T06:06:24.166Z","validTimeFrom":1792821900,"validTimeTo":1792843500,"seriesId
+== OPTIONS https://aviationweather.gov/api/data/isigmet?format=json
+HTTP/2 200 
+== GET https://aviationweather.gov/api/data/airsigmet?format=json
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+vary: Accept-Encoding
+cache-control: max-age=180
+bytes 8543
+[{"icaoId":"KKCI","alphaChar":"E","seriesId":"21E","receiptTime":"2026-10-24T10:44:12.486Z","creationTime":"2026-10-24T10:55:00.000Z","validTimeFrom":1792839300
+== OPTIONS https://aviationweather.gov/api/data/airsigmet?format=json
+HTTP/2 200 
+== GET https://api.met.no/weatherapi/sigmets/2.0/?type=sigmets
+HTTP/2 200 
+content-type: text/plain;name="sigmets.txt"
+last-modified: Sat, 24 Oct 2026 11:31:05 GMT
+expires: Sat, 24 Oct 2026 11:42:00 GMT
+vary: Accept
+access-control-allow-origin: *
+access-control-allow-methods: GET
+access-control-allow-headers: Origin
+age: 67
+bytes 0
+
+== OPTIONS https://api.met.no/weatherapi/sigmets/2.0/?type=sigmets
+HTTP/2 204 
+== GET https://api.met.no/weatherapi/sigmets/2.0/?type=airmets
+HTTP/2 200 
+content-type: text/plain;name="airmets.txt"
+vary: Accept
+last-modified: Sat, 24 Oct 2026 11:31:05 GMT
+expires: Sat, 24 Oct 2026 11:38:48 GMT
+access-control-allow-origin: *
+access-control-allow-methods: GET
+access-control-allow-headers: Origin
+age: 216
+bytes 245
+ZCZC
+WANO36 ENMI 240748
+ENOB AIRMET I02 VALID 240800/241200 ENMI-
+ENOB BODO OCEANIC FIR MOD ICE FCST WI N7751 E01550 - N7833 E01640 -
+N7957 E01615 - N8022 E0245
+== OPTIONS https://api.met.no/weatherapi/sigmets/2.0/?type=airmets
+HTTP/2 204 

@@ -1,4 +1,4 @@
-name: probe sigmet
+name: probe packages
 on:
   push:
     branches: [probe-atis]
@@ -7,28 +7,13 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 6
     steps:
       - name: fetch
         run: |
           mkdir -p out && cd out
-          UA="GRF-Runway-Cond probe (github.com/iskiillxalexi/grf-runway-cond)"
-          f() { n=$1; shift; curl -sS -m 40 -A "$UA" -H "Origin: https://iskiillxalexi.github.io" -D "$n.headers" -o "$n.body" "$@" || echo "fail $n" >> errors.txt; }
-          f awc_isigmet_json "https://aviationweather.gov/api/data/isigmet?format=json"
-          f awc_isigmet_geojson "https://aviationweather.gov/api/data/isigmet?format=geojson"
-          f awc_isigmet_raw "https://aviationweather.gov/api/data/isigmet?format=raw"
-          f awc_airsigmet_json "https://aviationweather.gov/api/data/airsigmet?format=json"
-          f awc_api_docs "https://aviationweather.gov/data/api/"
-          f awc_openapi_yaml "https://aviationweather.gov/data/api/openapi.yaml"
-          f awc_openapi_json "https://aviationweather.gov/data/api/openapi.json"
-          f awc_fir "https://aviationweather.gov/api/data/fir?format=geojson"
-          f metno_sigmets "https://api.met.no/weatherapi/sigmets/2.0/"
-          f metno_sigmets_doc "https://api.met.no/weatherapi/sigmets/2.0/documentation"
-          f metno_sigmets_avail "https://api.met.no/weatherapi/sigmets/2.0/available"
-          f metno_sigmets_sigmet "https://api.met.no/weatherapi/sigmets/2.0/?type=sigmets"
-          f metno_sigmets_airmet "https://api.met.no/weatherapi/sigmets/2.0/?type=airmets"
-          f vatspy_boundaries "https://raw.githubusercontent.com/vatsimnetwork/vatspy-data-project/master/Boundaries.geojson"
-          f vatspy_license "https://raw.githubusercontent.com/vatsimnetwork/vatspy-data-project/master/LICENSE"
+          npm pack world-atlas@2.0.2 topojson-client@3.1.0 2>&1 | tail -3
+          curl -sS -m 60 -o VATSpy.dat https://raw.githubusercontent.com/vatsimnetwork/vatspy-data-project/master/VATSpy.dat || true
           ls -la
       - name: publish
         run: |

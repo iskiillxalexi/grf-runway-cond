@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1792826819788;</script>
+<script>window.GRF_BUILD=1792833527290;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -57,28 +57,40 @@
 * { box-sizing:border-box; }
 [hidden] { display:none !important; }
 html, body { margin:0; }
-body { background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:16px; line-height:1.4;
+body { min-height:100vh; min-height:100dvh; background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:16px; line-height:1.4;
   padding:0 0 110px; -webkit-text-size-adjust:100%; }
 h1,h2,h3,h4 { font-family:var(--f-head); font-weight:700; margin:0; letter-spacing:.02em; text-wrap:balance; }
 h2 { font-size:15px; text-transform:uppercase; color:var(--muted); letter-spacing:.1em; }
 button, select, input, textarea { font:inherit; color:inherit; }
 button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
 
-/* header: logo, name and revision on one line; status chips under it; the mode choice last (on iPad: to the right) */
-.top { background:var(--head); border-bottom:1px solid var(--line); padding:14px 16px 16px; }
-.top-in { max-width:1100px; margin-inline:auto; display:grid; grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"brand sw" "meta meta" "modes modes"; gap:12px; align-items:center; }
-.brand { grid-area:brand; } .top-in > .themesw, .top-in > .tools { grid-area:sw; } .meta { grid-area:meta; } .top .seg.modes { grid-area:modes; }
-@media (max-width:559px) { .brand p span { display:block; } .brand p .sep { display:none; } }
-.brand { display:flex; align-items:center; gap:12px; min-width:0; }
+/* header (after Apple HIG and NN/g): one row with the name and how current the app is; the tools in a tab bar,
+   at the bottom on iPhone (thumb reach) and in the header on iPad; the mode choice belongs to Runway Cond, so it sits
+   at the top of that tool. License and appearance are under Settings. */
+:root { --tabh:calc(59px + env(safe-area-inset-bottom, 0px)); }
+.top { background:var(--head); border-bottom:1px solid var(--line); padding:10px 16px; }
+.top-in { max-width:1100px; margin-inline:auto; display:flex; align-items:center; gap:10px; min-height:44px; }
+.brand { display:flex; align-items:center; gap:10px; min-width:0; flex:1 1 auto; }
 .brand .ttl { min-width:0; }
-.logo { font-family:var(--f-logo); font-size:30px; line-height:1; color:var(--brand); letter-spacing:.02em; flex:none; }
-.brand h1 { font-size:22px; text-transform:uppercase; line-height:1; }
-.brand p { margin:5px 0 0; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.top .seg { width:100%; }
+.logo { font-family:var(--f-logo); font-size:26px; line-height:1; color:var(--brand); letter-spacing:.02em; flex:none; }
+.brand h1 { font-size:20px; text-transform:uppercase; line-height:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.brand p { margin:4px 0 0; font-family:var(--f-mono); font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.brand p:empty { display:none; }
+@media (max-width:479px) { .brand p span { display:block; } .brand p .sep { display:none; } .brand p { line-height:1.25; margin-top:3px; font-size:10.5px; } }
+.tabs { position:fixed; left:0; right:0; bottom:0; z-index:8; display:grid; grid-template-columns:repeat(4, 1fr); background:var(--head); border-top:1px solid var(--line); padding:4px max(4px, env(safe-area-inset-left, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)); }
+.tabs a { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:50px; border-radius:10px; color:var(--muted); text-decoration:none; font-size:11.5px; font-weight:600; -webkit-tap-highlight-color:transparent; }
+.tabs svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+.tabs a[aria-current="page"] { color:var(--ink); }
+.tabs a[aria-current="page"] svg { color:var(--brand); }
+.tabs .badge { position:absolute; top:5px; left:calc(50% + 7px); width:10px; height:10px; border-radius:50%; background:#D99A00; border:2px solid var(--head); box-sizing:content-box; }
+.tabs .badge.bad { background:#C62828; }
+.modesbar { max-width:1100px; margin-inline:auto; padding:12px 16px 0; }
+.modes { width:100%; }
 .modes button { display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; min-height:52px; padding:0 6px; }
 .modes button small { font-family:var(--f-head); font-weight:600; font-size:11px; letter-spacing:.12em; text-transform:uppercase; opacity:.7; }
 .modes button b { font-weight:600; font-size:16px; }
-.top .seg button[aria-pressed="true"] { background:var(--brand); color:var(--brand-ink); }
+.seg.modes button[aria-pressed="true"] { background:var(--brand); color:var(--brand-ink); }
+@media (max-width:859px) { body { padding-bottom:calc(var(--tabh) + 100px); } html:not([data-tool="grf"]) body { padding-bottom:calc(var(--tabh) + 24px) !important; } }
 
 .wrap { max-width:1100px; margin-inline:auto; padding:16px 16px 0; display:grid; gap:14px; }
 .left, .right { display:grid; gap:14px; min-width:0; align-content:start; }
@@ -198,26 +210,46 @@ details.how .hstep h4 { margin:0; text-transform:none; letter-spacing:.02em; fon
 details.how ol { color:var(--ink); font-size:14px; gap:5px; margin-top:6px; }
 details.how li::marker { color:var(--muted); }
 
-.bar { position:fixed; left:0; right:0; bottom:0; z-index:5; background:var(--dock); color:var(--dock-ink); border-top:3px solid var(--brand);
-  padding:10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display:flex; align-items:center; justify-content:space-between; gap:14px; cursor:pointer; }
+.bar { position:fixed; left:0; right:0; bottom:var(--tabh); z-index:5; background:var(--dock); color:var(--dock-ink); border-top:3px solid var(--brand);
+  padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px; cursor:pointer; }
 .bar .lbl { display:block; color:var(--dock-mute); }
 .bar .condtxt { font-size:22px; color:var(--brand); }
 .bar .big { font-size:30px; color:var(--dock-ink); } .bar .big small { font-size:15px; color:var(--dock-mute); } .bar .big.bad { font-size:20px; color:#FF9C9C; }
 
 @media (min-width:860px) {
   body { padding-bottom:40px; }
-  .top { padding:20px 24px 22px; }
-  .top-in { grid-template-columns:minmax(0,1fr) minmax(320px,440px) auto; grid-template-areas:"brand modes sw" "meta modes sw"; column-gap:24px; row-gap:10px; }
-  .logo { font-size:40px; }
-  .brand h1 { font-size:26px; }
+  .top { padding:12px 24px; }
+  .top-in { flex-wrap:wrap; gap:10px 20px; min-height:52px; }
+  .brand { flex:0 1 auto; }
+  .logo { font-size:32px; }
+  .brand h1 { font-size:24px; }
+  .tabs { position:static; order:2; display:flex; gap:3px; padding:3px; border:0; border-radius:12px; background:var(--surface2); }
+  .tabs a { flex-direction:row; gap:8px; min-height:40px; padding:0 14px; font-size:15px; border-radius:9px; }
+  .tabs a svg { display:none; }
+  .tabs a:hover { color:var(--ink); }
+  .tabs a[aria-current="page"] { background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.14); }
+  .tabs .badge { position:static; margin-left:-2px; border:0; }
+  .modesbar { padding:20px 24px 0; }
+  .modes { max-width:520px; }
   .wrap { padding:20px 24px 0; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); column-gap:20px; align-items:start; }
   .right { position:sticky; top:16px; }
   .bar { display:none; }
 }
-/* airport: live SNOWTAM */
-.srcs.four { grid-auto-flow:row; grid-template-columns:repeat(2, minmax(0,1fr)); }
-.srcs.four button { min-height:76px; padding:10px 6px; }
-@media (min-width:560px) { .srcs.four { grid-auto-flow:column; grid-template-columns:none; } .srcs.four button { min-height:92px; } }
+@media (min-width:1240px) { .tabs a svg { display:block; width:20px; height:20px; } }
+/* a narrow wide screen: name and status on the first row, the tabs on their own row */
+@media (min-width:860px) and (max-width:1000px) { .top .top-in > .tools { order:2; } .top .tabs { order:3; flex:1 1 100%; } .tabs a { flex:1; justify-content:center; } }
+/* how the report comes in: one compact row of four, so the input itself is in view (NN/g: the fold) */
+.srcs.four { grid-auto-flow:column; grid-template-columns:none; gap:6px; }
+.srcs button { min-height:62px; padding:8px 4px; gap:2px; border-radius:10px; }
+.srcs button svg { width:22px; height:22px; margin:0; }
+.srcs button b { font-size:14.5px; }
+.srcs button small { display:none; }
+@media (min-width:1100px) { .srcs button { min-height:76px; } .srcs button small { display:block; font-size:11.5px; } }
+/* the aircraft on one line with the narrow-runway box */
+#setup { gap:10px; padding:14px 16px; }
+#setup .row { flex-wrap:nowrap; align-items:flex-end; }
+#setup .field { flex:1 1 auto; }
+#setup .check { flex:0 1 auto; min-height:46px; font-size:15px; line-height:1.2; }
 .aptrow { flex-wrap:nowrap; }
 .aptrow input { flex:1 1 auto; min-width:0; min-height:48px; border:1px solid var(--line); background:var(--bg); color:var(--ink); border-radius:9px; padding:10px 12px; font-family:var(--f-mono); font-size:16px; text-transform:uppercase; }
 .aptrow input::placeholder { text-transform:none; font-family:var(--f-ui); }
@@ -286,13 +318,39 @@ details.how li::marker { color:var(--muted); }
   --g-sea:#0D141C; --g-land:#222A33; --g-coast:#4A5664; --g-border:#323C47; --g-grat:rgba(236,239,243,.07); --g-fir:rgba(236,239,243,.26); --g-rim:#2E3843; } }
 :root[data-theme="dark"] { --hz-ts:#FF8A4C; --hz-turb:#A78BFA; --hz-ice:#5CB8FF; --hz-mtw:#E0A060; --hz-va:#F06595; --hz-tc:#FF6B6B; --hz-ds:#E3C04A; --hz-rdo:#69DB7C; --hz-other:#A0A8B3; --hz-text:#ECEFF3;
   --g-sea:#0D141C; --g-land:#222A33; --g-coast:#4A5664; --g-border:#323C47; --g-grat:rgba(236,239,243,.07); --g-fir:rgba(236,239,243,.26); --g-rim:#2E3843; }
-html:not([data-tool="grf"]) .wrap, html:not([data-tool="grf"]) .bar, html:not([data-tool="grf"]) .top .seg.modes, html:not([data-tool="grf"]) #stBox { display:none !important; }
-html:not([data-tool="grf"]) body { padding-bottom:28px; }
-html.locked .tool { display:none !important; }
-.tbback { display:inline-grid; place-items:center; width:36px; height:36px; margin-left:-8px; margin-right:-6px; border-radius:10px; color:var(--ink); flex:none; }
-.tbback svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
-.tbback:hover { background:var(--surface2); }
-a.logo { text-decoration:none; }
+html:not([data-tool="grf"]) .wrap, html:not([data-tool="grf"]) .bar, html:not([data-tool="grf"]) .modesbar, html:not([data-tool="grf"]) #stBox { display:none !important; }
+@media (min-width:860px) { html:not([data-tool="grf"]) body { padding-bottom:28px; } }
+html.locked .tool, html.locked .modesbar { display:none !important; }
+/* home: what needs attention first, then the tools with their state */
+.attn { display:grid; gap:10px; }
+.alist { display:grid; border:1px solid var(--line); border-radius:14px; background:var(--surface); overflow:hidden; }
+.aitem { display:flex; align-items:center; gap:12px; width:100%; min-height:60px; padding:10px 14px; border:0; border-top:1px solid var(--line); background:transparent; color:var(--ink); font:inherit; text-align:left; cursor:pointer; text-decoration:none; }
+.aitem:first-child { border-top:0; }
+.aitem .ai { width:32px; height:32px; border-radius:50%; display:grid; place-items:center; flex:none; background:var(--surface2); color:var(--muted); }
+.aitem .ai svg, .aitem > svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.aitem > svg { color:var(--muted); flex:none; }
+.aitem.warn .ai { background:var(--warnbg); color:var(--warn); } .aitem.bad .ai { background:var(--badbg); color:var(--bad); }
+.aitem .t { flex:1; min-width:0; display:grid; gap:2px; } .aitem .t b { font-weight:600; } .aitem .t span { font-size:14px; color:var(--muted); }
+/* settings: rows that open something, in groups */
+.tbset { max-width:760px; margin-inline:auto; padding:18px 16px 0; display:grid; gap:12px; }
+.rows { display:grid; gap:0; margin:-4px 0; }
+.lrow { display:flex; align-items:center; gap:12px; width:100%; min-height:56px; padding:8px 0; border:0; border-top:1px solid var(--line); background:transparent; color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.rows .lrow:first-child, .panel > .lrow { border-top:0; }
+.lrow .lt, .setrow .lt { flex:1; min-width:0; display:grid; gap:2px; }
+.lrow .lt b, .setrow .lt b { font-weight:600; font-size:16px; }
+.lrow .lt span, .setrow .lt span { font-size:14px; color:var(--muted); }
+.lrow .go { width:20px; height:20px; flex:none; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.lic-ic { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; background:var(--okbg); color:var(--ink); flex:none; }
+.lic-ic svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+#licBtn #licDays { font-family:var(--f-head); font-size:22px; letter-spacing:.02em; }
+#licBtn[data-s="soon"] .lic-ic, #licBtn[data-s="soon"] #licDays { background:var(--warnbg); color:var(--warn); }
+#licBtn[data-s="soon"] #licDays, #licBtn[data-s="end"] #licDays { background:none; }
+#licBtn[data-s="end"] .lic-ic, #licBtn[data-s="end"] #licDays { color:var(--bad); } #licBtn[data-s="end"] .lic-ic { background:var(--badbg); }
+.setrow { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+/* short messages, with Undo where it can be undone; above the tab bar and the result bar */
+#tbSnack { bottom:calc(var(--tabh) + 84px); }
+html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--tabh) + 12px); }
+@media (min-width:860px) { #tbSnack, html:not([data-tool="grf"]) #tbSnack { bottom:24px; } }
 .tbhome { max-width:1100px; margin-inline:auto; padding:18px 16px 0; display:grid; gap:12px; }
 .tbh { margin:0; }
 .tiles { display:grid; gap:12px; }
@@ -384,12 +442,12 @@ a.logo { text-decoration:none; }
 .seg.sm button { min-height:40px; padding:0 8px; font-size:14px; }
 .sigwait { color:var(--muted); font-size:14px; margin:0; }
 /* iPhone: the toolbar in thumb reach, like the GRF result bar */
-.sigdock { position:fixed; left:0; right:0; bottom:0; z-index:6; display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px max(16px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)); background:var(--dock); border-top:3px solid var(--brand); }
+.sigdock { position:fixed; left:0; right:0; bottom:var(--tabh); z-index:6; display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px max(16px, env(safe-area-inset-left, 0px)); background:var(--dock); border-top:3px solid var(--brand); }
 .dockbtn { min-height:50px; border-radius:11px; border:1.5px solid var(--dock-mute); background:transparent; color:var(--dock-ink); font:inherit; font-weight:600; font-size:16px; cursor:pointer; }
 .dockbtn.main { background:var(--brand); border-color:var(--brand); color:var(--brand-ink); }
 .dockbtn:disabled, .sigtools .btn:disabled { opacity:.6; cursor:default; }
-html[data-tool="sigmet"] body { padding-bottom:96px; }
-.snack { position:fixed; left:12px; right:12px; bottom:calc(86px + env(safe-area-inset-bottom, 0px)); z-index:7; max-width:560px; margin-inline:auto; display:flex; align-items:center; gap:12px; padding:12px 12px 12px 16px; border-radius:12px; background:var(--ink); color:var(--surface); box-shadow:0 6px 20px rgba(0,0,0,.25); font-size:14.5px; line-height:1.35; }
+@media (max-width:859px) { html[data-tool="sigmet"] body { padding-bottom:calc(var(--tabh) + 92px) !important; } }
+.snack { position:fixed; left:12px; right:12px; bottom:calc(var(--tabh) + 82px); z-index:7; max-width:560px; margin-inline:auto; display:flex; align-items:center; gap:12px; padding:12px 12px 12px 16px; border-radius:12px; background:var(--ink); color:var(--surface); box-shadow:0 6px 20px rgba(0,0,0,.25); font-size:14.5px; line-height:1.35; }
 .snack.bad { background:var(--badbg); color:var(--bad); border:1px solid var(--bad); }
 .snack .msg { flex:1; min-width:0; }
 .snack button { flex:none; min-height:40px; padding:0 10px; border:0; border-radius:8px; background:transparent; color:inherit; font:inherit; font-weight:700; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
@@ -414,12 +472,12 @@ dialog.sheet textarea { min-height:150px; font-family:var(--f-mono); font-size:1
 .sigacts .btn svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; margin-right:6px; vertical-align:-3px; }
 
 /* installed app: keep clear of the iPhone status bar and home indicator */
-.top { padding-top:calc(14px + env(safe-area-inset-top, 0px)); padding-left:calc(16px + env(safe-area-inset-left, 0px)); padding-right:calc(16px + env(safe-area-inset-right, 0px)); }
+.top { padding-top:calc(10px + env(safe-area-inset-top, 0px)); padding-left:calc(16px + env(safe-area-inset-left, 0px)); padding-right:calc(16px + env(safe-area-inset-right, 0px)); }
 .offl { display:inline-flex; align-items:center; gap:6px; margin-top:6px; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); }
 .offl::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--line); }
 .offl.ok::before { background:var(--c5); } .offl.busy::before { background:var(--c3); }
 /* license gate */
-html.locked .top, html.locked .wrap, html.locked .bar { display:none !important; }
+html.locked .top, html.locked .wrap, html.locked .bar, html.locked .modesbar, html.locked #tbSnack { display:none !important; }
 .lock { min-height:100vh; min-height:100dvh; display:grid; place-items:center; padding:calc(24px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); background:var(--bg); }
 .lock-in { width:min(100%, 440px); background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:26px 22px; display:grid; gap:14px; }
 .lock .brandrow { display:flex; align-items:center; gap:12px; }
@@ -439,7 +497,8 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
 .themesw[aria-checked="true"] .knob { transform:translateX(28px); }
 .themesw[aria-checked="true"] .sun { color:var(--muted); } .themesw[aria-checked="true"] .moon { color:var(--ink); }
 @media (prefers-reduced-motion:reduce) { .themesw .knob, .themesw svg { transition:none; } }
-.top-in > .tools { grid-area:sw; justify-self:end; display:flex; align-items:center; gap:8px; }
+.top-in > .tools { order:3; margin-left:auto; display:flex; align-items:center; gap:8px; flex:none; min-width:0; }
+@media (max-width:479px) { .hchip.st #syncLine { display:none; } }
 /* header chips: license (opens the details) and app status (taps check for a new version) */
 .meta { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
 .hchip { display:inline-flex; align-items:center; gap:7px; min-height:34px; padding:0 13px 0 11px; border:1px solid var(--line); border-radius:17px; background:var(--surface); color:var(--ink); font-family:var(--f-ui); font-weight:600; font-size:13.5px; line-height:1; cursor:pointer; white-space:nowrap; max-width:100%; min-width:0; }
@@ -460,7 +519,7 @@ html.locked .top, html.locked .wrap, html.locked .bar { display:none !important;
 .hchip.st .rf { width:14px; height:14px; opacity:.75; }
 .hchip:hover { border-color:var(--muted); } .hchip:disabled { cursor:default; }
 /* the issuer's notice, or paused calculations: shown under the header, inputs and result hidden while paused */
-html.paused .wrap, html.paused .bar, html.paused .top .seg.modes { display:none !important; }
+html.paused .wrap, html.paused .bar, html.paused .modesbar { display:none !important; }
 .stbox { width:calc(100% - 32px); max-width:1100px; margin:16px auto 0; padding:16px; border-radius:12px; display:flex; gap:14px; align-items:flex-start; }
 .stbox.pause { background:var(--badbg); color:var(--bad); } .stbox.warn { background:var(--warnbg); color:var(--warn); }
 .stbox .ic { width:28px; height:28px; flex:none; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
@@ -520,6 +579,14 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
 .licdlg .keybox { font-family:var(--f-mono); font-size:13px; line-height:1.45; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:10px 12px; overflow-wrap:anywhere; word-break:break-all; -webkit-user-select:all; user-select:all; }
 .licdlg .acts { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
 .licdlg .acts .btn { flex:1 1 140px; }
+/* on iPhone every dialog is a sheet from the bottom; its title and its buttons stay in view while the text scrolls */
+dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; padding:16px 12px 10px 20px; background:var(--surface); border-bottom:1px solid var(--line); }
+#termsDlg .acts, #fbDlg .acts, #sigTextDlg .acts { position:sticky; bottom:0; z-index:2; margin:0 -20px -20px; padding:12px 20px 16px; background:var(--surface); border-top:1px solid var(--line); }
+@media (max-width:559px) {
+  dialog.licdlg { width:100%; max-width:100%; margin:auto 0 0; border-radius:16px 16px 0 0; border-bottom:0; max-height:calc(100dvh - 32px); }
+  dialog.licdlg .in { padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px)); }
+  #termsDlg .acts, #fbDlg .acts, #sigTextDlg .acts { margin-bottom:calc(-20px - env(safe-area-inset-bottom, 0px)); padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
+}
 </style>
 </head>
 <body>
@@ -1079,7 +1146,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     showSync(); applyStatus();
     return true;
   }
-  /* the key in use and the days it has left: a chip in the header, the full details in a dialog */
+  /* the key in use and the days it has left: a row under Settings (marked when it ends soon), the full details in a sheet */
   let cur = null;
   const daysText = n => n <= 0 ? 'Last day today' : `${plural(n, 'day')} left`;
   const LONG = 3650;   /* ten years or more: show the year, not a count of days */
@@ -1089,9 +1156,9 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const n = r.daysLeft, cls = n <= 3 ? 'end' : n <= 14 ? 'soon' : '';
     const b = $('licBtn');
     if (b) {
-      b.className = 'hchip lic' + (cls ? ' ' + cls : '');
+      if (cls) b.dataset.s = cls; else delete b.dataset.s;
       $('licDays').textContent = n > LONG ? `Valid to ${r.info.expiresDate.slice(0, 4)}` : n > 365 ? `Valid to ${fmt(r.info.expiresDate)}` : daysText(n);
-      if ($('licShort')) $('licShort').textContent = '';
+      if ($('licSub')) $('licSub').textContent = `${r.info.name ? r.info.name + ' · ' : ''}valid through ${fmt(r.info.expiresDate)}`;
       b.setAttribute('aria-label', `License: ${daysText(n)}, valid through ${fmt(r.info.expiresDate)}. Show license details.`);
     }
     const box = $('ldBox'); if (!box) return;
@@ -1174,7 +1241,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (!res.ok) throw [401, 403, 404, 410].includes(res.status) ? 'setup' : 'net';
       store.set(K_FBT, String(Date.now())); store.del(K_FBD); $('fbText').value = '';
       msg('Sent. Thank you!', 'ok'); b.textContent = 'Sent';
-      setTimeout(closeFeedbackDlg, 1800);
+      setTimeout(() => { closeFeedbackDlg(); if (window.GRFToolbox && window.GRFToolbox.snack) window.GRFToolbox.snack('Feedback sent. Thank you!'); }, 1800);
     } catch (why) {
       b.disabled = false; b.textContent = 'Send';
       msg(why === 'setup' ? 'Feedback cannot be sent yet: the issuer has not set it up. Your text is kept here.'
@@ -1350,7 +1417,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'c4028b391e', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'b7a5270b4e', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

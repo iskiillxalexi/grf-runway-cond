@@ -1,4 +1,4 @@
-name: probe packages
+name: probe sigmet job
 on:
   push:
     branches: [probe-atis]
@@ -9,12 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - name: fetch
-        run: |
-          mkdir -p out && cd out
-          npm pack world-atlas@2.0.2 topojson-client@3.1.0 2>&1 | tail -3
-          curl -sS -m 60 -o VATSpy.dat https://raw.githubusercontent.com/vatsimnetwork/vatspy-data-project/master/VATSpy.dat || true
-          ls -la
+      - uses: actions/checkout@v4
+      - name: Read the SIGMETs
+        run: python3 .github/scripts/sigmet.py out
       - name: publish
         run: |
           cd out && git init -q -b probe && git config user.name "github-actions[bot]" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -1,0 +1,17 @@
+name: probe cors
+on: push
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          UA='Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+          O='https://iskiillxalexi.github.io'
+          for u in "https://aviationweather.gov/api/data/isigmet?format=json" "https://aviationweather.gov/api/data/airsigmet?format=json" "https://api.met.no/weatherapi/sigmets/2.0/?type=sigmets" "https://api.met.no/weatherapi/sigmets/2.0/?type=airmets"; do
+            echo "== GET $u"
+            curl -s -D /tmp/h -o /tmp/b -A "$UA" -H "Origin: $O" -H "Referer: $O/grf-runway-cond/" "$u" || true
+            grep -i -E '^(HTTP|access-control|content-type|cache-control|age:|expires|last-modified|vary)' /tmp/h || true
+            echo "bytes $(wc -c </tmp/b)"; head -c 160 /tmp/b; echo
+            echo "== OPTIONS $u"
+            curl -s -D - -o /dev/null -X OPTIONS -A "$UA" -H "Origin: $O" -H 'Access-Control-Request-Method: GET' "$u" | grep -i -E '^(HTTP|access-control)' || true
+          done

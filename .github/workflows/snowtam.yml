@@ -1,5 +1,5 @@
-# Every 15 minutes: read the public AIS bulletins (LFV, Fintraffic AIS), extract the SNOWTAMs and publish
-# snowtam.json on the "data" branch. The app reads it from raw.githubusercontent.com (no server, no keys).
+# Every 15 minutes: read the public AIS bulletins (LFV, Fintraffic AIS, Naviair), ATIS Guru and the SIGMETs (NOAA AWC,
+# MET Norway); publish snowtam.json and sigmet.json on the "data" branch. The app reads it from raw.githubusercontent.com (no server, no keys).
 name: SNOWTAM bulletins
 on:
   schedule:
@@ -23,6 +23,8 @@ jobs:
         run: (command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)) >/dev/null 2>&1 || pip install --quiet pypdf
       - name: Read the bulletins
         run: python3 .github/scripts/snowtam.py out
+      - name: Read the SIGMETs
+        run: python3 .github/scripts/sigmet.py out || echo "::warning::The SIGMETs could not be read"
       - name: Publish on the data branch
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}

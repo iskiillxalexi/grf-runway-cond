@@ -656,6 +656,8 @@ function sureBtn(text, sure, act) {
 }
 function fbCtxText(c) {
   if (!c) return '';
+  if (c.tool === 'sigmet') { const g = c.sigmet || {};
+    return ['Tool: SIGMET · list: ' + (g.scope || ''), g.sel ? `Selected: ${g.sel.fir || ''} ${g.sel.id || ''} (${g.sel.src})\n${g.sel.raw || ''}` : 'No SIGMET selected', g.text ? 'Text in the box:\n' + g.text : ''].filter(Boolean).join('\n\n'); }
   const th = Array.isArray(c.thirds) ? c.thirds.map((t, i) => `  ${i + 1}: ${t.type}${t.cov != null ? ' ' + t.cov + '%' : ''}${t.depth != null ? ' ' + t.depth + 'mm' : ''}${t.rep != null ? ' RWYCC ' + t.rep : ''}`).join('\n') : '';
   return [`Mode: ${c.mode === 'inflight' ? 'in-flight landing' : 'dispatch ' + (c.phase === 'to' ? 'take-off' : 'landing')} · ${c.ac || ''}${c.narrow ? ' · narrow' : ''}${c.oat ? ' · OAT ' + c.oat : ''} · source ${c.src || ''}`,
     c.line ? 'Result line: ' + c.line : '', c.result ? 'Result:\n' + c.result : '', th ? 'Thirds:\n' + th : '', c.msg ? 'Message shown:\n' + c.msg : '', c.report ? 'Report text:\n' + c.report : ''].filter(Boolean).join('\n\n');
@@ -1200,7 +1202,7 @@ $('cRevoke').onclick = () => { if (!checked) return; $('cRevoke').hidden = true;
   withdraw(checked.id, {name: checked.name || 'Unknown', key: $('cKey').value.replace(/\s+/g, ''), issued: checked.issuedDate, expires: checked.expiresDate, device: checked.deviceCode || '', id: checked.id, createdAt: Date.now(), external: true}); };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = 'cee72d898c';
+const ADMIN_VER = '19f9088e84';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

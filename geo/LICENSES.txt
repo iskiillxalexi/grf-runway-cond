@@ -1,0 +1,4 @@
+Map data used by the SIGMET globe
+- world-50m.json, land-110m.json: Natural Earth 1:50m and 1:110m (public domain), as TopoJSON by world-atlas 2.0.2 (ISC license, Mike Bostock).
+- fir.json: FIR outlines from the VATSpy Data Project (github.com/vatsimnetwork/vatspy-data-project), licensed CC BY-SA 4.0; simplified (top-level FIRs only, about 1 km). Approximate: for context only.
+- The globe is drawn with d3-geo 3.1.1 and topojson-client 3.1.0 (ISC license).

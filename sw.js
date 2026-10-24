@@ -1,8 +1,8 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-83080a4540';
+const CACHE = 'grf-205c8cc8e6';
 const FILES = {
-"./": "cb4e093287e8ed0c",
-"app.bin": "c132564db49f1a58",
+"./": "ccad1b0b877ee87f",
+"app.bin": "acb43a226db03dbf",
 "fonts/Barlow-Medium.woff": "a7ab5c7e54c3c38d",
 "fonts/Barlow-Regular.woff": "bee61e0690d27f46",
 "fonts/Barlow-SemiBold.woff": "bfe69e7af9279ad8",
@@ -11,12 +11,15 @@ const FILES = {
 "fonts/IBMPlexMono-Medium.woff": "3a7fc269bd1fc79c",
 "fonts/IBMPlexMono-SemiBold.woff": "74d9c19dc8a8933f",
 "fonts/Monoton-Regular.woff": "dcc3dc535c754275",
+"geo/fir.json": "9d13d2c09989b246",
+"geo/land-110m.json": "ead5f68119c49a92",
+"geo/world-50m.json": "04342cdc1e3016bc",
 "icon-180.png": "5e29497706d4b452",
 "icon-192.png": "2160ef544412cde2",
 "icon-512.png": "019c91474f53a9a4",
 "icon-maskable-512.png": "00ffe0a4fa864efc",
-"index.html": "cb4e093287e8ed0c",
-"manifest.webmanifest": "59ecacf939c7aa24",
+"index.html": "ccad1b0b877ee87f",
+"manifest.webmanifest": "66fecc1b0c8ce87a",
 "ocr-client.js": "6adfcb06c827d565",
 "ocr/eng.traineddata": "906538558589e563",
 "ocr/ocr-worker.js": "2a21f08055ef5aae",

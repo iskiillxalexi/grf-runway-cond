@@ -11,8 +11,8 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1792337478659;</script>
-<script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';</script>
+<script>window.GRF_BUILD=1792825108684;</script>
+<script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -279,6 +279,94 @@ details.how li::marker { color:var(--muted); }
 .rv-span { border-top:2px solid var(--brand); padding-top:3px; text-align:center; font-family:var(--f-head); font-weight:600; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--brand); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 @media (prefers-reduced-motion:no-preference) { .big, .chip, .btn { transition:color .15s, background .15s; } }
 
+/* ---------- toolbox: a home screen with the tools; each tool has the header, the GRF parts only in GRF ---------- */
+:root { --hz-ts:#D9480F; --hz-turb:#7048E8; --hz-ice:#1C7ED6; --hz-mtw:#A15C1F; --hz-va:#C2255C; --hz-tc:#C92A2A; --hz-ds:#9C7A00; --hz-rdo:#2B8A3E; --hz-other:#5C6670; --hz-text:#1E2329;
+  --g-sea:#DCE5EE; --g-land:#FBFBFC; --g-coast:#9AA6B3; --g-border:#C9D1DA; --g-grat:rgba(30,35,41,.08); --g-fir:rgba(30,35,41,.28); --g-rim:#B7C1CC; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --hz-ts:#FF8A4C; --hz-turb:#A78BFA; --hz-ice:#5CB8FF; --hz-mtw:#E0A060; --hz-va:#F06595; --hz-tc:#FF6B6B; --hz-ds:#E3C04A; --hz-rdo:#69DB7C; --hz-other:#A0A8B3; --hz-text:#ECEFF3;
+  --g-sea:#0D141C; --g-land:#222A33; --g-coast:#4A5664; --g-border:#323C47; --g-grat:rgba(236,239,243,.07); --g-fir:rgba(236,239,243,.26); --g-rim:#2E3843; } }
+:root[data-theme="dark"] { --hz-ts:#FF8A4C; --hz-turb:#A78BFA; --hz-ice:#5CB8FF; --hz-mtw:#E0A060; --hz-va:#F06595; --hz-tc:#FF6B6B; --hz-ds:#E3C04A; --hz-rdo:#69DB7C; --hz-other:#A0A8B3; --hz-text:#ECEFF3;
+  --g-sea:#0D141C; --g-land:#222A33; --g-coast:#4A5664; --g-border:#323C47; --g-grat:rgba(236,239,243,.07); --g-fir:rgba(236,239,243,.26); --g-rim:#2E3843; }
+html:not([data-tool="grf"]) .wrap, html:not([data-tool="grf"]) .bar, html:not([data-tool="grf"]) .top .seg.modes, html:not([data-tool="grf"]) #stBox { display:none !important; }
+html:not([data-tool="grf"]) body { padding-bottom:28px; }
+html.locked .tool { display:none !important; }
+.tbback { display:inline-grid; place-items:center; width:36px; height:36px; margin-left:-8px; margin-right:-6px; border-radius:10px; color:var(--ink); flex:none; }
+.tbback svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.tbback:hover { background:var(--surface2); }
+a.logo { text-decoration:none; }
+.tbhome { max-width:1100px; margin-inline:auto; padding:18px 16px 0; display:grid; gap:12px; }
+.tbh { margin:0; }
+.tiles { display:grid; gap:12px; }
+@media (min-width:700px) { .tiles { grid-template-columns:1fr 1fr; } }
+.tile { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:16px; padding:18px 16px 18px 18px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--ink); text-decoration:none; min-height:112px; }
+.tile:hover { border-color:var(--muted); }
+.tile:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+.ticon { width:56px; height:56px; border-radius:14px; background:var(--brand-soft); display:grid; place-items:center; color:var(--brand); }
+.ticon svg { width:40px; height:40px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+.ticon svg .hz { fill:currentColor; fill-opacity:.35; }
+.tt { display:grid; gap:4px; min-width:0; }
+.tt b { font-family:var(--f-head); font-size:22px; text-transform:uppercase; letter-spacing:.03em; line-height:1; }
+.tt small { color:var(--muted); font-size:14px; line-height:1.35; }
+.tst { font-family:var(--f-mono); font-size:12px; color:var(--muted); }
+.tst:empty { display:none; }
+.tst.warn { color:var(--warn); } .tst.bad { color:var(--bad); }
+.tgo { width:22px; height:22px; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ---------- SIGMET: the globe, the sources, the selected SIGMET, the list, your own text ---------- */
+.sig { max-width:1100px; margin-inline:auto; padding:16px 16px 0; display:grid; gap:14px; }
+@media (min-width:860px) { .sig { grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr); align-items:start; padding:20px 24px 0; gap:20px; } }
+.gbox { position:relative; border-radius:14px; overflow:hidden; background:var(--g-sea); border:1px solid var(--line); height:min(64vh, 560px); min-height:320px; }
+@media (min-width:860px) { .sig .gbox { position:sticky; top:12px; height:calc(100vh - 170px); max-height:760px; } }
+#sigGlobe { display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
+#sigGlobe.drag { cursor:grabbing; }
+.gbtns { position:absolute; right:10px; top:10px; display:grid; gap:8px; }
+.gbtns button { width:40px; height:40px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); display:grid; place-items:center; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.gbtns svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.glegend { position:absolute; left:10px; top:10px; right:62px; display:flex; flex-wrap:wrap; gap:6px; pointer-events:none; }
+.glegend button { pointer-events:auto; display:inline-flex; align-items:center; gap:6px; min-height:30px; padding:0 10px 0 8px; border-radius:15px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+.glegend button i { width:12px; height:12px; border-radius:3px; background:var(--c); opacity:.85; }
+.glegend button[aria-pressed="false"] { color:var(--muted); background:var(--surface2); box-shadow:none; }
+.glegend button[aria-pressed="false"] i { background:transparent; border:1.5px solid var(--c); }
+.gcall { position:absolute; left:10px; right:10px; bottom:10px; background:var(--surface); border:1px solid var(--line); border-left:5px solid var(--c, var(--brand)); border-radius:12px; padding:10px 12px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; align-items:center; box-shadow:0 4px 14px rgba(0,0,0,.18); }
+.gcall b { font-family:var(--f-head); font-size:16px; letter-spacing:.03em; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gcall span { font-size:13.5px; color:var(--muted); grid-column:1; }
+.gcall .btn { grid-row:1 / span 2; grid-column:2; min-height:38px; }
+.gnote { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:14px; color:var(--muted); max-width:80%; text-align:center; }
+.sigside { display:grid; gap:14px; min-width:0; }
+.sighd { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.sighd .btn { min-height:36px; }
+.sigsrcs { display:grid; gap:8px; font-size:13.5px; }
+.sigsrcs .src { display:grid; gap:1px; color:var(--muted); overflow-wrap:anywhere; }
+.sigsrcs .src a { color:inherit; }
+.sigsrcs .src b { color:var(--ink); font-weight:600; }
+.sigsrcs .src .t { font-family:var(--f-mono); font-size:12.5px; color:var(--ink); }
+.sigsrcs .src.off .t { color:var(--bad); }
+.siglist { display:grid; gap:8px; }
+.sitem { display:grid; grid-template-columns:6px minmax(0,1fr); gap:0 12px; padding:10px 12px 10px 0; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); text-align:left; font:inherit; cursor:pointer; width:100%; overflow:hidden; }
+.sitem > i { grid-row:1 / span 3; background:var(--c); border-radius:0; }
+.sitem b { font-family:var(--f-head); font-size:15.5px; letter-spacing:.03em; text-transform:uppercase; }
+.sitem span { font-size:13.5px; color:var(--muted); }
+.sitem .t { font-family:var(--f-mono); font-size:12.5px; color:var(--ink); }
+.sitem.on { border-color:var(--c); box-shadow:inset 0 0 0 1px var(--c); }
+.sitem.past { opacity:.6; }
+.siglist .more { font-size:13.5px; color:var(--muted); padding:4px 2px; }
+.sigsel { border:1px solid var(--line); border-left:6px solid var(--c, var(--brand)); border-radius:12px; background:var(--surface); padding:14px 16px; display:grid; gap:10px; }
+.sigsel .hd { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.sigsel h3 { font-size:19px; text-transform:uppercase; line-height:1.1; }
+.sigsel h3 small { display:block; font-family:var(--f-ui); font-weight:600; font-size:14px; text-transform:none; color:var(--muted); letter-spacing:0; margin-top:3px; }
+.sigsel dl { margin:0; display:grid; grid-template-columns:auto minmax(0,1fr); gap:5px 14px; font-size:14.5px; }
+.sigsel dt { color:var(--muted); }
+.sigsel dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.sigsel dd a { color:inherit; }
+.sigsel pre { margin:0; font-family:var(--f-mono); font-size:12.5px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--bg); border-radius:8px; padding:9px 11px; }
+.sigsel .x { width:36px; height:36px; padding:0; justify-content:center; flex:none; }
+.vpill { display:inline-block; font-family:var(--f-head); font-weight:700; font-size:12px; letter-spacing:.08em; text-transform:uppercase; padding:2px 7px; border-radius:5px; background:var(--c5); color:var(--c5t); margin-right:6px; vertical-align:1px; }
+.vpill.soon { background:var(--c2); color:var(--c2t); } .vpill.old { background:var(--surface2); color:var(--muted); } .vpill.later { background:var(--surface2); color:var(--ink); }
+#sigText { width:100%; min-height:110px; border:1px solid var(--line); background:var(--bg); border-radius:9px; padding:10px 12px; font-family:var(--f-mono); font-size:13px; line-height:1.45; resize:vertical; }
+.sigacts { gap:10px; flex-wrap:wrap; }
+.seg.sm button { min-height:34px; padding:0 10px; font-size:14px; }
+.sigwait { color:var(--muted); font-size:14px; margin:0; }
+.sigacts .btn svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; margin-right:6px; vertical-align:-3px; }
+
 /* installed app: keep clear of the iPhone status bar and home indicator */
 .top { padding-top:calc(14px + env(safe-area-inset-top, 0px)); padding-left:calc(16px + env(safe-area-inset-left, 0px)); padding-right:calc(16px + env(safe-area-inset-right, 0px)); }
 .offl { display:inline-flex; align-items:center; gap:6px; margin-top:6px; font-family:var(--f-mono); font-size:11.5px; color:var(--muted); }
@@ -391,7 +479,7 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
 <body>
 <div class="lock" id="lock">
   <div class="lock-in">
-    <div class="brandrow"><span class="logo" aria-hidden="true">GRF</span><h1>Runway Cond</h1><button class="themesw" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="knob"></span><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button></div>
+    <div class="brandrow"><span class="logo" aria-hidden="true">GRF</span><h1>Toolbox</h1><button class="themesw" type="button" role="switch" aria-checked="false" aria-label="Dark mode" data-theme-toggle><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span class="knob"></span><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg></button></div>
     <p class="lead" id="licBusy">Checking the license…</p>
     <div id="licForm" hidden style="display:grid;gap:14px">
       <p class="lead">Enter your license key to open the app.</p>
@@ -399,7 +487,7 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
       <textarea id="licKey" aria-label="License key" placeholder="GRF-…" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
       <div id="licMsg" class="note bad" hidden></div>
       <div class="row"><button class="btn fill lg" type="button" id="licSync" hidden>Sync now</button><button class="btn fill lg" type="button" id="licGo">Activate</button><button class="btn" type="button" id="licCancel" hidden>Cancel</button></div>
-      <p class="lockterms">A supplementary aid only: it never replaces the performance manuals, and the flight crew remains responsible for every calculation. You accept the <button class="ghost" type="button" id="lkTerms">terms of use</button> when you activate.</p>
+      <p class="lockterms">Supplementary aids only: they never replace the manuals or the official briefing, and the flight crew remains responsible. You accept the <button class="ghost" type="button" id="lkTerms">terms of use</button> when you activate.</p>
       <div class="devbox">
         <span class="lbl">This device's code</span>
         <div class="row"><b id="devCode">…</b><button class="ghost" type="button" id="devCopy">Copy</button></div>
@@ -441,7 +529,7 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
       <button type="button" data-k="problem" aria-pressed="true">Problem</button><button type="button" data-k="idea" aria-pressed="false">Idea</button><button type="button" data-k="other" aria-pressed="false">Other</button>
     </div>
     <textarea id="fbText" maxlength="2000" aria-label="Your feedback" placeholder="What happened, or what could be better?"></textarea>
-    <label class="fbchk"><input type="checkbox" id="fbCtx" checked> <span>Attach the current calculation (report text, inputs and result), to help find a problem</span></label>
+    <label class="fbchk"><input type="checkbox" id="fbCtx" checked> <span>Attach what is on the screen (the calculation, or the SIGMET you look at), to help find a problem</span></label>
     <div id="fbMsg" class="note" hidden></div>
     <div class="acts"><button class="btn fill" type="button" id="fbSend">Send</button><button class="btn" type="button" id="fbCancel">Cancel</button></div>
   </div>
@@ -451,10 +539,11 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
     <div class="hd"><h2 id="tmTitle">Terms of use</h2><button class="ghost x" type="button" id="tmX" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <p class="lead" id="tmLead" hidden style="margin:0">Your license key is valid. Read and accept the terms to open the app on this device.</p>
     <div class="tm">
-      <p>GRF Runway Cond is a <b>supplementary aid</b>. It applies the GRF flowcharts and the crosswind table to runway condition reports, to help you prepare the Flysmart inputs.</p>
+      <p>The GRF Toolbox holds <b>supplementary aids</b>. Runway Cond applies the GRF flowcharts and the crosswind table to runway condition reports, to help you prepare the Flysmart inputs. SIGMET shows SIGMETs on a globe.</p>
       <p>It <b>never replaces</b> the Operations Manual, the Performance Manual, the RCAM or the approved performance software, and it is not an approved operational tool. Where they differ, the manuals apply.</p>
       <p>Results can be wrong, for example when a report is read incorrectly, a value is missing, or a condition is not covered. Check every input and every result against the report and the approved documentation before use.</p>
-      <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation and the safe conduct of the flight.</p>
+      <p>SIGMET shows SIGMETs from public sources (NOAA Aviation Weather Center, MET Norway) and from text or photos you enter. A SIGMET can be missing, late, read wrongly or drawn in the wrong place, and the FIR outlines are approximate. The SIGMET text and the official briefing apply.</p>
+      <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation, the weather briefing and the safe conduct of the flight.</p>
       <p>When it is online, the app tells the issuer when this device last synced and last showed a result, with the app version and the device code. This is encrypted on the way. Nothing you enter is sent, except in feedback you choose to send.</p>
       <p class="fine">The app is provided "as is", without warranty of any kind. To the extent permitted by law, its author accepts no liability for any loss or damage arising from its use.</p>
     </div>
@@ -695,7 +784,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
   let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
   const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000, CALC_EVERY = 3 * 60000;   /* last-seen report to the issuer */
-  const K_TERMS = 'grf-terms', TERMS_V = '1';   /* raise TERMS_V when the terms change: everyone accepts again */
+  const K_TERMS = 'grf-terms', TERMS_V = '2';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
   const store = {
@@ -911,9 +1000,15 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     $('licSync').hidden = !(msg === WHY.sync || offerSync);
     $('devCode').textContent = devCode;
   }
-  /* decrypt and start the app once */
-  let started = false;
-  async function start(ck) {
+  /* decrypt and start the app once. Two checks can run at the same moment (the start and the version check):
+     they share one start, or the app would be put in twice and the second copy would have no working buttons. */
+  let started = false, starting = null;
+  function start(ck) {
+    if (started) return Promise.resolve(true);
+    if (!starting) starting = startOnce(ck).finally(() => { starting = null; });
+    return starting;
+  }
+  async function startOnce(ck) {
     if (started) return true;
     let buf;
     try { buf = new Uint8Array(await (await fetch('app.bin')).arrayBuffer()); } catch (e) { throw 'load'; }
@@ -998,7 +1093,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const name = cur.r.info.name;
     $('fbLead').textContent = `It goes to the person who issued your license, with your name${name ? ` (${name})` : ''} and this device's code (${devCode}). It is encrypted on the way: nobody else can read it.`;
     $('fbText').value = store.get(K_FBD) || '';
-    $('fbCtx').checked = !!document.querySelector('.hero');
+    $('fbCtx').checked = document.documentElement.dataset.tool === 'sigmet' || !!document.querySelector('.hero');
     $('fbMsg').hidden = true; $('fbSend').disabled = false; $('fbSend').textContent = 'Send';
     setKind(fbKind);
     if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
@@ -1008,7 +1103,9 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   function fbContext() {
     try {
       const pt = $('pasteText'), ph = $('photoText'), g = sel => ((document.querySelector(sel) || {}).innerText || '');
-      return {mode: state.mode, phase: state.phase, ac: state.ac, src: state.src, narrow: state.narrow, oat: state.oat, thirds: state.thirds,
+      const tool = document.documentElement.dataset.tool || 'grf';
+      if (tool === 'sigmet' && window.GRFSig) return {tool, sigmet: window.GRFSig.context()};
+      return {tool, mode: state.mode, phase: state.phase, ac: state.ac, src: state.src, narrow: state.narrow, oat: state.oat, thirds: state.thirds,
         report: ((pt && pt.value) || (ph && ph.textContent) || '').slice(0, 3000), result: g('.hero').slice(0, 800), line: g('.reshead .ctx'),
         msg: g('#scanMsg').slice(0, 600)};
     } catch (e) { return null; }
@@ -1207,7 +1304,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '83080a4540', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '205c8cc8e6', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

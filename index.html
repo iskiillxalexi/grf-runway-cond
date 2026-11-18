@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795024970249;</script>
+<script>window.GRF_BUILD=1795026984079;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -1317,17 +1317,39 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     if (r.status !== 201) throw r.status;
     const j = await r.json(); store.set(K_REFISSUE, String(j.number)); return j.number;
   }
-  async function refreshSnow() {
+  /* the device-limit access is kept while the app is open, so a request for a reading is one call, not two.
+     It is read again from act.bin after any refusal (the issuer may have changed the token). */
+  let accMem = null;
+  async function accNow() {
+    if (accMem) return accMem;
     const k = store.get(K_KEY), info = k && GRFLicense.decode(k);
-    if (!info || info.old) return {ok: false, why: 'nokey'};
+    if (!info || info.old) throw 'nokey';
+    accMem = await access(info.ck); return accMem;
+  }
+  async function refreshSnow() {
     let acc;
-    try { acc = await access(info.ck); } catch (e) { return {ok: false, why: 'setup'}; }
+    try { acc = await accNow(); } catch (e) { return {ok: false, why: e === 'nokey' ? 'nokey' : 'setup'}; }
     const ask = n => ghApi(acc, `/issues/${n}/comments`, 'POST', {body: `New reading, please (app v${window.GRF_VER || '?'}, ${new Date().toISOString().slice(0, 16)}Z)`});
     try {
       let r = await ask(await refreshIssue(acc));
       if (r.status === 404 || r.status === 410 || r.status === 422) r = await ask(await refreshIssue(acc, true));   /* the issue is gone: find or make it again */
+      if (r.status !== 201) accMem = null;
       return r.status === 201 ? {ok: true} : {ok: false, why: r.status === 403 || r.status === 401 ? 'permission' : 'net', status: r.status};
-    } catch (e) { return {ok: false, why: e === 403 || e === 401 ? 'permission' : 'net', status: typeof e === 'number' ? e : 0}; }
+    } catch (e) { accMem = null; return {ok: false, why: e === 403 || e === 401 ? 'permission' : 'net', status: typeof e === 'number' ? e : 0}; }
+  }
+  /* the published data (snowtam.json, sigmet.json) through GitHub's API with the device-limit token: always the newest
+     (the CDN address can lag 5 minutes) and without the 60 requests an hour that GitHub allows an address with no token.
+     With an ETag, an unchanged file answers 304 with no content. The token only ever goes to this repository at GitHub. */
+  async function dataFetch(url, etag, ms) {
+    const acc = await accNow(), base = (acc.api || 'https://api.github.com') + '/repos/' + acc.repo + '/contents/';
+    if (!String(url).startsWith(base)) throw 'elsewhere';
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), ms || 8000);
+    try {
+      const r = await fetch(url, {cache: 'no-store', signal: ctl.signal,
+        headers: {'Authorization': 'Bearer ' + acc.token, 'Accept': 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28', ...(etag ? {'If-None-Match': etag} : {})}});
+      if (r.status === 401) accMem = null;
+      return r;
+    } finally { clearTimeout(timer); }
   }
   let actRun = null;
   function activate(r) { if (!actRun) actRun = activateOnce(r).finally(() => { actRun = null; }); return actRun; }
@@ -1565,7 +1587,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   window.GRFLock = {recheck(synced) { const k = store.get(K_KEY); if (k) check(k, false).then(ok => { if (ok && synced) reportSeen(); }); else lock(''); },
     /* called when the version check reached GitHub: fetch the withdrawn-license list too, so "Synced" is current */
     syncNow(force) { return syncAndCheck(force); },
-    refreshSnow() { return refreshSnow(); }};
+    refreshSnow() { return refreshSnow(); },
+    dataFetch(url, etag, ms) { return dataFetch(url, etag, ms); }};
   /* sync whenever possible, then apply what it says */
   /* several triggers can fire at once (coming back to the app, the version check): share a run that is under way,
      and skip one that comes within 3 s of a successful sync. A failed sync never holds up the next try. */
@@ -1647,7 +1670,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'dc08814e4b', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '366ae2e014', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

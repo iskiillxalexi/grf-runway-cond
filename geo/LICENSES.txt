@@ -1,4 +1,9 @@
-Map data used by the SIGMET globe
+Map data used by the SIGMET globe and the Timezones globe
 - world-50m.json, land-110m.json: Natural Earth 1:50m and 1:110m (public domain), as TopoJSON by world-atlas 2.0.2 (ISC license, Mike Bostock).
 - fir.json: FIR outlines from the VATSpy Data Project (github.com/vatsimnetwork/vatspy-data-project), licensed CC BY-SA 4.0; simplified (top-level FIRs only, about 1 km). Approximate: for context only.
 - The globe is drawn with d3-geo 3.1.1 and topojson-client 3.1.0 (ISC license).
+
+Data used by Timezones
+- tz-zones.json: time zone areas from timezone-boundary-builder, release 2026f (github.com/evansiroky/timezone-boundary-builder), the "with oceans, same since now" set. The data is made from OpenStreetMap: (c) OpenStreetMap contributors, licensed under the Open Database License (ODbL) 1.0, opendatacommons.org/licenses/odbl. Changed here: simplified (about 4 km) and stored as TopoJSON. Approximate near a zone border.
+- tz-places.json: airports from OurAirports (ourairports.com/data, public domain), each with its time zone looked up in the full timezone-boundary-builder data (via geo-tz); country names from OurAirports; the zones of each country from the IANA time zone database 2026f (zone.tab, public domain).
+- No time zone rules are stored with the app: offsets and clock changes are calculated by the device's own time zone database.

@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1792842392443;</script>
+<script>window.GRF_BUILD=1795024970249;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -77,13 +77,17 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 .brand p { margin:4px 0 0; font-family:var(--f-mono); font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .brand p:empty { display:none; }
 @media (max-width:479px) { .brand p span { display:block; } .brand p .sep { display:none; } .brand p { line-height:1.25; margin-top:3px; font-size:10.5px; } }
-.tabs { position:fixed; left:0; right:0; bottom:0; z-index:8; display:grid; grid-template-columns:repeat(4, 1fr); background:var(--head); border-top:1px solid var(--line); padding:4px max(4px, env(safe-area-inset-left, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)); }
+.tabs { position:fixed; left:0; right:0; bottom:0; z-index:8; display:grid; grid-template-columns:repeat(5, 1fr); background:var(--head); border-top:1px solid var(--line); padding:4px max(4px, env(safe-area-inset-left, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)); }
 .tabs a { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:50px; border-radius:10px; color:var(--muted); text-decoration:none; font-size:11.5px; font-weight:600; -webkit-tap-highlight-color:transparent; }
 .tabs svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
 .tabs a[aria-current="page"] { color:var(--ink); }
 .tabs a[aria-current="page"] svg { color:var(--brand); }
 .tabs .badge { position:absolute; top:5px; left:calc(50% + 7px); width:10px; height:10px; border-radius:50%; background:#D99A00; border:2px solid var(--head); box-sizing:content-box; }
 .tabs .badge.bad { background:#C62828; }
+/* five tools in the bar: the names stay on one line on a narrow phone */
+.tabs .tn { max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+@media (max-width:419px) { .tabs a { font-size:10.5px; letter-spacing:-.01em; } }
+@media (max-width:349px) { .tabs a { font-size:9.5px; } }
 .modesbar { max-width:1100px; margin-inline:auto; padding:12px 16px 0; }
 .modes { width:100%; }
 .modes button { display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; min-height:52px; padding:0 6px; }
@@ -368,6 +372,8 @@ html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--t
 .tst:empty { display:none; }
 .tst.warn { color:var(--warn); } .tst.bad { color:var(--bad); }
 .tgo { width:22px; height:22px; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+/* three tools side by side on a wide screen: the names on one line across the tiles */
+@media (min-width:1000px) { .tiles { grid-template-columns:repeat(3, 1fr); } .tile { gap:14px; padding:18px 12px 18px 16px; align-items:start; } .tile .tgo { align-self:center; } }
 
 /* ---------- SIGMET ----------
    Order by use: what the data is and how old (one status line, details behind a tap), the globe, then the selected
@@ -587,6 +593,210 @@ dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; pad
   dialog.licdlg .in { padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px)); }
   #termsDlg .acts, #fbDlg .acts, #sigTextDlg .acts { margin-bottom:calc(-20px - env(safe-area-inset-bottom, 0px)); padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
 }
+/* >>> tz.css */
+/* ---------- Timezones ----------
+   Phone: the clocks first, then your places, then the globe; Search and Other time stay within reach at the bottom.
+   Wide screen: clocks and globe on the left, the tools, the chosen place and your places on the right. */
+:root {
+  --tz-sea:#DCE5F0; --tz-sealine:rgba(40,70,110,.11); --tz-land:#EEF0F3;
+  --tz-a:#F6D9A8; --tz-b:#BFE0C8; --tz-c:#CFC8EC; --tz-d:#F4C2BA; --tz-e:#A9D8E0; --tz-f:#E3E29A;
+  --tz-line:rgba(30,35,41,.5); --tz-border:rgba(30,35,41,.15); --tz-coast:rgba(30,35,41,.42);
+  --tz-night:rgba(14,22,48,.17); --tz-ink:#1E2329; --tz-halo:rgba(255,255,255,.93); --tz-sel:#B85A06; --tz-selfill:rgba(233,148,53,.45); --tz-sun:#E2A100;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --tz-sea:#0D131B; --tz-sealine:rgba(160,190,230,.09); --tz-land:#262B32;
+  --tz-a:#77591F; --tz-b:#245C44; --tz-c:#454089; --tz-d:#7A3350; --tz-e:#265F6A; --tz-f:#5C5B29;
+  --tz-line:rgba(236,239,243,.5); --tz-border:rgba(236,239,243,.13); --tz-coast:rgba(236,239,243,.38);
+  --tz-night:rgba(0,0,0,.24); --tz-ink:#F2F4F7; --tz-halo:rgba(13,17,22,.9); --tz-sel:#F7BC72; --tz-selfill:rgba(244,180,102,.42); --tz-sun:#FFD257; } }
+:root[data-theme="dark"] {
+  --tz-sea:#0D131B; --tz-sealine:rgba(160,190,230,.09); --tz-land:#262B32;
+  --tz-a:#77591F; --tz-b:#245C44; --tz-c:#454089; --tz-d:#7A3350; --tz-e:#265F6A; --tz-f:#5C5B29;
+  --tz-line:rgba(236,239,243,.5); --tz-border:rgba(236,239,243,.13); --tz-coast:rgba(236,239,243,.38);
+  --tz-night:rgba(0,0,0,.24); --tz-ink:#F2F4F7; --tz-halo:rgba(13,17,22,.9); --tz-sel:#F7BC72; --tz-selfill:rgba(244,180,102,.42); --tz-sun:#FFD257; }
+
+:root { --tz-tabs:var(--tabh, 0px); --tz-top:12px; }
+#tzView { max-width:1100px; margin-inline:auto; padding:12px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); display:grid; gap:14px; min-width:0; }
+#tzView[hidden], #tzView [hidden] { display:none !important; }
+.tzmain, .tzside { display:contents; }
+.tzclock { order:1; } #tzPlaces { order:2; } .tzglobe { order:3; } #tzSel { order:4; } .tzabout { order:5; }
+#tzSel:empty { display:none; }
+#tzView svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.tzlbl { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.tztime { font-family:var(--f-mono); font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+.tzmono { font-family:var(--f-mono); font-size:.92em; }
+.tzsmall { color:var(--muted); font-size:13px; }
+.tzdisc { color:var(--muted); font-size:14px; margin:0; }
+.tzcard { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:grid; gap:12px; min-width:0; }
+.tzhead { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:28px; }
+.tzhead h2 { font-family:var(--f-head); font-weight:700; font-size:15px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0; }
+.tzlink { border:0; background:none; color:var(--ink); font:inherit; font-weight:600; cursor:pointer; min-height:36px; padding:0 4px; text-decoration:underline; text-underline-offset:3px; }
+.tzbtn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:46px; padding:0 16px; border:1.5px solid var(--ink); border-radius:10px; background:transparent; color:var(--ink); font:inherit; font-weight:600; cursor:pointer; }
+.tzbtn.main { background:var(--brand); border-color:var(--brand); color:var(--brand-ink, #2A1703); }
+.tzbtn.sm { min-height:38px; padding:0 14px; font-size:14.5px; }
+.tzbtn[aria-pressed="true"] { background:var(--ink); color:var(--surface); }
+.tznote { border-radius:9px; padding:10px 12px; font-size:14.5px; background:var(--surface2); }
+.tznote.bad { background:var(--badbg, #FBE4E4); color:var(--bad, #C62828); }
+.tzx { width:40px; height:40px; display:grid; place-items:center; border:0; border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; flex:none; }
+.tzx:hover { background:var(--surface2); color:var(--ink); }
+
+/* ---- the clocks ---- */
+.tzclock { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 16px; display:grid; gap:12px; min-width:0; }
+.tzclock.shift { border-color:var(--brand); box-shadow:inset 0 0 0 1.5px var(--brand); }
+.tzclock.shift #tzUtcL { color:var(--tz-sel); }
+.tzutc { display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:end; gap:2px 12px; }
+.tzutc .tzlbl { grid-column:1 / -1; }
+.tzbig { font-family:var(--f-mono); font-weight:600; font-size:46px; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.tzbig small { font-size:24px; font-weight:500; color:var(--muted); letter-spacing:0; }
+.tzdate { font-family:var(--f-head); font-weight:600; font-size:19px; letter-spacing:.03em; color:var(--muted); padding-bottom:3px; white-space:nowrap; }
+.tzduo { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.tzcell { display:grid; gap:1px; align-content:start; text-align:left; min-height:84px; padding:9px 12px 10px; border:1px solid var(--line); border-radius:11px; background:var(--bg); color:inherit; font:inherit; cursor:pointer; min-width:0; }
+.tzcell:hover { border-color:var(--muted); }
+.tzcell .tzlbl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tzcell .tzwho { color:var(--ink); }
+.tzcell .tzmid { display:flex; align-items:baseline; gap:8px; }
+.tzcell .tztime { font-size:28px; line-height:1.15; }
+.tzcell .tzoff { color:var(--muted); font-size:13.5px; }
+.tzcell.empty { align-content:center; border-style:dashed; }
+.tzadd { display:inline-flex; align-items:center; gap:6px; font-weight:600; margin-top:6px; }
+.tzday { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+
+/* ---- my places ---- */
+.tzlp { gap:6px; padding-bottom:8px; }
+.tzrow { display:flex; align-items:center; gap:6px; border-top:1px solid var(--line); }
+#tzList .tzrow:first-child { border-top:0; }
+.tzrowb, .tzr { flex:1; display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:60px; padding:9px 2px; border:0; background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; min-width:0; }
+.tzrowb[aria-current="true"] { box-shadow:inset 3px 0 0 var(--brand); padding-left:10px; }
+.tzrn { display:grid; gap:1px; min-width:0; }
+.tzrn b { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tzrn span { color:var(--muted); font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tzrt { display:grid; justify-items:end; flex:none; }
+.tzrt .tztime { font-size:24px; line-height:1.15; }
+.tzmini { width:40px; height:40px; display:grid; place-items:center; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--ink); cursor:pointer; flex:none; }
+.tzmini:disabled { opacity:.35; cursor:default; }
+.tzmini.del { color:var(--bad, #C62828); }
+.tzempty { color:var(--muted); font-size:14.5px; margin:0; padding:2px 0 8px; }
+.tzempty b { color:var(--ink); font-weight:600; }
+
+/* ---- the globe ---- */
+.tzglobe { scroll-margin-top:calc(var(--tz-top, 70px) + 6px); position:relative; background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden; min-width:0; }
+#tzGlobe { display:block; width:100%; height:min(56vh, 500px); touch-action:none; cursor:grab; -webkit-tap-highlight-color:transparent; }
+#tzGlobe:active { cursor:grabbing; }
+.tzgbtns { position:absolute; right:10px; top:10px; display:grid; gap:8px; }
+.tzgbtns button { width:44px; height:44px; display:grid; place-items:center; border:1px solid var(--line); border-radius:11px; background:var(--surface); color:var(--ink); cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.tzseg { display:inline-flex; background:var(--surface2); border-radius:10px; padding:3px; gap:3px; }
+.tzseg button { min-height:36px; padding:0 12px; border:0; border-radius:8px; background:transparent; color:var(--ink); font:inherit; font-weight:600; font-size:14.5px; cursor:pointer; }
+.tzseg button[aria-pressed="true"] { background:var(--brand); color:var(--brand-ink, #2A1703); }
+.tzgmode { position:absolute; left:10px; top:10px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+.tzcall { position:absolute; left:10px; right:10px; bottom:10px; }
+.tzcallb { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 14px; border:1px solid var(--line); border-left:4px solid var(--brand); border-radius:11px; background:var(--surface); color:var(--ink); font:inherit; text-align:left; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,.14); }
+.tzcalln { display:grid; min-width:0; }
+.tzcalln b { font-family:var(--f-head); font-weight:700; font-size:17px; letter-spacing:.03em; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tzcalln span { color:var(--muted); font-size:13.5px; }
+.tzcallt { font-family:var(--f-mono); font-weight:600; font-size:26px; flex:none; }
+.tzgnote { position:absolute; left:10px; right:64px; top:58px; padding:8px 12px; border-radius:9px; background:var(--surface); border:1px solid var(--line); font-size:14px; }
+
+/* ---- the chosen place ---- */
+.tzdet { gap:14px; }
+.tzdh { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.tzdh h3 { font-family:var(--f-head); font-weight:700; font-size:24px; line-height:1.1; letter-spacing:.02em; margin:0; }
+.tzdh p { margin:3px 0 0; color:var(--muted); font-size:14.5px; }
+.tzdh .tzx { margin:-6px -8px 0 0; }
+.tzdnow { display:flex; align-items:center; gap:14px; }
+.tzdnow .tztime { font-size:44px; line-height:1; }
+.tzdnow > span:last-child { display:grid; }
+.tzdnow b { font-weight:600; }
+.tzdnow span span { color:var(--muted); font-size:13.5px; }
+.tzfacts { display:grid; grid-template-columns:max-content minmax(0, 1fr); gap:7px 14px; margin:0; font-size:15px; }
+.tzfacts dt { color:var(--muted); }
+.tzfacts dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+.tzfacts dd b { font-weight:600; }
+.tzother { display:grid; gap:8px; }
+.tzother h4 { font-family:var(--f-head); font-weight:700; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0; }
+.tzzl { display:grid; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.tzz { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding:6px 12px; border:0; border-top:1px solid var(--line); background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.tzz:first-child { border-top:0; }
+.tzz[aria-current="true"] { background:var(--brand-soft, rgba(233,148,53,.18)); box-shadow:inset 3px 0 0 var(--brand); font-weight:600; }
+.tzacts { display:flex; flex-wrap:wrap; gap:10px; }
+.tzabout { color:var(--muted); font-size:13px; margin:0 2px; }
+
+/* ---- Search and Other time: fixed at the bottom on a phone ---- */
+.tzdock { position:fixed; left:0; right:0; bottom:var(--tz-tabs, 0px); z-index:6; display:grid; gap:10px; padding:10px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); background:var(--dock, #1E2329); border-top:3px solid var(--brand); }
+.tzbtns { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.tzdock .tzbtn { min-height:50px; border-color:rgba(255,255,255,.75); color:#fff; font-size:17px; }
+.tzdock .tzbtn.main { border-color:var(--brand); color:var(--brand-ink, #2A1703); }
+.tzdock .tzbtn[aria-pressed="true"] { background:#fff; color:#1E2329; border-color:#fff; }
+.tzbar { display:grid; gap:8px; color:#fff; }
+.tzbarhd { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:15px; }
+.tzbarhd b { font-family:var(--f-mono); font-weight:600; }
+.tzbarhd span span { opacity:.8; }
+.tzbarhd #tzNow { min-height:34px; border-color:var(--brand); color:var(--brand); }
+.tzbarhd > span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tzbarctl { display:grid; grid-template-columns:auto minmax(0, 1fr) auto; align-items:center; gap:10px; }
+.tzstep { min-width:56px; min-height:40px; border:1px solid rgba(255,255,255,.55); border-radius:9px; background:transparent; color:#fff; font:inherit; font-weight:600; cursor:pointer; }
+#tzSlide { width:100%; height:40px; margin:0; accent-color:var(--brand); }
+@media (max-width:859px) {
+  html[data-tool="tz"] body { padding-bottom:calc(var(--tz-tabs, 0px) + 96px) !important; }
+  html[data-tool="tz"].tzshift body { padding-bottom:calc(var(--tz-tabs, 0px) + 186px) !important; }
+}
+.tzsnack { position:fixed; left:12px; right:12px; bottom:calc(var(--tz-tabs, 0px) + 86px); z-index:7; max-width:540px; margin:0 auto; display:flex; align-items:center; gap:10px; padding:9px 6px 9px 16px; border-radius:12px; background:var(--ink); color:var(--bg); box-shadow:0 8px 28px rgba(0,0,0,.28); font-size:15px; }
+html.tzshift .tzsnack { bottom:calc(var(--tz-tabs, 0px) + 176px); }
+.tzsnack .tzsmsg { flex:1; min-width:0; }
+.tzsnack button { border:0; background:none; color:var(--brand); font:inherit; font-weight:700; cursor:pointer; min-height:40px; padding:0 8px; }
+.tzsnack .tzsx { color:inherit; opacity:.75; width:36px; padding:0; display:grid; place-items:center; }
+
+/* ---- sheets ---- */
+dialog.tzsheet { border:0; padding:0; border-radius:16px; background:var(--surface); color:var(--ink); width:min(560px, calc(100vw - 32px)); max-height:calc(100dvh - 48px); overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,.35); overscroll-behavior:contain; }
+dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
+.tzshead { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 10px 10px 18px; background:var(--surface); border-bottom:1px solid var(--line); }
+.tzshead h2 { font-family:var(--f-head); font-weight:700; font-size:18px; letter-spacing:.06em; text-transform:uppercase; margin:0; }
+.tzsbody { padding:16px 18px 20px; display:grid; gap:14px; }
+.tzsbody input, .tzsbody select { width:100%; min-height:48px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; font-size:17px; padding:10px 12px; -webkit-appearance:none; appearance:none; }
+.tzsbody input[type=date], .tzsbody input[type=time] { display:block; min-width:0; text-align:left; line-height:26px; }
+.tzsbody input::-webkit-date-and-time-value { text-align:left; margin:0; }
+.tzsbody select { background-image:linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position:calc(100% - 20px) 21px, calc(100% - 14px) 21px; background-size:6px 6px; background-repeat:no-repeat; padding-right:36px; }
+.tzfield { display:grid; gap:5px; min-width:0; }
+.tzrow2 { display:grid; grid-template-columns:minmax(0, 1.2fr) minmax(0, 1fr); gap:12px; }
+.tzres { display:grid; min-height:46vh; align-content:start; }
+.tzr { border-top:1px solid var(--line); padding:9px 0; }
+.tzr:first-child { border-top:0; }
+.tzr .tzrt .tztime { font-size:20px; }
+@media (max-width:559px) {
+  dialog.tzsheet { width:100vw; max-width:100vw; margin:auto 0 0; border-radius:16px 16px 0 0; max-height:92dvh; }
+  dialog.tzsheet .tzsbody { padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .tzsbody .tzacts .tzbtn.main { flex:1 1 auto; }
+  #tzFindDlg { height:92dvh; }
+}
+@media (max-width:379px) { .tzbig { font-size:40px; } .tzbig small { font-size:20px; } .tzdate { font-size:17px; } .tzcell .tztime { font-size:25px; } }
+@media (max-width:359px) { .tzdock .tzbtn { font-size:15.5px; gap:6px; padding:0 8px; white-space:nowrap; } .tzbtns { gap:8px; } }
+
+/* ---- wide screen: clocks and globe left, the rest right ---- */
+@media (min-width:860px) {
+  #tzView { grid-template-columns:minmax(0, 1.35fr) minmax(320px, 1fr); gap:14px 20px; align-items:start; padding:16px 24px 0; }
+  .tzmain { display:grid; gap:14px; position:sticky; top:var(--tz-top, 76px); min-width:0; }
+  .tzside { display:grid; gap:14px; min-width:0; }
+  .tzdock { order:1; } #tzSel { order:2; } #tzPlaces { order:3; } .tzabout { order:4; }
+  .tzcall { display:none; }
+  .tzclock { grid-template-columns:auto minmax(0, 1fr); align-items:center; gap:22px; }
+  .tzduo { border-left:1px solid var(--line); padding-left:22px; }
+  #tzGlobe { height:min(calc(100vh - 252px), 700px); min-height:340px; }
+  .tzdock { position:static; padding:0; background:none; border:0; z-index:auto; }
+  .tzdock .tzbtn { border-color:var(--ink); color:var(--ink); min-height:48px; font-size:16px; }
+  .tzdock .tzbtn.main { border-color:var(--brand); color:var(--brand-ink, #2A1703); }
+  .tzdock .tzbtn[aria-pressed="true"] { background:var(--ink); color:var(--surface); border-color:var(--ink); }
+  .tzbar { order:2; color:var(--ink); padding:12px 14px; border:1.5px solid var(--brand); border-radius:12px; background:var(--surface); }
+  .tzbarhd #tzNow { color:var(--ink); }
+  .tzstep { border-color:var(--line); color:var(--ink); }
+  .tzsnack, html.tzshift .tzsnack { bottom:24px; }
+}
+/* a narrow wide screen (an iPad in split view, an older iPad lying down): the clocks stack, as on a phone */
+@media (min-width:860px) and (max-width:1099px) {
+  .tzclock { grid-template-columns:minmax(0, 1fr); align-items:stretch; gap:10px; }
+  .tzduo { border-left:0; padding-left:0; }
+  .tzcell { min-height:0; }
+  #tzGlobe { height:min(calc(100vh - 318px), 700px); min-height:300px; }
+}
+@media (min-width:860px) and (max-width:1000px) { #tzGlobe { height:min(calc(100vh - 362px), 700px); } }
+/* <<< tz.css */
 </style>
 </head>
 <body>
@@ -642,7 +852,7 @@ dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; pad
       <button type="button" data-k="problem" aria-pressed="true">Problem</button><button type="button" data-k="idea" aria-pressed="false">Idea</button><button type="button" data-k="other" aria-pressed="false">Other</button>
     </div>
     <textarea id="fbText" maxlength="2000" aria-label="Your feedback" placeholder="What happened, or what could be better?"></textarea>
-    <label class="fbchk"><input type="checkbox" id="fbCtx" checked> <span>Attach what is on the screen (the calculation, or the SIGMET you look at), to help find a problem</span></label>
+    <label class="fbchk"><input type="checkbox" id="fbCtx" checked> <span>Attach what is on the screen (the calculation, or the SIGMET or the place you look at), to help find a problem</span></label>
     <div id="fbMsg" class="note" hidden></div>
     <div class="acts"><button class="btn fill" type="button" id="fbSend">Send</button><button class="btn" type="button" id="fbCancel">Cancel</button></div>
   </div>
@@ -652,10 +862,11 @@ dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; pad
     <div class="hd"><h2 id="tmTitle">Terms of use</h2><button class="ghost x" type="button" id="tmX" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <p class="lead" id="tmLead" hidden style="margin:0">Your license key is valid. Read and accept the terms to open the app on this device.</p>
     <div class="tm">
-      <p>The GRF Toolbox holds <b>supplementary aids</b>. Runway Cond applies the GRF flowcharts and the crosswind table to runway condition reports, to help you prepare the Flysmart inputs. SIGMET shows SIGMETs on a globe.</p>
+      <p>The GRF Toolbox holds <b>supplementary aids</b>. Runway Cond applies the GRF flowcharts and the crosswind table to runway condition reports, to help you prepare the Flysmart inputs. SIGMET shows SIGMETs on a globe. Timezones shows UTC and local times.</p>
       <p>It <b>never replaces</b> the Operations Manual, the Performance Manual, the RCAM or the approved performance software, and it is not an approved operational tool. Where they differ, the manuals apply.</p>
       <p>Results can be wrong, for example when a report is read incorrectly, a value is missing, or a condition is not covered. Check every input and every result against the report and the approved documentation before use.</p>
       <p>SIGMET shows SIGMETs from public sources (NOAA Aviation Weather Center, MET Norway) and from text or photos you enter. A SIGMET can be missing, late, read wrongly or drawn in the wrong place, and the FIR outlines are approximate. The SIGMET text and the official briefing apply.</p>
+      <p>Timezones calculates every time from this device's clock and the time zone data in its operating system, and draws the zones from a simplified map. A time can be wrong when the device's clock is wrong, when a country has changed its clock rules and the device has not been updated, or for a point tapped near a zone border. Check a time that matters (a report time, a pick-up, a slot, a curfew) against the official source.</p>
       <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation, the weather briefing and the safe conduct of the flight.</p>
       <p>When it is online, the app tells the issuer when this device last synced and last showed a result, with the app version and the device code. This is encrypted on the way. Nothing you enter is sent, except in feedback you choose to send.</p>
       <p class="fine">The app is provided "as is", without warranty of any kind. To the extent permitted by law, its author accepts no liability for any loss or damage arising from its use.</p>
@@ -897,7 +1108,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
   let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
   const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000, CALC_EVERY = 3 * 60000;   /* last-seen report to the issuer */
-  const K_TERMS = 'grf-terms', TERMS_V = '2';   /* raise TERMS_V when the terms change: everyone accepts again */
+  const K_TERMS = 'grf-terms', TERMS_V = '3';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
   const store = {
@@ -1224,7 +1435,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const name = cur.r.info.name;
     $('fbLead').textContent = `It goes to the person who issued your license, with your name${name ? ` (${name})` : ''} and this device's code (${devCode}). It is encrypted on the way: nobody else can read it.`;
     $('fbText').value = store.get(K_FBD) || '';
-    $('fbCtx').checked = document.documentElement.dataset.tool === 'sigmet' || !!document.querySelector('.hero');
+    $('fbCtx').checked = /^(sigmet|tz)$/.test(document.documentElement.dataset.tool || '') || !!document.querySelector('.hero');
     $('fbMsg').hidden = true; $('fbSend').disabled = false; $('fbSend').textContent = 'Send';
     setKind(fbKind);
     if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
@@ -1236,6 +1447,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       const pt = $('pasteText'), ph = $('photoText'), g = sel => ((document.querySelector(sel) || {}).innerText || '');
       const tool = document.documentElement.dataset.tool || 'grf';
       if (tool === 'sigmet' && window.GRFSig) return {tool, sigmet: window.GRFSig.context()};
+      if (tool === 'tz' && window.GRFTz) return {tool, tz: window.GRFTz.context()};
       return {tool, mode: state.mode, phase: state.phase, ac: state.ac, src: state.src, narrow: state.narrow, oat: state.oat, thirds: state.thirds,
         report: ((pt && pt.value) || (ph && ph.textContent) || '').slice(0, 3000), result: g('.hero').slice(0, 800), line: g('.reshead .ctx'),
         msg: g('#scanMsg').slice(0, 600)};
@@ -1435,7 +1647,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '848b400cec', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'dc08814e4b', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

@@ -3,6 +3,8 @@
 # GitHub runs the schedule only every few hours in practice, so the apps also ask for a reading when the data is old:
 # they write a comment on the issue "GRF data refresh" (their token may only handle issues). Only comments by the
 # repository owner start a reading; each comment is deleted again.
+# The SIGMETs take a second to read and the bulletins about a minute, so the SIGMETs are read and published first:
+# an app that asked has them some 10 seconds later. The bulletins follow in the same job.
 name: SNOWTAM bulletins
 on:
   schedule:
@@ -22,28 +24,43 @@ jobs:
       cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      DATA_BRANCH: data
     steps:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: .github/scripts
           fetch-depth: 1
+      - name: Read the SIGMETs and publish them at once
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # what is published now stays in place until the bulletins have been read again
+          mkdir -p out now
+          if git init -q now && git -C now fetch -q --depth 1 "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$DATA_BRANCH" \
+              && git -C now checkout -q FETCH_HEAD && [ -f now/snowtam.json ]; then
+            rm -rf now/.git
+            if python3 .github/scripts/sigmet.py out --quick; then
+              cp out/sigmet.json now/sigmet.json
+              bash .github/scripts/publish.sh now "SIGMETs"
+            else
+              rm -f out/sigmet.json
+              echo "::warning::The quick SIGMET reading failed: it is read again after the bulletins"
+            fi
+          else
+            echo "::notice::Nothing is published yet, or it could not be fetched: everything is published together"
+          fi
       - name: PDF reader
         run: (command -v pdftotext || (sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils)) >/dev/null 2>&1 || pip install --quiet pypdf
       - name: Read the bulletins
         run: python3 .github/scripts/snowtam.py out
-      - name: Read the SIGMETs
-        run: python3 .github/scripts/sigmet.py out || echo "::warning::The SIGMETs could not be read"
+      - name: Read the SIGMETs (when the quick reading did not succeed)
+        run: |
+          [ -f out/sigmet.json ] || python3 .github/scripts/sigmet.py out || echo "::warning::The SIGMETs could not be read"
       - name: Publish on the data branch
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cd out
-          git init -q -b data
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -q -m "SNOWTAM bulletins $(date -u +%Y-%m-%dT%H:%MZ)"
-          git push -q -f "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data
+        run: bash .github/scripts/publish.sh out "SNOWTAM bulletins"
       - name: Tidy the request
         if: always() && github.event_name == 'issue_comment'
         env:

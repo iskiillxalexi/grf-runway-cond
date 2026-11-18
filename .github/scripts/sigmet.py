@@ -6,7 +6,9 @@ Sources:
     area as coordinates (cut to the real FIR boundaries), validity and the time AWC received each one.
   - MET Norway (api.met.no) SIGMETs for ENOR and ENOB, as text: the app reads them itself.
 Each SIGMET keeps its source and times, so the app can show where it came from and how old the reading is.
-Usage: sigmet.py OUTDIR
+Usage: sigmet.py OUTDIR [--quick]
+  --quick  the first reading of a job, published at once so that an app that asked gets its SIGMETs in seconds:
+           short waits, and when AWC does not answer nothing is written and the exit code is 2 (the job reads again later).
 """
 import json, os, sys, time, urllib.request
 from datetime import datetime, timezone
@@ -15,15 +17,19 @@ UA = 'GRF-Runway-Cond SIGMET reader (low volume, every 15 min; github.com/iskiil
 AWC = 'https://aviationweather.gov/api/data/isigmet?format=json'
 METNO = 'https://api.met.no/weatherapi/sigmets/2.0/?type=sigmets'
 
+QUICK = '--quick' in sys.argv[1:]
+
 def get(url):
     last = None
-    for attempt in range(3):
+    tries, wait, pause = (2, 12, 1) if QUICK else (3, 40, 3)
+    for attempt in range(tries):
         try:
             req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept': '*/*'})
-            with urllib.request.urlopen(req, timeout=40) as r:
+            with urllib.request.urlopen(req, timeout=wait) as r:
                 return r.read(), dict(r.headers)
         except Exception as e:
-            last = e; time.sleep(3 * (attempt + 1))
+            last = e
+            if attempt + 1 < tries: time.sleep(pause * (attempt + 1))
     raise last
 
 def iso(t):
@@ -69,10 +75,13 @@ def main(outdir):
     except Exception as e:
         src['error'] = str(e)[:200]
     sources.append(src)
+    if QUICK and not sources[0]['ok']:
+        print('AWC did not answer the quick reading:', sources[0].get('error', '')); sys.exit(2)
     data = {'v': 1, 'generated': read, 'sources': sources, 'awc': items, 'texts': texts}
     json.dump(data, open(os.path.join(outdir, 'sigmet.json'), 'w'), separators=(',', ':'))
     print(f"{len(items)} AWC SIGMETs, {len(texts)} text bulletins")
     for s in sources: print(' ', s['id'], s.get('ok'), s.get('count'), s.get('error', ''))
 
 if __name__ == '__main__':
-    main(sys.argv[1] if len(sys.argv) > 1 else 'out')
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    main(args[0] if args else 'out')

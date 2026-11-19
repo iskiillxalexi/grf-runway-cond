@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795026984079;</script>
+<script>window.GRF_BUILD=1795091397343;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -84,6 +84,13 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 .tabs a[aria-current="page"] svg { color:var(--brand); }
 .tabs .badge { position:absolute; top:5px; left:calc(50% + 7px); width:10px; height:10px; border-radius:50%; background:#D99A00; border:2px solid var(--head); box-sizing:content-box; }
 .tabs .badge.bad { background:#C62828; }
+/* Settings: a round button in the header, beside the app status (the tab bar holds the five tools) */
+.hgear { position:relative; width:36px; height:34px; display:grid; place-items:center; border:1px solid var(--line); border-radius:17px; background:var(--surface); color:var(--ink); flex:none; }
+.hgear svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.hgear:hover { border-color:var(--muted); }
+.hgear[aria-current="page"] { background:var(--ink); border-color:var(--ink); color:var(--surface); }
+.hgear .badge { position:absolute; top:-3px; right:-3px; width:9px; height:9px; border-radius:50%; background:#D99A00; border:2px solid var(--head); box-sizing:content-box; }
+.hgear .badge.bad { background:#C62828; }
 /* five tools in the bar: the names stay on one line on a narrow phone */
 .tabs .tn { max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 @media (max-width:419px) { .tabs a { font-size:10.5px; letter-spacing:-.01em; } }
@@ -239,7 +246,8 @@ details.how li::marker { color:var(--muted); }
   .right { position:sticky; top:16px; }
   .bar { display:none; }
 }
-@media (min-width:1240px) { .tabs a svg { display:block; width:20px; height:20px; } }
+/* one row from here on: the name and the tabs keep their width, the status line gives way (it shortens with "…") */
+@media (min-width:1001px) { .top-in { flex-wrap:nowrap; } .brand, .tabs { flex:none; } .top .top-in > .tools { flex:0 1 auto; } }
 /* a narrow wide screen: name and status on the first row, the tabs on their own row */
 @media (min-width:860px) and (max-width:1000px) { .top .top-in > .tools { order:2; } .top .tabs { order:3; flex:1 1 100%; } .tabs a { flex:1; justify-content:center; } }
 /* how the report comes in: one compact row of four, so the input itself is in view (NN/g: the fold) */
@@ -372,8 +380,6 @@ html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--t
 .tst:empty { display:none; }
 .tst.warn { color:var(--warn); } .tst.bad { color:var(--bad); }
 .tgo { width:22px; height:22px; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-/* three tools side by side on a wide screen: the names on one line across the tiles */
-@media (min-width:1000px) { .tiles { grid-template-columns:repeat(3, 1fr); } .tile { gap:14px; padding:18px 12px 18px 16px; align-items:start; } .tile .tgo { align-self:center; } }
 
 /* ---------- SIGMET ----------
    Order by use: what the data is and how old (one status line, details behind a tap), the globe, then the selected
@@ -505,6 +511,9 @@ html.locked .top, html.locked .wrap, html.locked .bar, html.locked .modesbar, ht
 @media (prefers-reduced-motion:reduce) { .themesw .knob, .themesw svg { transition:none; } }
 .top-in > .tools { order:3; margin-left:auto; display:flex; align-items:center; gap:8px; flex:none; min-width:0; }
 @media (max-width:479px) { .hchip.st #syncLine { display:none; } }
+/* phone: the tool's name is never cut for the status line; on the narrowest phones the status is its dot alone */
+@media (max-width:859px) { .brand { flex:1 0 auto; } .top-in > .tools { flex:0 1 auto; } }
+@media (max-width:359px) { .hchip.st .t { display:none; } .hchip.st { padding:0 10px; gap:6px; } }
 /* header chips: license (opens the details) and app status (taps check for a new version) */
 .meta { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
 .hchip { display:inline-flex; align-items:center; gap:7px; min-height:34px; padding:0 13px 0 11px; border:1px solid var(--line); border-radius:17px; background:var(--surface); color:var(--ink); font-family:var(--f-ui); font-weight:600; font-size:13.5px; line-height:1; cursor:pointer; white-space:nowrap; max-width:100%; min-width:0; }
@@ -797,6 +806,126 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
 }
 @media (min-width:860px) and (max-width:1000px) { #tzGlobe { height:min(calc(100vh - 362px), 700px); } }
 /* <<< tz.css */
+/* >>> rt.css */
+/* ---------- Route ----------
+   Phone: the flight, the globe, then Ops or PA notes. Wide screen: flight and globe on the left, the lists on the right.
+   The cards, buttons and sheets are the ones of Timezones (tz…); only what is Route's own is here. */
+:root { --rt-line:#B4127A; --rt-hit:#C62828; --rt-hitbg:#FBE4E4; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --rt-line:#FF6BC1; --rt-hit:#FF8A80; --rt-hitbg:#4A1F1F; } }
+:root[data-theme="dark"] { --rt-line:#FF6BC1; --rt-hit:#FF8A80; --rt-hitbg:#4A1F1F; }
+#rtView { max-width:1100px; margin-inline:auto; padding:12px max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); display:grid; gap:14px; min-width:0; }
+#rtView[hidden], #rtView [hidden] { display:none !important; }
+#rtView svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+.rtmain, .rtside, .rtpane { display:grid; gap:14px; min-width:0; }
+.rtmode { justify-self:start; }
+.rtmode button { min-width:96px; min-height:40px; }
+#rtGlobe { display:block; width:100%; height:min(42vh, 420px); touch-action:none; cursor:grab; -webkit-tap-highlight-color:transparent; }
+#rtGlobe:active { cursor:grabbing; }
+.rtmap.empty #rtGlobe { height:min(30vh, 260px); }
+.rtcallb { cursor:default; padding-right:4px; }
+.rtcallb .tzcallt small { font-size:12px; font-weight:500; color:var(--muted); }
+.rtcallb .tzcalln span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ---- the flight ---- */
+.rtflight { gap:10px; }
+.rtod h3 { display:flex; align-items:baseline; gap:10px; font-size:30px; line-height:1.05; font-weight:600; margin:0; letter-spacing:0; }
+.rtod h3 .tzmono { font-size:1em; }
+.rtarrow { color:var(--muted); font-weight:400; }
+.rtod p { margin:3px 0 0; color:var(--muted); font-size:15px; }
+.rtmeta { margin:0; font-size:14.5px; color:var(--ink); }
+.rtcell { cursor:default; min-height:0; }
+#rtView .tzduo { border-left:0; padding-left:0; }
+.rtcell:hover { border-color:var(--line); }
+.rtnow { display:grid; gap:8px; }
+.rtnowl { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14.5px; }
+.rtnowl > span { color:var(--muted); min-width:0; }
+.rtnowl b { color:var(--ink); font-weight:600; }
+.rtnowl .tzlink { flex:none; white-space:nowrap; }
+.rtbar { height:6px; border-radius:3px; background:var(--surface2); overflow:hidden; }
+.rtbar i { display:block; height:100%; background:var(--rt-line); border-radius:3px; }
+.rtwarn { background:var(--warnbg, #FFF4D6); color:var(--ink); }
+.rtwarn b { font-weight:600; }
+
+/* ---- Ops ---- */
+.rtstamp { margin:-4px 0 0; font-size:13.5px; color:var(--muted); }
+.rtstamp.old { color:var(--warn, #8A5A00); font-weight:600; }
+.rtlist { display:grid; }
+.rtsig { border-top:1px solid var(--line); }
+.rtlist .rtsig:first-child { border-top:0; }
+.rtsig summary { display:grid; grid-template-columns:auto minmax(0, 1fr); gap:4px 12px; align-items:start; padding:10px 0; cursor:pointer; list-style:none; }
+.rtsig summary::-webkit-details-marker { display:none; }
+.rtsw { width:6px; align-self:stretch; border-radius:3px; grid-row:1 / span 2; min-height:38px; }
+.rtsn { display:grid; gap:1px; min-width:0; }
+.rtsn b { font-weight:600; }
+.rtsn span { color:var(--muted); font-size:13.5px; }
+.rttag { grid-column:2; justify-self:start; font-size:13px; font-weight:600; padding:3px 9px; border-radius:999px; background:var(--surface2); color:var(--ink); }
+.rttag.hit { background:var(--rt-hitbg); color:var(--rt-hit); }
+.rttag.watch { background:var(--warnbg); color:var(--warn); }
+.rtsub { margin:2px 0 -6px; font-family:var(--f-head); font-weight:700; font-size:13.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.rtsigd { padding:0 0 12px 18px; display:grid; gap:8px; }
+.rtsigd p { margin:0; font-size:13.5px; color:var(--muted); }
+.rtsigd pre { margin:0; padding:10px 12px; border-radius:9px; background:var(--surface2); font-family:var(--f-mono); font-size:12.5px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.rtnone { margin:0; padding:10px 12px; border-radius:9px; background:var(--okbg, #E3F4E6); font-size:14.5px; }
+.rtnone b { font-weight:600; }
+.rtmore > summary { cursor:pointer; font-weight:600; font-size:14.5px; min-height:40px; display:flex; align-items:center; }
+.rttable { display:grid; }
+.rttr { display:grid; grid-template-columns:5.2ch minmax(0, 1fr) auto 5.6ch; gap:10px; align-items:baseline; padding:7px 0; border-top:1px solid var(--line); font-size:15px; }
+.rttable .rttr:first-child { border-top:0; }
+.rttr b { font-weight:600; }
+.rttn { color:var(--muted); font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rtdim { color:var(--muted); font-size:13px; }
+.rttr .tztime { font-size:16px; text-align:right; }
+.rtpts > summary { display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; min-height:28px; }
+.rtpts > summary h2 { font-family:var(--f-head); font-weight:700; font-size:15px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0; }
+.rtpts[open] > summary { margin-bottom:8px; }
+.rtpts .tzsmall { margin:8px 0 0; }
+#rtView .tzcard > .tzsmall { margin:0; }
+
+/* ---- PA notes ---- */
+.rtpa { gap:8px; }
+.rtpah { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.rtnl { display:grid; }
+.rtn { display:grid; grid-template-columns:5.6ch minmax(0, 1fr) auto; gap:12px; align-items:center; min-height:58px; padding:8px 0; border:0; border-top:1px solid var(--line); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
+.rtnl > :first-child { border-top:0; }
+.rtn.past { opacity:.5; }
+.rtn.land .rtnn b { font-family:var(--f-head); text-transform:uppercase; letter-spacing:.05em; font-weight:700; }
+.rtnt { display:grid; }
+.rtnt .tztime { font-size:16px; }
+.rtnt span { color:var(--muted); font-size:12.5px; font-family:var(--f-mono); }
+.rtnn { display:grid; gap:1px; min-width:0; }
+.rtnn b { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rtnn span { color:var(--muted); font-size:13.5px; }
+.rtsd { display:flex; align-items:center; gap:4px; min-width:74px; justify-content:center; padding:5px 8px; border-radius:9px; background:var(--surface2); font-size:13px; }
+.rtsd > span { display:grid; justify-items:center; line-height:1.15; }
+.rtsd b { font-weight:600; }
+.rtsd small { color:var(--muted); font-size:12px; }
+.rtsd.l { justify-content:flex-start; } .rtsd.r { justify-content:flex-end; }
+#rtView .rtsd svg { width:16px; height:16px; }
+.rtnowrow { display:flex; align-items:center; gap:10px; padding:7px 10px; margin:4px 0; border-radius:9px; background:var(--brand-soft, rgba(233,148,53,.18)); box-shadow:inset 3px 0 0 var(--brand); font-size:14px; }
+.rtnowrow span:first-child { font-family:var(--f-head); font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+.rtnowrow span:last-child { color:var(--muted); margin-left:auto; }
+
+/* ---- sheets ---- */
+#rtText, #rtPaText { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:10px 12px; resize:vertical; }
+#rtText { font-family:var(--f-mono); font-size:14px; line-height:1.45; min-height:150px; }
+#rtPaText { font:inherit; font-size:16px; line-height:1.5; min-height:300px; }
+.rtinbtns { display:flex; flex-wrap:wrap; gap:8px; }
+.rtends { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.rtends input { font-family:var(--f-mono); text-transform:uppercase; }
+.rtparow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.tzsnack#rtSnack { bottom:calc(var(--tz-tabs, 0px) + 16px); }
+
+/* ---- wide screen ---- */
+@media (min-width:860px) {
+  #rtView { grid-template-columns:minmax(0, 1.2fr) minmax(340px, 1fr); gap:14px 20px; align-items:start; padding:16px 24px 0; }
+  .rtmain { position:sticky; top:12px; }
+  #rtGlobe { height:min(calc(100vh - 420px), 620px); min-height:300px; }
+  .rtmap.empty #rtGlobe { height:min(calc(100vh - 330px), 520px); }
+  .tzsnack#rtSnack { bottom:24px; }
+  #rtCall .tzcallb { box-shadow:0 2px 10px rgba(0,0,0,.14); }
+  #rtView .tzcall { display:block; }
+}
+/* <<< rt.css */
 </style>
 </head>
 <body>
@@ -852,7 +981,7 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
       <button type="button" data-k="problem" aria-pressed="true">Problem</button><button type="button" data-k="idea" aria-pressed="false">Idea</button><button type="button" data-k="other" aria-pressed="false">Other</button>
     </div>
     <textarea id="fbText" maxlength="2000" aria-label="Your feedback" placeholder="What happened, or what could be better?"></textarea>
-    <label class="fbchk"><input type="checkbox" id="fbCtx" checked> <span>Attach what is on the screen (the calculation, or the SIGMET or the place you look at), to help find a problem</span></label>
+    <label class="fbchk"><input type="checkbox" id="fbCtx" checked> <span>Attach what is on the screen (the calculation, or the SIGMET, the route or the place you look at), to help find a problem</span></label>
     <div id="fbMsg" class="note" hidden></div>
     <div class="acts"><button class="btn fill" type="button" id="fbSend">Send</button><button class="btn" type="button" id="fbCancel">Cancel</button></div>
   </div>
@@ -862,10 +991,11 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
     <div class="hd"><h2 id="tmTitle">Terms of use</h2><button class="ghost x" type="button" id="tmX" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <p class="lead" id="tmLead" hidden style="margin:0">Your license key is valid. Read and accept the terms to open the app on this device.</p>
     <div class="tm">
-      <p>The GRF Toolbox holds <b>supplementary aids</b>. Runway Cond applies the GRF flowcharts and the crosswind table to runway condition reports, to help you prepare the Flysmart inputs. SIGMET shows SIGMETs on a globe. Timezones shows UTC and local times.</p>
+      <p>The GRF Toolbox holds <b>supplementary aids</b>. Runway Cond applies the GRF flowcharts and the crosswind table to runway condition reports, to help you prepare the Flysmart inputs. SIGMET shows SIGMETs on a globe. Route draws the flight plan you paste, with what lies along it. Timezones shows UTC and local times.</p>
       <p>It <b>never replaces</b> the Operations Manual, the Performance Manual, the RCAM or the approved performance software, and it is not an approved operational tool. Where they differ, the manuals apply.</p>
       <p>Results can be wrong, for example when a report is read incorrectly, a value is missing, or a condition is not covered. Check every input and every result against the report and the approved documentation before use.</p>
       <p>SIGMET shows SIGMETs from public sources (NOAA Aviation Weather Center, MET Norway) and from text or photos you enter. A SIGMET can be missing, late, read wrongly or drawn in the wrong place, and the FIR outlines are approximate. The SIGMET text and the official briefing apply.</p>
+      <p>Route draws the flight plan you paste on a map. Its points come from EUROCONTROL's list of free route points and from OurAirports, which can be out of date or incomplete; airways, SIDs and STARs are drawn straight, and a point that is not found is passed straight by. Times are spread between the EET figures of the flight plan and are not a nav log. The SIGMETs it picks out are the ones the app has read, compared with the route as drawn and the levels as filed: it can miss one. PA notes (places, sides, distances, people, heights) are approximate and come from open map data. Route is not for navigation and does not replace the briefing package.</p>
       <p>Timezones calculates every time from this device's clock and the time zone data in its operating system, and draws the zones from a simplified map. A time can be wrong when the device's clock is wrong, when a country has changed its clock rules and the device has not been updated, or for a point tapped near a zone border. Check a time that matters (a report time, a pick-up, a slot, a curfew) against the official source.</p>
       <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation, the weather briefing and the safe conduct of the flight.</p>
       <p>When it is online, the app tells the issuer when this device last synced and last showed a result, with the app version and the device code. This is encrypted on the way. Nothing you enter is sent, except in feedback you choose to send.</p>
@@ -1108,7 +1238,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
   let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
   const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000, CALC_EVERY = 3 * 60000;   /* last-seen report to the issuer */
-  const K_TERMS = 'grf-terms', TERMS_V = '3';   /* raise TERMS_V when the terms change: everyone accepts again */
+  const K_TERMS = 'grf-terms', TERMS_V = '4';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
   const store = {
@@ -1457,7 +1587,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     const name = cur.r.info.name;
     $('fbLead').textContent = `It goes to the person who issued your license, with your name${name ? ` (${name})` : ''} and this device's code (${devCode}). It is encrypted on the way: nobody else can read it.`;
     $('fbText').value = store.get(K_FBD) || '';
-    $('fbCtx').checked = /^(sigmet|tz)$/.test(document.documentElement.dataset.tool || '') || !!document.querySelector('.hero');
+    $('fbCtx').checked = /^(sigmet|tz|route)$/.test(document.documentElement.dataset.tool || '') || !!document.querySelector('.hero');
     $('fbMsg').hidden = true; $('fbSend').disabled = false; $('fbSend').textContent = 'Send';
     setKind(fbKind);
     if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
@@ -1470,6 +1600,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       const tool = document.documentElement.dataset.tool || 'grf';
       if (tool === 'sigmet' && window.GRFSig) return {tool, sigmet: window.GRFSig.context()};
       if (tool === 'tz' && window.GRFTz) return {tool, tz: window.GRFTz.context()};
+      if (tool === 'route' && window.GRFRoute) return {tool, route: window.GRFRoute.context()};
       return {tool, mode: state.mode, phase: state.phase, ac: state.ac, src: state.src, narrow: state.narrow, oat: state.oat, thirds: state.thirds,
         report: ((pt && pt.value) || (ph && ph.textContent) || '').slice(0, 3000), result: g('.hero').slice(0, 800), line: g('.reshead .ctx'),
         msg: g('#scanMsg').slice(0, 600)};
@@ -1670,7 +1801,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '366ae2e014', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '0e07173874', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;
@@ -1740,7 +1871,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-check-version]'); if (b && !b.disabled) checkNow(b); });
   navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(function (r) {
     reg = r;
-    function poll() { if (!ready) reg.update().catch(function () {}); checkLatest(); }
+    function poll() { if (!ready && reg && reg.update) reg.update().catch(function () {}); checkLatest(); }
     document.addEventListener('visibilitychange', function () { if (!document.hidden) poll(); });
     window.addEventListener('online', poll);
     setInterval(poll, 600000);

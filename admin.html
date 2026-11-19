@@ -929,6 +929,11 @@ function fbCtxText(c) {
   if (!c) return '';
   if (c.tool === 'sigmet') { const g = c.sigmet || {};
     return ['Tool: SIGMET · list: ' + (g.scope || ''), g.sel ? `Selected: ${g.sel.fir || ''} ${g.sel.id || ''} (${g.sel.src})\n${g.sel.raw || ''}` : 'No SIGMET selected', g.text ? 'Text in the box:\n' + g.text : ''].filter(Boolean).join('\n\n'); }
+  if (c.tool === 'route') { const r = c.route || {}, x = r.read;
+    return ['Tool: Route' + (r.airac ? ' · points of AIRAC ' + r.airac : ''),
+      x ? `${x.dep} → ${x.dest} · ${x.nm} NM · ${x.eet} min · ${x.points} points` + (x.missing && x.missing.length ? ' · not found: ' + x.missing.join(', ') : '') : 'No route read' + (r.problem ? ' (' + r.problem + ')' : ''),
+      x ? 'Times anchored at: ' + (x.anchors || []).join(', ') + (x.sig != null ? ' · SIGMETs on or near the route: ' + x.sig : '') : '',
+      'Showing: ' + (r.mode === 'pa' ? 'PA notes' : 'Ops') + (r.tko ? ' · take-off set to ' + r.tko : ''), r.text ? 'The text:\n' + r.text : ''].filter(Boolean).join('\n'); }
   if (c.tool === 'tz') { const z = c.tz || {}, off = m => (m == null ? '?' : 'UTC' + (m < 0 ? '−' : '+') + Math.floor(Math.abs(m) / 60) + (Math.abs(m) % 60 ? ':' + String(Math.abs(m) % 60).padStart(2, '0') : ''));
     return ['Tool: Timezones' + (z.data ? ' · zone data ' + z.data : ''), z.sel ? `Selected: ${z.sel.name || ''} (${z.sel.kind || ''}) · ${z.sel.tz || 'no zone'} · ${off(z.sel.off)}` : 'No place selected',
       z.shift ? 'Other time shown: ' + z.shift : 'Showing the time now', `Device clock: ${z.at || ''} · device zone ${z.here || ''} (${off(z.hereOff)})`, `Home: ${z.home ? z.home + ' (' + off(z.homeOff) + ')' : 'not set'} · places saved: ${z.places || 0}`].join('\n'); }
@@ -984,7 +989,7 @@ function renderFb() {
     if (d && !ok) box.append(h('div', {className: 'unv'}, 'The name is as the app gave it: the key that sent it is not in your list.'));
     if (!d) box.append(h('div', {className: 'unv'}, 'This message could not be opened with your feedback key.'));
     if (d) box.append(h('div', {className: 'txt'}, d.text));
-    if (d && d.ctx) box.append(h('details', {}, h('summary', {}, d.ctx.tool === 'sigmet' ? 'The SIGMET on the screen' : d.ctx.tool === 'tz' ? 'Timezones on the screen' : 'Calculation sent with it'), h('pre', {}, fbCtxText(d.ctx))));
+    if (d && d.ctx) box.append(h('details', {}, h('summary', {}, d.ctx.tool === 'sigmet' ? 'The SIGMET on the screen' : d.ctx.tool === 'tz' ? 'Timezones on the screen' : d.ctx.tool === 'route' ? 'The route on the screen' : 'Calculation sent with it'), h('pre', {}, fbCtxText(d.ctx))));
     if (d) box.append(h('details', {}, h('summary', {}, 'Device'), h('pre', {}, `App version: ${d.app || '–'}\nSent: ${d.at || '–'}\n${d.ua || ''}`)));
     box.append(h('div', {className: 'acts'},
       h('button', {className: 'btn sm', type: 'button', onclick: async ev => {
@@ -1590,7 +1595,7 @@ $('cRevoke').onclick = async () => {
 };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = 'f3c97defff';
+const ADMIN_VER = '1cfcbb2bad';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

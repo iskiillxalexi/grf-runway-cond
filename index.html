@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795189889573;</script>
+<script>window.GRF_BUILD=1795217117341;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -828,7 +828,8 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
 #rtView[hidden], #rtView [hidden] { display:none !important; }
 #rtView svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .rtmain, .rtside, .rtpane { display:grid; gap:14px; min-width:0; }
-.rtmode { justify-self:stretch; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.rtmode { justify-self:stretch; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); }
+.rtslot { display:contents; }
 .rtmode button { min-width:0; min-height:40px; padding:0 6px; }
 #rtGlobe { display:block; width:100%; height:min(42vh, 420px); touch-action:none; cursor:grab; -webkit-tap-highlight-color:transparent; }
 #rtGlobe:active { cursor:grabbing; }
@@ -984,6 +985,11 @@ button.rtetp { cursor:pointer; }
 :root { --wx-wind:#2B8A3E; --wx-head:#B7791F; --wx-cloud:#5C6670; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --wx-wind:#69DB7C; --wx-head:#E0A458; --wx-cloud:#B4BCC8; } }
 :root[data-theme="dark"] { --wx-wind:#69DB7C; --wx-head:#E0A458; --wx-cloud:#B4BCC8; }
+.rtwxmap { position:absolute; left:10px; top:10px; z-index:2; display:inline-flex; align-items:center; gap:7px; min-height:34px; max-width:calc(100% - 84px); padding:0 12px 0 10px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); font-family:var(--f-ui); font-weight:600; font-size:13px; white-space:nowrap; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.rtwxmap::before { content:""; flex:none; width:13px; height:10px; border-radius:2px; background:linear-gradient(90deg, rgba(0,0,0,0), var(--wx-wind)); }
+.rtwxmap[aria-pressed="false"] { color:var(--muted); border-style:dashed; }
+.rtwxmap[aria-pressed="false"]::before { opacity:.3; filter:grayscale(1); }
+.rtwxmap[hidden] { display:none; }
 .rtxs { gap:10px; }
 #rtWx .tzhead .tzlink { white-space:nowrap; flex:none; }
 .rtxs .rtstamp { margin-top:-6px; }
@@ -1006,6 +1012,9 @@ button.rtetp { cursor:pointer; }
 #rtXsLay button[aria-pressed="false"]::before { opacity:.3; filter:grayscale(1); }
 .rtxskey .k-conv { border-top:2.5px solid var(--hz-ts); border-radius:0; height:10px; }
 .rtxskey .k-conv::after { content:""; position:absolute; inset:0; background:var(--hz-ts); opacity:.2; }
+.rtxskey .k-sig { height:10px; width:16px; border:1.8px solid var(--muted); border-radius:2px; }
+.rtrsigs { border-bottom:1px solid var(--line); margin-top:-4px; }
+.rtrsigs .rthz { min-height:0; padding:8px 0; }
 .rtxskey .k-trop { height:0; border-top:2px dashed var(--tz-ink, currentColor); border-radius:0; }
 .rtxskey .k-frz { height:0; border-top:2px dotted var(--hz-ice); border-radius:0; }
 .rtxsread { display:grid; gap:10px; border-top:1px solid var(--line); padding-top:10px; }
@@ -1063,7 +1072,7 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
 
 /* ---- sheets ---- */
 #rtText, #rtPaText { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:10px 12px; resize:vertical; }
-#rtText { font-family:var(--f-mono); font-size:14px; line-height:1.45; min-height:150px; }
+#rtText { font-family:var(--f-mono); font-size:16px; line-height:1.4; min-height:150px; }   /* 16 px: iOS zooms the whole page in, and leaves it so, when a field with smaller type is tapped */
 #rtPaText { font:inherit; font-size:16px; line-height:1.5; min-height:300px; }
 .rtinbtns { display:flex; flex-wrap:wrap; gap:8px; }
 .rtends { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -1086,6 +1095,8 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
   #rtView .tzcall .tzcallb { border:1px solid var(--line); border-left:4px solid var(--brand); border-radius:11px; box-shadow:0 2px 10px rgba(0,0,0,.14); }
 }
 /* <<< rt.css */
+/* iOS zooms the whole page in when a field with type smaller than 16 px is tapped, and leaves it zoomed in: no field is smaller */
+#licKey, #fbText, #sigText, #pasteText, #rtText { font-size:16px; }
 </style>
 </head>
 <body>
@@ -1161,7 +1172,7 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
       <p>It <b>never replaces</b> the Operations Manual, the Performance Manual, the RCAM or the approved performance software, and it is not an approved operational tool. Where they differ, the manuals apply.</p>
       <p>Results can be wrong, for example when a report is read incorrectly, a value is missing, or a condition is not covered. Check every input and every result against the report and the approved documentation before use.</p>
       <p>SIGMET shows SIGMETs from public sources (NOAA Aviation Weather Center, MET Norway) and from text or photos you enter. A SIGMET can be missing, late, read wrongly or drawn in the wrong place, and the FIR outlines are approximate. The SIGMET text and the official briefing apply.</p>
-      <p>Route draws the flight plan you paste on a map. Its points come from EUROCONTROL's list of free route points and from OurAirports, which can be out of date or incomplete; airways, SIDs and STARs are drawn straight, and a point that is not found is passed straight by. Times are spread between the EET figures of the flight plan and are not a nav log. The SIGMETs it picks out are the ones the app has read, compared with the route as drawn and the levels as filed: it can miss one. Equal time points are worked out from the route as drawn and the one wind you give: a cross-check, not the figures of the flight plan. The Weather view is worked out from NOAA's GFS forecast model. Its wind, temperature, turbulence, icing and convection are model guidance: they can be wrong, coarse or out of date, and they are not the SIGWX chart, a SIGMET or the weather in your flight plan. The charts it opens are LFV's, with their own date printed on them. PA notes (places, sides, distances, people, heights) are approximate and come from open map data. Route is not for navigation and does not replace the briefing package.</p>
+      <p>Route draws the flight plan you paste on a map. Its points come from EUROCONTROL's list of free route points and from OurAirports, which can be out of date or incomplete; airways, SIDs and STARs are drawn straight, and a point that is not found is passed straight by. Times are spread between the EET figures of the flight plan and are not a nav log. The SIGMETs it picks out are the ones the app has read, compared with the route as drawn and the levels as filed: it can miss one. Equal time points are worked out from the route as drawn and the one wind you give: a cross-check, not the figures of the flight plan. The forecast it shows along the route is worked out from NOAA's GFS forecast model. Its wind, temperature, turbulence, icing and convection are model guidance: they can be wrong, coarse or out of date, and they are not the SIGWX chart, a SIGMET or the weather in your flight plan. The charts it opens are LFV's, with their own date printed on them. PA notes (places, sides, distances, people, heights) are approximate and come from open map data. Route is not for navigation and does not replace the briefing package.</p>
       <p>Timezones calculates every time from this device's clock and the time zone data in its operating system, and draws the zones from a simplified map. A time can be wrong when the device's clock is wrong, when a country has changed its clock rules and the device has not been updated, or for a point tapped near a zone border. Check a time that matters (a report time, a pick-up, a slot, a curfew) against the official source.</p>
       <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation, the weather briefing and the safe conduct of the flight.</p>
       <p>When it is online, the app tells the issuer when this device last synced and last showed a result, with the app version and the device code. This is encrypted on the way. Nothing you enter is sent, except in feedback you choose to send.</p>
@@ -1979,7 +1990,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '2759fb9d74', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'a434214686', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

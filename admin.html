@@ -305,6 +305,8 @@ html:not(.ready) .snack { bottom:16px; }
 .themesw[aria-checked="true"] .knob { transform:translateX(28px); }
 .themesw[aria-checked="true"] .sun { color:var(--muted); } .themesw[aria-checked="true"] .moon { color:var(--ink); }
 @media (prefers-reduced-motion:reduce) { .themesw .knob, .themesw svg { transition:none; } }
+/* iOS zooms the whole page in when a field with type smaller than 16 px is tapped, and leaves it zoomed in: no field is smaller */
+#stText, #cKey { font-size:16px; }
 </style>
 </head>
 <body>
@@ -398,7 +400,7 @@ html:not(.ready) .snack { bottom:16px; }
         </div>
         <p class="disc" id="stHint"></p>
       </div>
-      <div class="field" id="stTextF"><label for="stText">Message shown in the app</label><textarea id="stText" maxlength="600" style="font-family:var(--f-ui);font-size:15px;min-height:96px"></textarea></div>
+      <div class="field" id="stTextF"><label for="stText">Message shown in the app</label><textarea id="stText" maxlength="600" style="font-family:var(--f-ui);font-size:16px;min-height:96px"></textarea></div>
       <div class="field" id="stScopeF">
         <span class="lbl">Applies to</span>
         <div class="seg" id="stScope" role="group" aria-label="Applies to">
@@ -1597,7 +1599,7 @@ $('cRevoke').onclick = async () => {
 };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = 'af213ef29c';
+const ADMIN_VER = 'c792045b23';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});

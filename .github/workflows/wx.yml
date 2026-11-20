@@ -1,18 +1,24 @@
 # The forecast for the Weather view of the Route tool: NOAA's GFS model (U.S. National Weather Service, public domain),
 # cut down to small files and published on the "wx" branch. The app reads it from raw.githubusercontent.com
 # (no server, no keys).
-# A new run of the model is ready four times a day. This job starts every hour, looks whether there is a new run,
-# and reads and publishes only then: a start that GitHub skips or delays costs an hour at most, and an hour with
-# nothing new costs a few seconds.
+# A new run of the model is ready four times a day. This job looks whether there is a new run, and reads and
+# publishes only then: a start with nothing new costs a few seconds.
+# It is set to start every hour, but GitHub starts scheduled jobs on this repository only every few hours. So it
+# also starts on the comment the apps write on the issue "GRF data refresh" when their SIGMETs are old (see
+# snowtam.yml; only comments by the repository owner count): while the app is in use somewhere, a new run of the
+# model is published within minutes of being ready.
 name: Weather forecast
 on:
   schedule:
     - cron: '41 * * * *'
   workflow_dispatch:
+  issue_comment:
+    types: [created]
 permissions:
   contents: write
 jobs:
   wx:
+    if: github.event_name != 'issue_comment' || (github.event.issue.title == 'GRF data refresh' && github.event.comment.user.login == github.repository_owner)
     concurrency:
       group: wx
       cancel-in-progress: false

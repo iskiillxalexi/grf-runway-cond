@@ -1,0 +1,51 @@
+# The forecast for the Weather view of the Route tool: NOAA's GFS model (U.S. National Weather Service, public domain),
+# cut down to small files and published on the "wx" branch. The app reads it from raw.githubusercontent.com
+# (no server, no keys).
+# A new run of the model is ready four times a day. This job starts every hour, looks whether there is a new run,
+# and reads and publishes only then: a start that GitHub skips or delays costs an hour at most, and an hour with
+# nothing new costs a few seconds.
+name: Weather forecast
+on:
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  wx:
+    concurrency:
+      group: wx
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATA_BRANCH: wx
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+          fetch-depth: 1
+      - name: Is there a new run of the model?
+        id: check
+        shell: bash
+        run: |
+          curl -fsS --max-time 20 "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${DATA_BRANCH}/index.json" -o have.json || rm -f have.json
+          python3 .github/scripts/wx.py out --hours 48 $([ -f have.json ] && echo "--have have.json") --check | tee check.txt
+          echo "state=$(tail -n 1 check.txt)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.state == 'new'
+        with:
+          python-version: '3.12'
+      - name: Read the forecast
+        if: steps.check.outputs.state == 'new'
+        run: |
+          python3 -m pip install --quiet numpy pygrib
+          rm -rf out
+          python3 .github/scripts/wx.py out --hours 48
+      - name: Publish on the wx branch
+        if: steps.check.outputs.state == 'new'
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f out/index.json ] || { echo "::error::The forecast was not written"; exit 1; }
+          bash .github/scripts/publish.sh out "Weather forecast"

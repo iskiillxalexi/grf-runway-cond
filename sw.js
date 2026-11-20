@@ -1,8 +1,8 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-8fcca78065';
+const CACHE = 'grf-2759fb9d74';
 const FILES = {
-"./": "5b1a1f8fdff7ef4b",
-"app.bin": "b2e75c2361cfad5e",
+"./": "2bd87d010c939729",
+"app.bin": "d0396ab4c823a931",
 "fonts/Barlow-Medium.woff": "a7ab5c7e54c3c38d",
 "fonts/Barlow-Regular.woff": "bee61e0690d27f46",
 "fonts/Barlow-SemiBold.woff": "bfe69e7af9279ad8",
@@ -24,7 +24,7 @@ const FILES = {
 "icon-192.png": "2160ef544412cde2",
 "icon-512.png": "019c91474f53a9a4",
 "icon-maskable-512.png": "00ffe0a4fa864efc",
-"index.html": "5b1a1f8fdff7ef4b",
+"index.html": "2bd87d010c939729",
 "manifest.webmanifest": "66fecc1b0c8ce87a",
 "ocr-client.js": "6adfcb06c827d565",
 "ocr/eng.traineddata": "906538558589e563",
@@ -61,6 +61,17 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
   const url = new URL(req.url);
+  /* LFV's charts for the Weather view: from the network; with none, the copy the app kept ("wx-charts", which the app
+     fills itself with requests marked ?keep: those pass by here untouched) */
+  if (req.method === 'GET' && url.origin === 'https://aro.lfv.se' && url.pathname.startsWith('/tor/')) {
+    if (url.searchParams.has('keep')) return;
+    e.respondWith((async () => {
+      const kept = await (await caches.open('wx-charts')).match(url.origin + url.pathname);
+      /* a network that does not answer is given up on: sooner when there is a copy to show */
+      return Promise.race([fetch(req), new Promise((ok, no) => setTimeout(no, kept ? 7000 : 25000))]).catch(() => kept || Response.error());
+    })());
+    return;
+  }
   /* the revocation list, the published version number and the key tool always come from the network, never from the cache */
   if (req.method !== 'GET' || url.origin !== self.location.origin || /\/(revoked\.json|licenses\.json|status\.json|version\.json|act\.bin|admin\.html|keys-log\.bin)$/.test(url.pathname)) return;
   e.respondWith(caches.open(CACHE).then(async c => {

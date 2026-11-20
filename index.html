@@ -11,8 +11,8 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795132426876;</script>
-<script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';</script>
+<script>window.GRF_BUILD=1795189889573;</script>
+<script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -828,8 +828,8 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
 #rtView[hidden], #rtView [hidden] { display:none !important; }
 #rtView svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .rtmain, .rtside, .rtpane { display:grid; gap:14px; min-width:0; }
-.rtmode { justify-self:start; }
-.rtmode button { min-width:96px; min-height:40px; }
+.rtmode { justify-self:stretch; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); }
+.rtmode button { min-width:0; min-height:40px; padding:0 6px; }
 #rtGlobe { display:block; width:100%; height:min(42vh, 420px); touch-action:none; cursor:grab; -webkit-tap-highlight-color:transparent; }
 #rtGlobe:active { cursor:grabbing; }
 .rtmap.empty #rtGlobe { height:min(30vh, 260px); }
@@ -978,6 +978,89 @@ button.rtetp { cursor:pointer; }
 .rtnowrow span:first-child { font-family:var(--f-head); font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
 .rtnowrow span:last-child { color:var(--muted); margin-left:auto; }
 
+/* ---- Weather ----
+   One colour for the wind (more of it for more wind), grey for cloud, and the colours of the SIGMET kinds for what
+   they stand for there: turbulence, icing, convection. Each has its own pattern too, so that no colour stands alone. */
+:root { --wx-wind:#2B8A3E; --wx-head:#B7791F; --wx-cloud:#5C6670; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --wx-wind:#69DB7C; --wx-head:#E0A458; --wx-cloud:#B4BCC8; } }
+:root[data-theme="dark"] { --wx-wind:#69DB7C; --wx-head:#E0A458; --wx-cloud:#B4BCC8; }
+.rtxs { gap:10px; }
+#rtWx .tzhead .tzlink { white-space:nowrap; flex:none; }
+.rtxs .rtstamp { margin-top:-6px; }
+.rtxsbox { margin:2px -6px 0; }
+#rtXs { display:block; width:100%; height:356px; touch-action:pan-y; cursor:crosshair; border-radius:6px; -webkit-tap-highlight-color:transparent; }
+#rtXs:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+.rtxskey { display:flex; flex-wrap:wrap; gap:5px 14px; font-size:12.5px; color:var(--muted); }
+.rtxskey span { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.rtxskey i { position:relative; width:18px; height:10px; border-radius:2px; flex:none; }
+.rtxskey .k-prof { height:3px; background:var(--rt-line); }
+.rtxskey .k-wind { background:linear-gradient(90deg, rgba(0,0,0,0), var(--wx-wind)); opacity:.75; }
+/* the four kinds that can be switched off carry their mark on the switch itself */
+#rtXsLay { gap:5px; }
+#rtXsLay button { padding:0 9px 0 7px; gap:5px; font-size:13.5px; }
+#rtXsLay button::before { width:13px; height:10px; border:0; border-radius:2px; }
+#rtXsLay button[data-l="wind"]::before { background:linear-gradient(90deg, rgba(0,0,0,0), var(--wx-wind)); }
+#rtXsLay button[data-l="cloud"]::before { background:var(--wx-cloud); opacity:.45; }
+#rtXsLay button[data-l="ice"]::before { background:radial-gradient(circle, var(--hz-ice) 1.1px, rgba(0,0,0,0) 1.5px) 0 0 / 5px 5px; }
+#rtXsLay button[data-l="turb"]::before { background:repeating-linear-gradient(135deg, var(--hz-turb) 0 1.3px, rgba(0,0,0,0) 1.3px 4.5px); }
+#rtXsLay button[aria-pressed="false"]::before { opacity:.3; filter:grayscale(1); }
+.rtxskey .k-conv { border-top:2.5px solid var(--hz-ts); border-radius:0; height:10px; }
+.rtxskey .k-conv::after { content:""; position:absolute; inset:0; background:var(--hz-ts); opacity:.2; }
+.rtxskey .k-trop { height:0; border-top:2px dashed var(--tz-ink, currentColor); border-radius:0; }
+.rtxskey .k-frz { height:0; border-top:2px dotted var(--hz-ice); border-radius:0; }
+.rtxsread { display:grid; gap:10px; border-top:1px solid var(--line); padding-top:10px; }
+.rtrh { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:30px; font-size:15px; }
+.rtrh > span { min-width:0; }
+.rtrh b { font-family:var(--f-mono); font-weight:600; }
+.rtrh span span { color:var(--muted); }
+.rtrh .tzlink { flex:none; white-space:nowrap; min-height:30px; }
+.rtrg { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px 16px; }
+.rtrc { display:grid; gap:1px; min-width:0; align-content:start; }
+.rtrc.wide { grid-column:1 / -1; }
+.rtrc b { font-family:var(--f-mono); font-weight:600; font-size:18px; line-height:1.25; }
+.rtrc.wide b { font-size:22px; }
+.rtrc > span:last-child { color:var(--muted); font-size:13.5px; }
+.rtrc.turb, .rtrc.ice { padding-left:10px; box-shadow:inset 3px 0 0 var(--hz-turb); }
+.rtrc.ice { box-shadow:inset 3px 0 0 var(--hz-ice); }
+.rthz { display:grid; grid-template-columns:auto minmax(0, 1fr) auto; gap:4px 12px; align-items:center; min-height:58px; padding:10px 0; border:0; border-top:1px solid var(--line); background:none; color:inherit; font:inherit; text-align:left; width:100%; cursor:pointer; }
+.rtlist .rthz:first-child { border-top:0; }
+.rthz .rtsw { grid-row:auto; }
+.rthz .rttag { grid-column:auto; white-space:nowrap; }
+.rthz:hover .rtsn b { text-decoration:underline; text-underline-offset:3px; }
+.rtlvh, .rtlv { display:grid; grid-template-columns:5.6ch minmax(70px, 1fr) 3.6ch 3.6ch; gap:12px; align-items:center; }
+.rtlvh { margin-bottom:-8px; font-family:var(--f-head); font-weight:600; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.rtlvh > span:nth-child(n+3) { text-align:right; }
+.rtlvh > span:first-child { visibility:hidden; }
+.rtlvax { display:flex; justify-content:space-between; }
+.rtlvl { display:grid; }
+.rtlv { padding:3px 0; border-top:1px solid var(--line); font-size:14.5px; line-height:1.5; }
+.rtlvl .rtlv:first-child { border-top:0; }
+.rtlv b { font-weight:500; }
+.rtlv.filed { background:var(--surface2); box-shadow:-8px 0 0 var(--surface2), 8px 0 0 var(--surface2); border-top-color:transparent; }
+.rtlv.filed + .rtlv { border-top-color:transparent; }
+.rtlv.filed b, .rtlv.filed .rtlvk { font-weight:600; }
+.rtlvbar { position:relative; height:12px; background:linear-gradient(var(--muted), var(--muted)) center / 1px 100% no-repeat; }
+.rtlvbar i { position:absolute; top:1px; bottom:1px; min-width:1px; }
+.rtlvbar i.tail { background:var(--wx-wind); border-radius:0 3px 3px 0; }
+.rtlvbar i.head { background:var(--wx-head); border-radius:3px 0 0 3px; }
+.rtlvk, .rtlvm { text-align:right; white-space:nowrap; }
+.rtlvm { color:var(--muted); }
+.rtchh { justify-self:start; }
+.rtchh button { min-width:54px; font-family:var(--f-mono); }
+.rtchv { font-size:13px; color:var(--muted); }
+.rtchb { display:flex; flex-wrap:wrap; gap:8px; }
+.rtchb .tzbtn { flex:1 1 120px; }
+#rtView .rtchsel { flex:1 1 130px; min-width:0; min-height:46px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); font:inherit; font-size:16px; padding:0 12px; }
+/* the chart: as wide as the sheet; a tap enlarges it around the place tapped */
+dialog.tzsheet.rtchart { width:min(1160px, calc(100vw - 32px)); overflow:hidden; }
+dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
+.rtchartb { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:8px; padding:10px 12px calc(14px + env(safe-area-inset-bottom, 0px)); }
+.rtchartb .tzsmall { margin:0 4px; }
+.rtchartv { flex:1 1 auto; min-height:0; overflow:auto; border-radius:8px; background:#fff; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+#rtChartImg { display:block; width:100%; max-width:none; height:auto; cursor:zoom-in; }
+#rtChartImg.max { cursor:zoom-out; }
+@media (max-width:559px) { dialog.tzsheet.rtchart { width:100vw; height:92dvh; } }
+
 /* ---- sheets ---- */
 #rtText, #rtPaText { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:10px 12px; resize:vertical; }
 #rtText { font-family:var(--f-mono); font-size:14px; line-height:1.45; min-height:150px; }
@@ -998,6 +1081,7 @@ button.rtetp { cursor:pointer; }
   #rtGlobe { height:min(calc(100vh - 420px), 620px); min-height:300px; }
   .rtmap.empty #rtGlobe { height:min(calc(100vh - 330px), 520px); }
   .tzsnack#rtSnack { bottom:24px; }
+  #rtXs { height:380px; }
   #rtView .tzcall { display:block; position:absolute; left:10px; right:auto; bottom:10px; width:min(430px, calc(100% - 82px)); }
   #rtView .tzcall .tzcallb { border:1px solid var(--line); border-left:4px solid var(--brand); border-radius:11px; box-shadow:0 2px 10px rgba(0,0,0,.14); }
 }
@@ -1019,7 +1103,7 @@ button.rtetp { cursor:pointer; }
       <ul class="lockwhat" aria-label="What is in the app">
         <li><b>Runway Cond</b><span>Flysmart inputs from a SNOWTAM, an ATIS or a runway report</span></li>
         <li><b>SIGMET</b><span>On a globe: live, or from text or a photo when offline</span></li>
-        <li><b>Route</b><span>Your flight plan briefed: SIGMETs, equal time points, PA notes</span></li>
+        <li><b>Route</b><span>Your flight plan briefed: SIGMETs, weather, equal time points, PA notes</span></li>
         <li><b>Timezones</b><span>UTC, local and home time, anywhere</span></li>
       </ul>
       <div class="devbox">
@@ -1077,7 +1161,7 @@ button.rtetp { cursor:pointer; }
       <p>It <b>never replaces</b> the Operations Manual, the Performance Manual, the RCAM or the approved performance software, and it is not an approved operational tool. Where they differ, the manuals apply.</p>
       <p>Results can be wrong, for example when a report is read incorrectly, a value is missing, or a condition is not covered. Check every input and every result against the report and the approved documentation before use.</p>
       <p>SIGMET shows SIGMETs from public sources (NOAA Aviation Weather Center, MET Norway) and from text or photos you enter. A SIGMET can be missing, late, read wrongly or drawn in the wrong place, and the FIR outlines are approximate. The SIGMET text and the official briefing apply.</p>
-      <p>Route draws the flight plan you paste on a map. Its points come from EUROCONTROL's list of free route points and from OurAirports, which can be out of date or incomplete; airways, SIDs and STARs are drawn straight, and a point that is not found is passed straight by. Times are spread between the EET figures of the flight plan and are not a nav log. The SIGMETs it picks out are the ones the app has read, compared with the route as drawn and the levels as filed: it can miss one. PA notes (places, sides, distances, people, heights) are approximate and come from open map data. Route is not for navigation and does not replace the briefing package.</p>
+      <p>Route draws the flight plan you paste on a map. Its points come from EUROCONTROL's list of free route points and from OurAirports, which can be out of date or incomplete; airways, SIDs and STARs are drawn straight, and a point that is not found is passed straight by. Times are spread between the EET figures of the flight plan and are not a nav log. The SIGMETs it picks out are the ones the app has read, compared with the route as drawn and the levels as filed: it can miss one. Equal time points are worked out from the route as drawn and the one wind you give: a cross-check, not the figures of the flight plan. The Weather view is worked out from NOAA's GFS forecast model. Its wind, temperature, turbulence, icing and convection are model guidance: they can be wrong, coarse or out of date, and they are not the SIGWX chart, a SIGMET or the weather in your flight plan. The charts it opens are LFV's, with their own date printed on them. PA notes (places, sides, distances, people, heights) are approximate and come from open map data. Route is not for navigation and does not replace the briefing package.</p>
       <p>Timezones calculates every time from this device's clock and the time zone data in its operating system, and draws the zones from a simplified map. A time can be wrong when the device's clock is wrong, when a country has changed its clock rules and the device has not been updated, or for a point tapped near a zone border. Check a time that matters (a report time, a pick-up, a slot, a curfew) against the official source.</p>
       <p>The <b>flight crew remains fully responsible</b> for the runway condition assessment, the performance calculation, the weather briefing and the safe conduct of the flight.</p>
       <p>When it is online, the app tells the issuer when this device last synced and last showed a result, with the app version and the device code. This is encrypted on the way. Nothing you enter is sent, except in feedback you choose to send.</p>
@@ -1320,7 +1404,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
   let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
   const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000, CALC_EVERY = 3 * 60000;   /* last-seen report to the issuer */
-  const K_TERMS = 'grf-terms', TERMS_V = '4';   /* raise TERMS_V when the terms change: everyone accepts again */
+  const K_TERMS = 'grf-terms', TERMS_V = '5';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
   const store = {
@@ -1895,7 +1979,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '8fcca78065', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '2759fb9d74', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795217117341;</script>
+<script>window.GRF_BUILD=1795263279925;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -620,18 +620,18 @@ dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; pad
 :root {
   --tz-sea:#DCE5F0; --tz-sealine:rgba(40,70,110,.11); --tz-land:#EEF0F3;
   --tz-a:#F6D9A8; --tz-b:#BFE0C8; --tz-c:#CFC8EC; --tz-d:#F4C2BA; --tz-e:#A9D8E0; --tz-f:#E3E29A;
-  --tz-line:rgba(30,35,41,.5); --tz-border:rgba(30,35,41,.15); --tz-coast:rgba(30,35,41,.42);
+  --tz-line:rgba(30,35,41,.5); --tz-border:rgba(30,35,41,.24); --tz-coast:rgba(30,35,41,.42);
   --tz-night:rgba(14,22,48,.17); --tz-ink:#1E2329; --tz-halo:rgba(255,255,255,.93); --tz-sel:#B85A06; --tz-selfill:rgba(233,148,53,.45); --tz-sun:#E2A100;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --tz-sea:#0D131B; --tz-sealine:rgba(160,190,230,.09); --tz-land:#262B32;
   --tz-a:#77591F; --tz-b:#245C44; --tz-c:#454089; --tz-d:#7A3350; --tz-e:#265F6A; --tz-f:#5C5B29;
-  --tz-line:rgba(236,239,243,.5); --tz-border:rgba(236,239,243,.13); --tz-coast:rgba(236,239,243,.38);
+  --tz-line:rgba(236,239,243,.5); --tz-border:rgba(236,239,243,.22); --tz-coast:rgba(236,239,243,.38);
   --tz-night:rgba(0,0,0,.24); --tz-ink:#F2F4F7; --tz-halo:rgba(13,17,22,.9); --tz-sel:#F7BC72; --tz-selfill:rgba(244,180,102,.42); --tz-sun:#FFD257; } }
 :root[data-theme="dark"] {
   --tz-sea:#0D131B; --tz-sealine:rgba(160,190,230,.09); --tz-land:#262B32;
   --tz-a:#77591F; --tz-b:#245C44; --tz-c:#454089; --tz-d:#7A3350; --tz-e:#265F6A; --tz-f:#5C5B29;
-  --tz-line:rgba(236,239,243,.5); --tz-border:rgba(236,239,243,.13); --tz-coast:rgba(236,239,243,.38);
+  --tz-line:rgba(236,239,243,.5); --tz-border:rgba(236,239,243,.22); --tz-coast:rgba(236,239,243,.38);
   --tz-night:rgba(0,0,0,.24); --tz-ink:#F2F4F7; --tz-halo:rgba(13,17,22,.9); --tz-sel:#F7BC72; --tz-selfill:rgba(244,180,102,.42); --tz-sun:#FFD257; }
 
 :root { --tz-tabs:var(--tabh, 0px); --tz-top:12px; }
@@ -957,6 +957,8 @@ button.rtetp { cursor:pointer; }
 .rtfilt button[aria-pressed="true"] { background:var(--surface2); border:1px solid transparent; color:var(--ink); font-weight:600; }
 .rtfilt button[aria-pressed="true"]::before { background:var(--brand); border-color:var(--brand); }
 .rtpa { gap:8px; }
+.rtnames { display:flex; align-items:center; gap:10px; }
+.rtnames .tzseg button { min-height:32px; font-size:14px; }
 .rtpah { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
 .rtnl { display:grid; }
 .rtn { display:grid; grid-template-columns:5.6ch minmax(0, 1fr) auto; gap:12px; align-items:center; min-height:58px; padding:8px 0; border:0; border-top:1px solid var(--line); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; }
@@ -1075,6 +1077,8 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
 #rtText { font-family:var(--f-mono); font-size:16px; line-height:1.4; min-height:150px; }   /* 16 px: iOS zooms the whole page in, and leaves it so, when a field with smaller type is tapped */
 #rtPaText { font:inherit; font-size:16px; line-height:1.5; min-height:300px; }
 .rtinbtns { display:flex; flex-wrap:wrap; gap:8px; }
+.rtdone { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.rtdone[hidden] { display:none; }
 .rtends { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .rtends input { font-family:var(--f-mono); text-transform:uppercase; }
 .rttimef input { font-family:var(--f-mono); font-size:26px !important; font-weight:600; letter-spacing:.06em; min-height:58px !important; }
@@ -1990,7 +1994,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'a434214686', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '9fcaa489a7', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

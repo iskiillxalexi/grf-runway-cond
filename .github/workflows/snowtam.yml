@@ -1,10 +1,11 @@
-# Read the public AIS bulletins (LFV, Fintraffic AIS, Naviair) and the SIGMETs (NOAA AWC, MET Norway);
-# publish snowtam.json and sigmet.json on the "data" branch. The app reads it from raw.githubusercontent.com (no server, no keys).
+# Read the public AIS bulletins (LFV, Fintraffic AIS, Naviair), the SIGMETs (NOAA AWC, MET Norway) and the METARs and
+# TAFs of the world's airports (NOAA AWC); publish snowtam.json, sigmet.json and the opmet folder on the "data" branch.
+# The app reads it from raw.githubusercontent.com (no server, no keys).
 # GitHub runs the schedule only every few hours in practice, so the apps also ask for a reading when the data is old:
 # they write a comment on the issue "GRF data refresh" (their token may only handle issues). Only comments by the
 # repository owner start a reading; each comment is deleted again.
-# The SIGMETs take a second to read and the bulletins about a minute, so the SIGMETs are read and published first:
-# an app that asked has them some 10 seconds later. The bulletins follow in the same job.
+# The SIGMETs and the METARs and TAFs take a second to read and the bulletins about a minute, so the first two are read
+# and published first: an app that asked has them some 10 seconds later. The bulletins follow in the same job.
 name: SNOWTAM bulletins
 on:
   schedule:
@@ -31,7 +32,7 @@ jobs:
         with:
           sparse-checkout: .github/scripts
           fetch-depth: 1
-      - name: Read the SIGMETs and publish them at once
+      - name: Read the SIGMETs, the METARs and the TAFs, and publish them at once
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -40,13 +41,23 @@ jobs:
           if git init -q now && git -C now fetch -q --depth 1 "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$DATA_BRANCH" \
               && git -C now checkout -q FETCH_HEAD && [ -f now/snowtam.json ]; then
             rm -rf now/.git
+            what=""
             if python3 .github/scripts/sigmet.py out --quick; then
-              cp out/sigmet.json now/sigmet.json
-              bash .github/scripts/publish.sh now "SIGMETs"
+              cp out/sigmet.json now/sigmet.json; what="SIGMETs"
             else
               rm -f out/sigmet.json
               echo "::warning::The quick SIGMET reading failed: it is read again after the bulletins"
             fi
+            # half a second more: they go out in the same commit, so an app that sees new SIGMETs finds these too
+            if python3 .github/scripts/opmet.py out now; then
+              rm -rf now/opmet; cp -r out/opmet now/opmet; what="${what:+$what, }METAR and TAF"
+            else
+              # what is published stays, also when the bulletins are published at the end of the job
+              echo "::warning::METAR and TAF could not be read: what is published stays"
+              rm -rf out/opmet
+              if [ -d now/opmet ]; then cp -r now/opmet out/opmet; fi
+            fi
+            if [ -n "$what" ]; then bash .github/scripts/publish.sh now "$what"; fi
           else
             echo "::notice::Nothing is published yet, or it could not be fetched: everything is published together"
           fi
@@ -57,6 +68,9 @@ jobs:
       - name: Read the SIGMETs (when the quick reading did not succeed)
         run: |
           [ -f out/sigmet.json ] || python3 .github/scripts/sigmet.py out || echo "::warning::The SIGMETs could not be read"
+      - name: Read the METARs and TAFs (when there are none from the first step)
+        run: |
+          [ -d out/opmet ] || python3 .github/scripts/opmet.py out || echo "::warning::METAR and TAF could not be read"
       - name: Publish on the data branch
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}

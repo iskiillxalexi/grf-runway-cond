@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795279562619;</script>
+<script>window.GRF_BUILD=1795281494246;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -274,16 +274,21 @@ details.how li::marker { color:var(--muted); }
 .aptsug button span { color:var(--muted); font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
 .aptsug button i { font-style:normal; font-family:var(--f-head); font-weight:700; font-size:11.5px; letter-spacing:.06em; color:var(--brand); }
 /* the airports of the flight: shortcuts, each with what the sources hold for it */
-.aptflt { display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; }
+.aptflt { display:grid; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface); }
 .aptflt[hidden] { display:none; }
-.aptfl { flex:1 0 100%; font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-.aptchip { flex:1 1 138px; display:grid; grid-template-columns:auto minmax(0, 1fr); gap:0 8px; align-items:baseline; text-align:left; min-height:52px; padding:7px 12px; border:1.5px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); font:inherit; cursor:pointer; }
+.aptfl { padding:9px 12px 3px; font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.aptrole { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 14px; }
+.aptrole[hidden] { display:none; }
+.aptrole b { font-weight:600; }
+.aptrole .btn { min-height:40px; border-color:currentColor; color:inherit; background:transparent; flex:none; }
+.aptchip { display:grid; grid-template-columns:5.6ch auto minmax(0, 1fr); gap:10px; align-items:baseline; text-align:left; min-height:46px; padding:9px 12px; border:0; border-top:1px solid var(--line); background:transparent; color:var(--ink); font:inherit; cursor:pointer; }
+.aptfl + .aptchip { border-top:0; }
 .aptchip b { font-family:var(--f-mono); font-weight:600; font-size:16px; }
-.aptchip span { font-size:12.5px; color:var(--muted); }
-.aptchip i { grid-column:1 / -1; font-style:normal; font-family:var(--f-mono); font-size:12px; color:var(--muted); }
+.aptchip span { font-size:13px; color:var(--muted); }
+.aptchip i { justify-self:end; text-align:right; font-style:normal; font-family:var(--f-mono); font-size:12.5px; color:var(--muted); }
 .aptchip[data-k="snow"] i, .aptchip[data-k="atis"] i { color:var(--ink); font-weight:600; }
-.aptchip[data-k="snow"] { border-color:var(--brand); }
-.aptchip[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+.aptchip[aria-pressed="true"] { background:var(--brand-soft); box-shadow:inset 3px 0 0 var(--brand); }
+@media (max-width:359px) { .aptchip { grid-template-columns:5.6ch minmax(0, 1fr); } .aptchip i { grid-column:1 / -1; justify-self:start; text-align:left; } }
 .apthd { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; }
 .apthd b { font-family:var(--f-head); font-size:19px; letter-spacing:.04em; text-transform:uppercase; }
 .apthd span { font-family:var(--f-mono); font-size:12px; color:var(--muted); }
@@ -399,7 +404,14 @@ html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--t
 .frows { border-radius:11px; }
 .frow .t span { overflow-wrap:anywhere; } .frow .t span b { font-family:var(--f-mono); font-weight:600; font-size:.95em; color:var(--ink); margin-right:6px; }
 .fnow button { border:0; background:none; padding:0 0 0 6px; font:inherit; font-weight:600; color:var(--ink); text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:32px; }
-.frow.bad .t span { color:var(--bad); font-weight:600; } .frow.warn .t span { color:var(--warn); font-weight:600; }
+/* with a flight the rows are the list of the tools: the tool's name stands out, each line under it says one thing */
+.frow { min-height:64px; padding:12px 14px; }
+.frow .ai { width:38px; height:38px; border-radius:11px; background:var(--brand-soft); color:var(--brand); }
+.frow .ai svg { width:21px; height:21px; }
+.frow .t > b { font-size:16.5px; }
+.frow .t span.on { color:var(--ink); }
+.frow .t span.bad { color:var(--bad); font-weight:600; } .frow .t span.warn { color:var(--warn); font-weight:600; }
+.tiles[hidden], .tbh[hidden] { display:none; }
 .fmain { display:grid; gap:12px; min-width:0; }
 @media (min-width:700px) { .fcard:not(.none) { grid-template-columns:minmax(0, 1fr) minmax(0, 1.25fr); gap:12px 22px; align-items:start; } }
 @media (max-width:359px) { .ftime b { font-size:24px; } .fhead h3 { font-size:27px; } }
@@ -1144,9 +1156,24 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
 
 /* ---- sheets ---- */
 #rtText, #rtPaText { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:10px 12px; resize:vertical; }
-#rtText { font-family:var(--f-mono); font-size:16px; line-height:1.4; min-height:132px; }   /* 16 px: iOS zooms the whole page in, and leaves it so, when a field with smaller type is tapped */
+#rtText { font-family:var(--f-mono); font-size:16px; line-height:1.4; min-height:88px; }   /* 16 px: iOS zooms the whole page in, and leaves it so, when a field with smaller type is tapped */
 #rtPaText { font:inherit; font-size:16px; line-height:1.5; min-height:300px; }
 .rtinbtns { display:flex; flex-wrap:wrap; gap:8px; }
+/* the flight's sheet: from AvioBook first (there, back, paste), typing it second. One button at a time is the filled one:
+   Paste while nothing is typed, Show the flight once there is something to read. */
+.rtpasterow { display:flex; flex-wrap:wrap; gap:10px; }
+.rtpasterow .tzbtn { min-height:52px; }
+.rtpasterow #rtPaste { flex:1 1 190px; }
+.rtpasterow #rtShot { flex:0 1 auto; }
+.rtback { background:var(--brand-soft, #FCEBD6); color:var(--ink); }
+.rtback[hidden] { display:none; }
+.rtback b { font-weight:600; }
+.rtor { display:flex; align-items:center; gap:12px; color:var(--muted); font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; margin-top:2px; }
+.rtor::before, .rtor::after { content:''; flex:1; height:1px; background:var(--line); }
+.rtinacts { align-items:center; justify-content:space-between; }
+.rtinacts .tzbtn { flex:1 1 200px; min-height:50px; }
+.rtinacts .tzlink { flex:none; }
+@media (max-width:359px) { .rtpasterow #rtShot { flex:1 1 100%; } }
 .rtdone { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .rtdone[hidden] { display:none; }
 .rtends { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -2084,7 +2111,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'ad072aefa6', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '5d21d448ba', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

@@ -1,8 +1,8 @@
 /* GRF Runway Cond: everything is stored on the device at install, then served from the cache (works with no network). */
-const CACHE = 'grf-a05c49d0ff';
+const CACHE = 'grf-c47d6449c6';
 const FILES = {
-"./": "bb4b9da31ad79a25",
-"app.bin": "c40da0ebe532f851",
+"./": "1c31bc6457fc93dd",
+"app.bin": "208d5f0fcba57df8",
 "fonts/Barlow-Medium.woff": "a7ab5c7e54c3c38d",
 "fonts/Barlow-Regular.woff": "bee61e0690d27f46",
 "fonts/Barlow-SemiBold.woff": "bfe69e7af9279ad8",
@@ -14,9 +14,9 @@ const FILES = {
 "geo/country-labels.json": "3049de10f56e8534",
 "geo/fir.json": "9d13d2c09989b246",
 "geo/land-110m.json": "ead5f68119c49a92",
-"geo/rt-features.json": "d3e92c46ef3688bc",
-"geo/rt-info.json": "a7ea6f0d8ef06acc",
-"geo/rt-places.json": "12024c0bd364b10c",
+"geo/rt-features.json": "5ca421c0f6ec5e61",
+"geo/rt-info.json": "9e0c156b8e9db125",
+"geo/rt-places.json": "0f80c0f0b55fa963",
 "geo/rt-points.json": "50762c63b4bb362f",
 "geo/tz-places.json": "109ba5d2918fea12",
 "geo/tz-zones.json": "4be990134530a1f5",
@@ -26,7 +26,7 @@ const FILES = {
 "icon-192.png": "2160ef544412cde2",
 "icon-512.png": "019c91474f53a9a4",
 "icon-maskable-512.png": "00ffe0a4fa864efc",
-"index.html": "bb4b9da31ad79a25",
+"index.html": "1c31bc6457fc93dd",
 "manifest.webmanifest": "66fecc1b0c8ce87a",
 "ocr-client.js": "6adfcb06c827d565",
 "ocr/eng.traineddata": "906538558589e563",

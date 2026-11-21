@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795295252608;</script>
+<script>window.GRF_BUILD=1795300976318;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';window.GRF_MET_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/opmet/';window.GRF_MET_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/opmet/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -1196,9 +1196,8 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
 @media (max-width:559px) { dialog.tzsheet.rtchart { width:100vw; height:92dvh; } }
 
 /* ---- sheets ---- */
-#rtText, #rtPaText { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:10px 12px; resize:vertical; }
+#rtText { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:10px 12px; resize:vertical; }
 #rtText { font-family:var(--f-mono); font-size:16px; line-height:1.4; min-height:88px; }   /* 16 px: iOS zooms the whole page in, and leaves it so, when a field with smaller type is tapped */
-#rtPaText { font:inherit; font-size:16px; line-height:1.5; min-height:300px; }
 .rtinbtns { display:flex; flex-wrap:wrap; gap:8px; }
 /* the flight's sheet: from AvioBook first (there, back, paste), typing it second. One button at a time is the filled one:
    Paste while nothing is typed, Show the flight once there is something to read. */
@@ -1244,7 +1243,6 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
 .rttimef input { font-family:var(--f-mono); font-size:26px !important; font-weight:600; letter-spacing:.06em; min-height:58px !important; }
 .rttimef input::placeholder { color:var(--muted); opacity:.55; }
 #rtTimeD { margin:-4px 0 0; min-height:1.3em; }
-.rtparow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .tzsnack#rtSnack { bottom:calc(var(--tz-tabs, 0px) + 16px); }
 
 /* ---- wide screen ---- */
@@ -2193,7 +2191,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'a05c49d0ff', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'c47d6449c6', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

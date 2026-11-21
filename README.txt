@@ -1,4 +1,4 @@
-GRF Runway Cond, offline app (version a05c49d0ff)
+GRF Runway Cond, offline app (version c47d6449c6)
 
 Host this folder on any HTTPS web server (for example Netlify Drop or GitHub Pages).
 Open the address once in Safari on the iPhone or iPad, then Share > Add to Home Screen.

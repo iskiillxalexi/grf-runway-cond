@@ -1,4 +1,4 @@
-# Read the public AIS bulletins (LFV, Fintraffic AIS, Naviair), ATIS Guru and the SIGMETs (NOAA AWC, MET Norway);
+# Read the public AIS bulletins (LFV, Fintraffic AIS, Naviair) and the SIGMETs (NOAA AWC, MET Norway);
 # publish snowtam.json and sigmet.json on the "data" branch. The app reads it from raw.githubusercontent.com (no server, no keys).
 # GitHub runs the schedule only every few hours in practice, so the apps also ask for a reading when the data is old:
 # they write a comment on the issue "GRF data refresh" (their token may only handle issues). Only comments by the

@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795281494246;</script>
+<script>window.GRF_BUILD=1795282757158;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -63,6 +63,8 @@ h1,h2,h3,h4 { font-family:var(--f-head); font-weight:700; margin:0; letter-spaci
 h2 { font-size:15px; text-transform:uppercase; color:var(--muted); letter-spacing:.1em; }
 button, select, input, textarea { font:inherit; color:inherit; }
 button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+dialog { overscroll-behavior:contain; }
+dialog h2[tabindex="-1"]:focus { outline:none; }
 
 /* header (after Apple HIG and NN/g): one row with the name and how current the app is; the tools in a tab bar,
    at the bottom on iPhone (thumb reach) and in the header on iPad; the mode choice belongs to Runway Cond, so it sits
@@ -286,7 +288,7 @@ details.how li::marker { color:var(--muted); }
 .aptchip b { font-family:var(--f-mono); font-weight:600; font-size:16px; }
 .aptchip span { font-size:13px; color:var(--muted); }
 .aptchip i { justify-self:end; text-align:right; font-style:normal; font-family:var(--f-mono); font-size:12.5px; color:var(--muted); }
-.aptchip[data-k="snow"] i, .aptchip[data-k="atis"] i { color:var(--ink); font-weight:600; }
+.aptchip[data-k="snow"] i { color:var(--ink); font-weight:600; }
 .aptchip[aria-pressed="true"] { background:var(--brand-soft); box-shadow:inset 3px 0 0 var(--brand); }
 @media (max-width:359px) { .aptchip { grid-template-columns:5.6ch minmax(0, 1fr); } .aptchip i { grid-column:1 / -1; justify-self:start; text-align:left; } }
 .apthd { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; }
@@ -1313,6 +1315,45 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
 </section>
 
 <script>
+/* A sheet (a modal dialog) is on the screen: the page behind it stays where it is. iOS moves the page behind a
+   dialog when the dialog itself has nothing to scroll, or is at its end. While a sheet is open, a drag or a turn of
+   the wheel that is not inside something that can itself scroll that way is stopped. With the keyboard up the page
+   may still move: iOS needs that to bring the field being typed in into view. And the first focus goes to the
+   sheet's title, not to its Close button (which iOS then draws a ring around). */
+(() => {
+  const P = window.HTMLDialogElement && HTMLDialogElement.prototype; if (!P || !P.showModal) return;
+  const root = document.documentElement, on = () => root.classList.contains('sheetopen'), sync = () => root.classList.toggle('sheetopen', !!document.querySelector('dialog[open]'));
+  const show = P.showModal, close = P.close;
+  P.showModal = function () {
+    const r = show.apply(this, arguments); sync();
+    try { const t = this.querySelector('h2'); if (t && !this.querySelector('[autofocus]')) { t.tabIndex = -1; t.focus({preventScroll: true}); } } catch (e) {}
+    return r;
+  };
+  P.close = function () { const r = close.apply(this, arguments); sync(); return r; };
+  document.addEventListener('close', sync, true);
+  const keys = () => { const v = window.visualViewport; return !!v && window.innerHeight - v.height > 120; };
+  /* the nearest thing under the finger, inside the sheet, that can itself be scrolled */
+  function scroller(t) {
+    for (let e = t; e && e.nodeType === 1; e = e.parentElement) {
+      if (e.scrollHeight - e.clientHeight > 1 || e.scrollWidth - e.clientWidth > 1) { const cs = getComputedStyle(e); if (/auto|scroll/.test(cs.overflowY + ' ' + cs.overflowX) || e.tagName === 'TEXTAREA') return e; }
+      if (e.tagName === 'DIALOG') break;
+    }
+    return null;
+  }
+  let x0 = 0, y0 = 0;
+  document.addEventListener('touchstart', e => { if (e.touches.length === 1) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, {passive: true, capture: true});
+  document.addEventListener('touchmove', e => {
+    if (!on() || e.touches.length !== 1 || !e.cancelable || keys()) return;
+    const t = e.target; if (!t || t.nodeType !== 1 || (t.matches && t.matches('input[type=range]'))) return;
+    const s = scroller(t); if (!s) { e.preventDefault(); return; }
+    const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+    if (Math.abs(dy) >= Math.abs(dx)) { if (s.scrollHeight - s.clientHeight <= 1 || (dy > 0 ? s.scrollTop <= 0 : s.scrollTop + s.clientHeight >= s.scrollHeight - 1)) e.preventDefault(); }
+    else if (s.scrollWidth - s.clientWidth <= 1) e.preventDefault();
+  }, {passive: false, capture: true});
+  document.addEventListener('wheel', e => { if (on() && e.cancelable && !(e.target && e.target.nodeType === 1 && scroller(e.target))) e.preventDefault(); }, {passive: false, capture: true});
+})();
+</script>
+<script>
 /* GRF license keys: ECDSA P-256 signed, checked on the device with no network.
    Key = "GRF-" + base64url(payload + 64-byte signature)
    payload v2: v(1)=2 | issued day(2) | expiry day(2) | id(4) | flags(1) | [device id(5)] | app content key(32) | name length(1) | name (UTF-8)
@@ -1741,7 +1782,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
       if (it) { store.set(K_REFISSUE, String(it.number)); return it.number; }
       if (list.length < 100) break;
     }
-    const r = await ghApi(acc, '/issues', 'POST', {title: REF_TITLE, body: 'Apps write a short comment here to ask for a new reading of the SNOWTAM bulletins, the ATIS and the SIGMETs when GitHub\'s own schedule is late. The data job only answers comments from the repository owner and deletes each comment again. Leave this issue open and as it is.'});
+    const r = await ghApi(acc, '/issues', 'POST', {title: REF_TITLE, body: 'Apps write a short comment here to ask for a new reading of the SNOWTAM bulletins and the SIGMETs when GitHub\'s own schedule is late. The data job only answers comments from the repository owner and deletes each comment again. Leave this issue open and as it is.'});
     if (r.status !== 201) throw r.status;
     const j = await r.json(); store.set(K_REFISSUE, String(j.number)); return j.number;
   }
@@ -2111,7 +2152,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '5d21d448ba', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'e46b9f0342', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

@@ -1,0 +1,21 @@
+0 ids, 0 places to look up
+looked up {}
+  by title 1 of 748: found 0, 1 calls, 0 s
+  by title 101 of 748: found 17, 101 calls, 13 s
+  by title 201 of 748: found 37, 201 calls, 25 s
+   DEBUG peak|Nanda Devi|30.54,79.97 title Nanda Devi -> Nanda Devi Q213262 fits 2 there 2 Second-highest mountain in India
+  by title 301 of 748: found 49, 301 calls, 38 s
+   DEBUG regions|Tatra Mountains|18,48.8,23.1,50.1 title Tatra Mountains -> Tatra Mountains Q194263 fits 2 there 2 Mountain range on the Polish–Slovak border
+  by title 401 of 748: found 75, 406 calls, 101 s
+   DEBUG regions|Sahel|-16.5,9.3,38.4,23 title Sahel -> Sahel Q66065 fits 2 there 1 Biogeographical region in Africa
+  by title 501 of 748: found 90, 506 calls, 113 s
+  by title 601 of 748: found 93, 610 calls, 158 s
+  by title 701 of 748: found 111, 710 calls, 171 s
+by title {"city": [36, 178], "peak": [13, 123], "spot": [12, 49], "regions": [24, 81], "marine": [0, 12], "lakes": [10, 182], "river": [30, 123]}
+en: 122 articles to read
+  en: 20 of 122 titles, 20 texts, 765 calls, 212 s
+en: 122 texts
+sv: 82 articles to read
+  sv: 20 of 82 titles, 20 texts, 772 calls, 218 s
+sv: 82 texts
+texts for 122 of the ids; English 122, Swedish 82 of which by a robot 28; found 125 of 748; 776 calls, 222 s

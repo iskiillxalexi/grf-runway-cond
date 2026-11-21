@@ -11,8 +11,8 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795282757158;</script>
-<script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';</script>
+<script>window.GRF_BUILD=1795285029288;</script>
+<script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';window.GRF_MET_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/opmet/';window.GRF_MET_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/opmet/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
@@ -314,6 +314,31 @@ details.how li::marker { color:var(--muted); }
 .aptsrc li { color:var(--muted); }
 .aptsrc .has { font-family:var(--f-mono); font-size:12.5px; color:var(--ink); }
 .aptsrc .has.none { color:var(--muted); }
+/* METAR and TAF (Runway Cond's Airport tab, and Route): the text as it was sent, a TAF with one change group to a line */
+.aptwx { border:1px solid var(--line); border-radius:10px; padding:10px 14px 12px; background:var(--surface); display:grid; grid-template-columns:minmax(0, 1fr); gap:8px; }
+.aptwx > b { font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.metgrp { display:grid; grid-template-columns:minmax(0, 1fr); min-width:0; }
+.met { display:grid; grid-template-columns:minmax(0, 1fr); gap:5px; padding:12px 0; border-top:1px solid var(--line); min-width:0; }
+.met:first-child { border-top:0; padding-top:0; }
+.meth { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 10px; margin-bottom:2px; }
+.meth b { font-family:var(--f-mono); font-weight:600; font-size:16px; }
+.meth span { font-size:13px; color:var(--muted); }
+.metk { display:flex; flex-wrap:wrap; align-items:baseline; gap:0 10px; }
+.metk:not(:first-child) { margin-top:4px; }
+.metk b { font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; }
+.metk span { font-family:var(--f-mono); font-size:12px; color:var(--muted); }
+.metk span.old { color:var(--warn); font-weight:600; }
+.metraw, .mettaf { font-family:var(--f-mono); font-size:13px; line-height:1.5; background:var(--bg); border-radius:8px; overflow-wrap:anywhere; }
+.metraw { padding:7px 10px 7px calc(10px + 2ch); text-indent:-2ch; }
+.mettaf { padding:6px 0; }
+.metl { padding:1px 10px 1px calc(10px + 4ch); text-indent:-2ch; }
+.metl.base { padding-left:calc(10px + 2ch); }
+.metl.on { background:var(--brand-soft); box-shadow:inset 3px 0 0 var(--brand); font-weight:600; }
+.metnote, .metfoot, .metnone { margin:0; font-size:12.5px; color:var(--muted); }
+.metnone { font-size:14px; }
+.metnone.off, .metfoot.old { color:var(--warn); }
+.metfoot { padding-top:10px; border-top:1px solid var(--line); }
+.metkey { display:inline-block; width:3px; height:.95em; margin-right:7px; vertical-align:-.12em; background:var(--brand); border-radius:1px; }
 /* runway picture */
 .rv { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 14px 14px; display:grid; gap:8px; --rv-asph:#4A5059; --rv-mark:#F2F4F6; }
 @media (prefers-color-scheme:dark) { :root:not([data-theme="light"]) .rv { --rv-asph:#353B43; } }
@@ -2152,7 +2177,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'e46b9f0342', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '5f170d44ab', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

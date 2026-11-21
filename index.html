@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795268882898;</script>
+<script>window.GRF_BUILD=1795279562619;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -273,6 +273,17 @@ details.how li::marker { color:var(--muted); }
 .aptsug button b { font-family:var(--f-mono); font-weight:600; }
 .aptsug button span { color:var(--muted); font-size:14px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
 .aptsug button i { font-style:normal; font-family:var(--f-head); font-weight:700; font-size:11.5px; letter-spacing:.06em; color:var(--brand); }
+/* the airports of the flight: shortcuts, each with what the sources hold for it */
+.aptflt { display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; }
+.aptflt[hidden] { display:none; }
+.aptfl { flex:1 0 100%; font-family:var(--f-head); font-weight:700; font-size:12.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.aptchip { flex:1 1 138px; display:grid; grid-template-columns:auto minmax(0, 1fr); gap:0 8px; align-items:baseline; text-align:left; min-height:52px; padding:7px 12px; border:1.5px solid var(--line); border-radius:10px; background:var(--surface); color:var(--ink); font:inherit; cursor:pointer; }
+.aptchip b { font-family:var(--f-mono); font-weight:600; font-size:16px; }
+.aptchip span { font-size:12.5px; color:var(--muted); }
+.aptchip i { grid-column:1 / -1; font-style:normal; font-family:var(--f-mono); font-size:12px; color:var(--muted); }
+.aptchip[data-k="snow"] i, .aptchip[data-k="atis"] i { color:var(--ink); font-weight:600; }
+.aptchip[data-k="snow"] { border-color:var(--brand); }
+.aptchip[aria-pressed="true"] { border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
 .apthd { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; }
 .apthd b { font-family:var(--f-head); font-size:19px; letter-spacing:.04em; text-transform:uppercase; }
 .apthd span { font-family:var(--f-mono); font-size:12px; color:var(--muted); }
@@ -364,6 +375,34 @@ html.locked .tool, html.locked .modesbar { display:none !important; }
 html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--tabh) + 12px); }
 @media (min-width:860px) { #tbSnack, html:not([data-tool="grf"]) #tbSnack { bottom:24px; } }
 .tbhome { max-width:1100px; margin-inline:auto; padding:18px 16px 0; display:grid; gap:12px; }
+/* home: your flight, set once for every tool */
+.flt { display:grid; gap:10px; }
+.flt[hidden] { display:none; }
+.flth { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:28px; }
+.flth .ghost { min-height:32px; text-decoration:underline; text-underline-offset:3px; color:var(--ink); }
+.fcard { border:1px solid var(--line); border-radius:14px; background:var(--surface); padding:16px; display:grid; gap:12px; min-width:0; }
+.fcard.none p { margin:0; color:var(--muted); font-size:15px; line-height:1.45; } .fcard.none p b { color:var(--ink); font-weight:600; }
+.facts { display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; }
+.facts .btn { min-height:48px; display:inline-flex; align-items:center; gap:8px; }
+.facts .btn svg { width:18px; height:18px; stroke-width:2.4; }
+.fltavio { display:inline-flex; align-items:center; gap:6px; min-height:44px; color:var(--ink); font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+.fltavio svg { width:15px; height:15px; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.fhead h3 { margin:0; display:flex; align-items:baseline; gap:10px; font-family:var(--f-mono); font-size:30px; font-weight:600; line-height:1.05; letter-spacing:0; }
+.fhead h3 .arr { color:var(--muted); font-family:var(--f-ui); font-weight:400; font-size:.8em; }
+.fhead p { margin:4px 0 0; color:var(--muted); font-size:15px; overflow-wrap:anywhere; }
+.ftimes { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ftime { display:grid; gap:1px; padding:9px 12px 10px; border:1px solid var(--line); border-radius:11px; background:var(--bg); min-width:0; }
+.ftime .lbl { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ftime b { font-family:var(--f-mono); font-weight:600; font-size:27px; line-height:1.15; font-variant-numeric:tabular-nums; }
+.ftime > span:last-child { color:var(--muted); font-size:13.5px; }
+.fnow { margin:0; font-weight:600; font-size:15px; } .fnow span { font-weight:400; color:var(--muted); }
+.frows { border-radius:11px; }
+.frow .t span { overflow-wrap:anywhere; } .frow .t span b { font-family:var(--f-mono); font-weight:600; font-size:.95em; color:var(--ink); margin-right:6px; }
+.fnow button { border:0; background:none; padding:0 0 0 6px; font:inherit; font-weight:600; color:var(--ink); text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:32px; }
+.frow.bad .t span { color:var(--bad); font-weight:600; } .frow.warn .t span { color:var(--warn); font-weight:600; }
+.fmain { display:grid; gap:12px; min-width:0; }
+@media (min-width:700px) { .fcard:not(.none) { grid-template-columns:minmax(0, 1fr) minmax(0, 1.25fr); gap:12px 22px; align-items:start; } }
+@media (max-width:359px) { .ftime b { font-size:24px; } .fhead h3 { font-size:27px; } }
 .tbh { margin:0; }
 .tiles { display:grid; gap:12px; }
 @media (min-width:700px) { .tiles { grid-template-columns:1fr 1fr; } }
@@ -437,6 +476,9 @@ html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--t
 .sitem span { font-size:13.5px; color:var(--muted); }
 .sitem .t { font-family:var(--f-mono); font-size:12.5px; color:var(--ink); }
 .sitem.on { border-color:var(--c); box-shadow:inset 0 0 0 1px var(--c); }
+.sitem.rt > i { grid-row:1 / span 4; }
+.sitem .rtl { font-size:13px; color:var(--ink); margin-top:3px; }
+.sitem .rtl.hit { color:var(--rt-hit, var(--bad)); font-weight:600; } .sitem .rtl.watch { color:var(--warn); font-weight:600; }
 .sitem.past { opacity:.6; }
 .siglist .more { font-size:13.5px; color:var(--muted); padding:4px 2px; margin:0; }
 .sigsel { border:1px solid var(--line); border-left:6px solid var(--c, var(--brand)); border-radius:12px; background:var(--surface); padding:14px 16px; display:grid; gap:10px; scroll-margin-top:12px; }
@@ -639,7 +681,8 @@ dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; pad
 #tzView[hidden], #tzView [hidden] { display:none !important; }
 .tzmain, .tzside { display:contents; }
 .tzclock { order:1; } #tzPlaces { order:2; } .tzglobe { order:3; } #tzSel { order:4; } .tzabout { order:5; }
-#tzSel:empty { display:none; }
+#tzSel:empty, #tzFlt:empty { display:none; }
+#tzFlt { order:1; }
 #tzView svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 .tzlbl { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
 .tztime { font-family:var(--f-mono); font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
@@ -731,6 +774,16 @@ dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; pad
 .tzfacts dd { margin:0; min-width:0; overflow-wrap:anywhere; }
 .tzfacts dd b { font-weight:600; }
 .tzother { display:grid; gap:8px; }
+/* your flight through the time zones */
+.tzfod { margin:0; display:grid; gap:2px; font-size:15px; color:var(--muted); overflow-wrap:anywhere; } .tzfod b { color:var(--ink); font-size:22px; font-weight:600; } .tzfod i { font-style:normal; color:var(--muted); margin:0 8px; }
+.tzfc .tzday { text-transform:none; letter-spacing:0; font-family:inherit; font-weight:400; font-size:13.5px; }
+.tzflt .tzduo { border-left:0; padding-left:0; }
+.tzfdiff { margin:0; font-size:15px; } .tzfdiff b { font-weight:600; }
+.tzleg { justify-content:flex-start; gap:12px; min-height:54px; }
+.tzleg .tztime { flex:none; width:5.2ch; }
+.tzleg .tztime { font-size:16px; }
+.tzlegn { flex:1; display:grid; gap:1px; min-width:0; } .tzlegn b { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .tzlegn span { font-size:13.5px; color:var(--muted); }
+.tzleg .tzmono { color:var(--muted); font-size:13px; white-space:nowrap; }
 .tzother h4 { font-family:var(--f-head); font-weight:700; font-size:14px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0; }
 .tzzl { display:grid; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
 .tzz { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding:6px 12px; border:0; border-top:1px solid var(--line); background:transparent; color:inherit; font:inherit; text-align:left; cursor:pointer; }
@@ -794,7 +847,7 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
   #tzView { grid-template-columns:minmax(0, 1.35fr) minmax(320px, 1fr); gap:14px 20px; align-items:start; padding:16px 24px 0; }
   .tzmain { display:grid; gap:14px; position:sticky; top:var(--tz-top, 76px); min-width:0; }
   .tzside { display:grid; gap:14px; min-width:0; }
-  .tzdock { order:1; } #tzSel { order:2; } #tzPlaces { order:3; } .tzabout { order:4; }
+  .tzdock { order:1; } #tzSel { order:2; } #tzFlt { order:2; } #tzPlaces { order:3; } .tzabout { order:4; }
   .tzcall { display:none; }
   .tzclock { grid-template-columns:auto minmax(0, 1fr); align-items:center; gap:22px; }
   .tzduo { border-left:1px solid var(--line); padding-left:22px; }
@@ -1091,13 +1144,33 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
 
 /* ---- sheets ---- */
 #rtText, #rtPaText { width:100%; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:10px 12px; resize:vertical; }
-#rtText { font-family:var(--f-mono); font-size:16px; line-height:1.4; min-height:150px; }   /* 16 px: iOS zooms the whole page in, and leaves it so, when a field with smaller type is tapped */
+#rtText { font-family:var(--f-mono); font-size:16px; line-height:1.4; min-height:132px; }   /* 16 px: iOS zooms the whole page in, and leaves it so, when a field with smaller type is tapped */
 #rtPaText { font:inherit; font-size:16px; line-height:1.5; min-height:300px; }
 .rtinbtns { display:flex; flex-wrap:wrap; gap:8px; }
 .rtdone { display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .rtdone[hidden] { display:none; }
 .rtends { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.rtends input { font-family:var(--f-mono); text-transform:uppercase; }
+.rtends input, .rtstd input { font-family:var(--f-mono); text-transform:uppercase; }
+/* the flight's sheet stands outside the Route view (it is opened from Home too): what the view gives its own parts */
+#rtInDlg svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+#rtInDlg [hidden] { display:none !important; }
+#rtInDlg .tzsbody { gap:12px; }
+#rtInDlg .tzlbl i { font-style:normal; font-weight:500; letter-spacing:.04em; text-transform:none; opacity:.85; margin-left:6px; }
+.rtavio { text-decoration:none; justify-content:flex-start; min-height:52px; }
+.rtavio span { flex:1; text-align:left; }
+.rtavio .rtext { width:17px !important; height:17px !important; color:var(--muted); }
+.rtaptn { font-size:13px; color:var(--muted); min-height:1.25em; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rtaptn.bad { color:var(--bad, #C62828); }
+.rtends input[readonly], .rtstd input[readonly] { background:var(--surface2); border-style:dashed; color:var(--ink); }
+.rtstd { display:grid; grid-template-columns:minmax(0, 1fr) auto; gap:5px 10px; align-items:center; }
+.rtstd > .tzlbl, .rtstd.one > input { grid-column:1 / -1; }
+#rtInDlg input::placeholder, #rtInDlg textarea::placeholder { color:var(--muted); opacity:.5; }
+.rtstd .rtaptn { grid-column:1 / -1; white-space:normal; }
+.rtstd .rtday { min-height:48px; }
+.rtstd .rtday button { min-height:42px; padding:0 10px; white-space:nowrap; }
+.rtaviol { display:inline-flex; align-items:center; gap:6px; text-decoration:underline; text-underline-offset:3px; color:var(--ink); font-weight:600; min-height:36px; justify-self:start; }
+#rtView .rtaviol svg { width:15px; height:15px; color:var(--muted); }
+@media (max-width:359px) { .rtstd .rtday button { padding:0 7px; font-size:13.5px; } }
 .rttimef input { font-family:var(--f-mono); font-size:26px !important; font-weight:600; letter-spacing:.06em; min-height:58px !important; }
 .rttimef input::placeholder { color:var(--muted); opacity:.55; }
 #rtTimeD { margin:-4px 0 0; min-height:1.3em; }
@@ -2011,7 +2084,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '67d6f6ce69', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'ad072aefa6', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

@@ -1,0 +1,10 @@
+places: 7342 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+peaks: 711 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+regpoints: 235 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+countries: 242 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+ne_10m_geography_regions_polys: 1047 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+ne_10m_geography_marine_polys: 306 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+ne_10m_lakes: 1355 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+ne_10m_lakes_europe: 767 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+ne_10m_rivers_lake_centerlines: 1455 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False
+ne_10m_rivers_europe: 1325 features, 0 with a Danish name, 0 of them unlike the English one; has the field: False

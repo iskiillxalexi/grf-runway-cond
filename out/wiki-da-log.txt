@@ -1,0 +1,27 @@
+10739 ids
+  ids 50 of 10739: 42 labels, 22 articles, 1 calls, 0 s
+  ids 1050 of 10739: 757 labels, 399 articles, 21 calls, 11 s
+  ids 2050 of 10739: 1432 labels, 697 articles, 41 calls, 22 s
+  ids 3050 of 10739: 2030 labels, 1104 articles, 61 calls, 33 s
+  ids 4050 of 10739: 2687 labels, 1504 articles, 81 calls, 43 s
+  ids 5050 of 10739: 3295 labels, 1921 articles, 101 calls, 53 s
+  ids 6050 of 10739: 4079 labels, 2470 articles, 121 calls, 64 s
+  ids 7050 of 10739: 5002 labels, 3246 articles, 141 calls, 79 s
+  ids 8050 of 10739: 5507 labels, 3716 articles, 161 calls, 100 s
+  ids 9050 of 10739: 6116 labels, 4197 articles, 181 calls, 108 s
+  ids 10050 of 10739: 6499 labels, 4518 articles, 201 calls, 116 s
+Danish labels 6761, Danish articles 4750
+  da: 20 of 4750 titles, 20 texts, 216 calls, 124 s
+  da: 420 of 4750 titles, 420 texts, 236 calls, 156 s
+  da: 820 of 4750 titles, 820 texts, 256 calls, 183 s
+  da: 1220 of 4750 titles, 1220 texts, 276 calls, 215 s
+  da: 1620 of 4750 titles, 1620 texts, 296 calls, 249 s
+  da: 2020 of 4750 titles, 2020 texts, 316 calls, 273 s
+  da: 2420 of 4750 titles, 2420 texts, 336 calls, 304 s
+  da: 2820 of 4750 titles, 2820 texts, 356 calls, 329 s
+  da: 3220 of 4750 titles, 3220 texts, 376 calls, 350 s
+  da: 3620 of 4750 titles, 3620 texts, 396 calls, 372 s
+  da: 4020 of 4750 titles, 4020 texts, 416 calls, 398 s
+  da: 4420 of 4750 titles, 4420 texts, 436 calls, 422 s
+da: 4750 texts
+texts for 4750 of 10739 ids; labels 6761; 453 calls, 463 s

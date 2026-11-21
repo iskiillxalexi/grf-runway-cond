@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795285029288;</script>
+<script>window.GRF_BUILD=1795287192484;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';window.GRF_MET_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/opmet/';window.GRF_MET_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/opmet/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -428,6 +428,14 @@ html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--t
 .ftime b { font-family:var(--f-mono); font-weight:600; font-size:27px; line-height:1.15; font-variant-numeric:tabular-nums; }
 .ftime > span:last-child { color:var(--muted); font-size:13.5px; }
 .fnow { margin:0; font-weight:600; font-size:15px; } .fnow span { font-weight:400; color:var(--muted); }
+/* the take-off time is a button (the pencil says so): it opens the sheet where the time is set */
+button.ftime { font:inherit; color:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+button.ftime:hover { border-color:var(--muted); }
+.ftime .lbl { display:flex; align-items:center; gap:6px; } .ftime .lbl > span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.ftime .lbl svg { flex:none; width:15px; height:15px; margin-left:auto; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+/* an old flight plan on Home: what it is, and one tap to the coming day */
+.fold { display:grid; gap:9px; padding:11px 12px 12px; border-radius:10px; background:var(--warnbg); font-size:14.5px; }
+.fold b { font-weight:600; } .fold .facts { display:flex; flex-wrap:wrap; gap:8px 10px; } .fold .btn { min-height:42px; } .fold .btn:not(.fill) { background:var(--surface); }
 .frows { border-radius:11px; }
 .frow .t span { overflow-wrap:anywhere; } .frow .t span b { font-family:var(--f-mono); font-weight:600; font-size:.95em; color:var(--ink); margin-right:6px; }
 .fnow button { border:0; background:none; padding:0 0 0 6px; font:inherit; font-weight:600; color:var(--ink); text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:32px; }
@@ -971,6 +979,9 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
 .rtbar i { display:block; height:100%; background:var(--rt-line); border-radius:3px; }
 .rtwarn { background:var(--warnbg, #FFF4D6); color:var(--ink); }
 .rtwarn b { font-weight:600; }
+.rtold { display:grid; gap:9px; }
+/* the day of a time in the time sheet: two buttons under the field */
+.rttday { width:100%; } .rttday button { flex:1 1 0; min-height:42px; white-space:nowrap; }
 
 /* ---- Ops ---- */
 /* the lines that open are plain lines of their card, not cards inside it */
@@ -2177,7 +2188,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = '5f170d44ab', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '879bc0dc6e', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

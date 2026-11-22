@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795336062549;</script>
+<script>window.GRF_BUILD=1795339105659;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';window.GRF_MET_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/opmet/';window.GRF_MET_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/opmet/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -442,6 +442,14 @@ button.ftime:hover { border-color:var(--muted); }
 .fold { display:grid; gap:9px; padding:11px 12px 12px; border-radius:10px; background:var(--warnbg); font-size:14.5px; }
 .fold b { font-weight:600; } .fold .facts { display:flex; flex-wrap:wrap; gap:8px 10px; } .fold .btn { min-height:42px; } .fold .btn:not(.fill) { background:var(--surface); }
 .frows { border-radius:11px; }
+/* the flight's list at the end of every tool: the row of the tool one is in is marked */
+.tbflow { max-width:1100px; margin:26px auto 0; padding:0 16px; display:grid; gap:10px; } .tbflow[hidden] { display:none; }
+.tbflow .flth a { display:inline-flex; align-items:center; min-height:32px; text-decoration:underline; text-underline-offset:3px; color:var(--ink); font-weight:600; }
+.flown { margin:0; color:var(--muted); font-size:14.5px; overflow-wrap:anywhere; } .flown b { font-family:var(--f-mono); font-weight:600; color:var(--ink); }
+.frow.here { background:var(--brand-soft); box-shadow:inset 4px 0 0 var(--brand); cursor:default; } .frow.here .ai { background:var(--surface); }
+.herem { flex:none; font-family:var(--f-head); font-weight:600; font-size:12px; letter-spacing:.08em; text-transform:uppercase; white-space:nowrap; padding:4px 9px; border-radius:999px; background:var(--brand); color:var(--brand-ink, #2A1703); }
+@media (min-width:860px) { .tbflow { padding:0 24px; } }
+html.locked .tbflow, html.paused[data-tool="grf"] .tbflow { display:none !important; }
 .frow .t span { overflow-wrap:anywhere; } .frow .t span b { font-family:var(--f-mono); font-weight:600; font-size:.95em; color:var(--ink); margin-right:6px; }
 .fnow button { border:0; background:none; padding:0 0 0 6px; font:inherit; font-weight:600; color:var(--ink); text-decoration:underline; text-underline-offset:3px; cursor:pointer; min-height:32px; }
 /* with a flight the rows are the list of the tools: the tool's name stands out, each line under it says one thing */
@@ -753,6 +761,8 @@ dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; pad
 .tznote.bad { background:var(--badbg, #FBE4E4); color:var(--bad, #C62828); }
 .tzx { width:40px; height:40px; display:grid; place-items:center; border:0; border-radius:10px; background:transparent; color:var(--muted); cursor:pointer; flex:none; }
 .tzx:hover { background:var(--surface2); color:var(--ink); }
+/* the cross is drawn wherever the button stands: the sheets opened from Home stand outside the views whose rule draws their icons */
+.tzx svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 
 /* ---- the clocks ---- */
 .tzclock { background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 16px; display:grid; gap:12px; min-width:0; }
@@ -991,6 +1001,9 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
 .rtfts b { font-size:25px; line-height:1.15; font-weight:600; font-variant-numeric:tabular-nums; } .rtfts span { color:var(--muted); font-size:13.5px; }
 .rtfts .rtftn2 { margin-top:4px; font-weight:600; font-size:14.5px; } .rtfts .rtftn2.on { color:var(--ink); }
 .rtft .tzsbody { display:grid; gap:12px; }
+/* Done (and Clear) stay at the foot of the sheet while it is scrolled */
+.rtftacts { position:sticky; bottom:0; z-index:2; margin:4px -18px -20px; padding:12px 18px calc(14px + env(safe-area-inset-bottom, 0px)); background:var(--surface); border-top:1px solid var(--line); }
+.rtftacts .tzbtn { flex:1 1 0; min-height:48px; }
 .rtfts .tzlbl { display:flex; align-items:center; gap:7px; }
 .rtfix { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 4px 8px 12px; border-radius:9px; background:var(--brand-soft); font-size:14px; }
 .rtfix b { font-weight:600; }
@@ -2216,7 +2229,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'c1369a9351', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'ff995d232f', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

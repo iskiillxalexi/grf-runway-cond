@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795300976318;</script>
+<script>window.GRF_BUILD=1795336062549;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';window.GRF_MET_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/opmet/';window.GRF_MET_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/opmet/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -426,7 +426,12 @@ html:not([data-tool="grf"]) #tbSnack, html.paused #tbSnack { bottom:calc(var(--t
 .ftime { display:grid; gap:1px; padding:9px 12px 10px; border:1px solid var(--line); border-radius:11px; background:var(--bg); min-width:0; }
 .ftime .lbl { font-family:var(--f-head); font-weight:600; font-size:13px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ftime b { font-family:var(--f-mono); font-weight:600; font-size:27px; line-height:1.15; font-variant-numeric:tabular-nums; }
-.ftime > span:last-child { color:var(--muted); font-size:13.5px; }
+.ftime > span:not(.lbl) { color:var(--muted); font-size:13.5px; }
+.ftime > span.air { color:var(--ink); font-weight:600; margin-top:3px; }
+/* block and flight time and the night, in a line under where the flight is */
+.fft { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; min-height:44px; padding:8px 10px 8px 12px; border:1px solid var(--line); border-radius:11px; background:var(--bg); color:var(--muted); font:inherit; font-size:14.5px; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.fft:hover { border-color:var(--muted); } .fft b { color:var(--ink); font-weight:600; } .fft > span { min-width:0; overflow-wrap:anywhere; }
+.fft svg { flex:none; width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .fnow { margin:0; font-weight:600; font-size:15px; } .fnow span { font-weight:400; color:var(--muted); }
 /* the take-off time is a button (the pencil says so): it opens the sheet where the time is set */
 button.ftime { font:inherit; color:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -967,6 +972,26 @@ dialog.tzsheet::backdrop { background:rgba(10,12,15,.45); }
 .rtset { cursor:pointer; }
 .rtset:hover { border-color:var(--muted); }
 #rtView .rtset .tzlbl svg { width:15px; height:15px; margin-left:auto; color:var(--muted); }
+/* the block times on the flight card: the time in the air under each */
+.rtcell.rtset { cursor:pointer; } .rtcell.rtset:hover { border-color:var(--muted); }
+.rtcell .rtair { color:var(--ink); font-weight:600; margin-top:3px; }
+.rtftl > span { overflow-wrap:anywhere; }
+/* the sheet of the flight times: a row to each time, then what they add up to */
+.rtfth { margin:0; color:var(--muted); font-size:14.5px; } .rtfth b { color:var(--ink); font-weight:600; }
+.rtftrows { display:grid; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--bg); }
+.rtftr { display:flex; align-items:center; gap:12px; min-height:60px; padding:9px 10px 9px 14px; border:0; border-top:1px solid var(--line); background:none; color:inherit; font:inherit; text-align:left; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.rtftr:first-child { border-top:0; } .rtftr:hover { background:var(--surface); }
+.rtftn { flex:1 1 auto; min-width:0; display:grid; gap:1px; } .rtftn b { font-weight:600; font-size:16px; } .rtftn span { color:var(--muted); font-size:13.5px; overflow-wrap:anywhere; }
+.rtftt { flex:none; font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--muted); }
+.rtftr.on .rtftt { color:var(--ink); } .rtftr.on .rtftn span { color:var(--ink); }
+.rtftr > svg { flex:none; width:18px; height:18px; fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.rtptr { min-height:52px; } .rtptr .rtftt { font-size:18px; }
+.rtftsum { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.rtfts { display:grid; gap:1px; padding:10px 12px 11px; border:1px solid var(--line); border-radius:11px; background:var(--bg); min-width:0; }
+.rtfts b { font-size:25px; line-height:1.15; font-weight:600; font-variant-numeric:tabular-nums; } .rtfts span { color:var(--muted); font-size:13.5px; }
+.rtfts .rtftn2 { margin-top:4px; font-weight:600; font-size:14.5px; } .rtfts .rtftn2.on { color:var(--ink); }
+.rtft .tzsbody { display:grid; gap:12px; }
+.rtfts .tzlbl { display:flex; align-items:center; gap:7px; }
 .rtfix { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 4px 8px 12px; border-radius:9px; background:var(--brand-soft); font-size:14px; }
 .rtfix b { font-weight:600; }
 .rtfix .tzlink { flex:none; }
@@ -2191,7 +2216,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'c47d6449c6', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = 'c1369a9351', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;

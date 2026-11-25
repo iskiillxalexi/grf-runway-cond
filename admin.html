@@ -307,6 +307,10 @@ html:not(.ready) .snack { bottom:16px; }
 @media (prefers-reduced-motion:reduce) { .themesw .knob, .themesw svg { transition:none; } }
 /* iOS zooms the whole page in when a field with type smaller than 16 px is tapped, and leaves it zoomed in: no field is smaller */
 #stText, #cKey { font-size:16px; }
+/* What's new: the preview is drawn as the app's sheet draws the text */
+.nwprev { border:1px solid var(--line); border-radius:12px; background:var(--surface); padding:14px 16px; display:grid; gap:12px; font-size:16px; line-height:1.5; overflow-wrap:anywhere; min-height:52px; }
+.nwprev p { margin:0; } .nwprev ul { margin:0; padding:0 0 0 20px; display:grid; gap:9px; } .nwprev li::marker { color:var(--brand); } .nwprev li b { font-weight:600; }
+.nwprev .none { color:var(--muted); font-size:14.5px; }
 </style>
 </head>
 <body>
@@ -412,6 +416,20 @@ html:not(.ready) .snack { bottom:16px; }
       <div id="stMsg" class="note" hidden></div>
     </section>
     <p class="disc">Applies to Runway Cond only. SIGMET always works.</p>
+    <!-- What's new: a text the app shows once, as a sheet, on each device that had the app before it was published -->
+    <section class="card" id="pNews">
+      <h2>What's new</h2>
+      <p class="disc" id="nwNow" role="status" style="margin:0"></p>
+      <div class="field"><label for="nwText">Text shown in the app</label>
+        <textarea id="nwText" maxlength="2000" style="font-family:var(--f-ui);font-size:16px;min-height:200px" placeholder="GRF Runway Cond is now GRF Toolbox. New since the first version:&#10;- Your flight: add it once on Home.&#10;- SIGMET: worldwide on a globe."></textarea>
+        <p class="disc">Start a line with - for a point of a list; the words before its first colon are shown bold. Any other line is a paragraph. <span id="nwCount"></span></p>
+        <div class="row" id="nwFromF" hidden><button class="btn" type="button" id="nwFrom">Use the text of the notice</button></div>
+      </div>
+      <div class="field"><span class="lbl">As the app shows it</span><div class="nwprev" id="nwPrev"></div></div>
+      <div class="row"><button class="btn fill" type="button" id="nwGo">Publish</button><button class="btn" type="button" id="nwOff">Remove</button></div>
+      <div id="nwMsg" class="note" hidden></div>
+      <p class="disc">The app shows it once, as a sheet "What's new" when it is opened, on every device that had the app before you publish. A device that gets the app later is not shown it; everyone can read it under Settings → Help → What's new. Publishing again shows it again on every device. It is not a warning: for the flowcharts, use the notice above.</p>
+    </section>
   </section>
 
   <!-- settings (and the first set-up) -->
@@ -697,6 +715,36 @@ const GRFLicense = (() => {
     const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, stMsg(obj.issued, obj.mode, obj.before, obj.text));
     return ok ? {issued: obj.issued, mode: obj.mode, before: obj.before, text: obj.text} : null;
   }
+  /* What's new (news.json), written by the issuer in GRF Keys: a text the app shows once, as a sheet, on each device that
+     had the app before the text was published. Signed like the lists above; the newest (by issue time) wins; an empty
+     text takes it away. */
+  const NEWS_MAX = 2000;
+  const nwMsg = (issued, text) => new TextEncoder().encode(`GRF-NEWS-1|${issued}|${text}`);
+  async function signNews(text, privJwk, issuedMs) {
+    const issued = Math.floor(issuedMs ?? Date.now()), t = String(text || '').replace(/\r\n?/g, '\n').trim().slice(0, NEWS_MAX);
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), nwMsg(issued, t)));
+    return {v:1, issued, text:t, sig: b64u.enc(sig)};
+  }
+  async function verifyNews(obj, pubJwk) {
+    if (!obj || obj.v !== 1 || !Number.isFinite(obj.issued) || typeof obj.text !== 'string' || obj.text.length > NEWS_MAX || typeof obj.sig !== 'string') return null;
+    let sig; try { sig = b64u.dec(obj.sig); } catch (e) { return null; }
+    const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, nwMsg(obj.issued, obj.text));
+    return ok ? {issued: obj.issued, text: obj.text} : null;
+  }
+  /* The text as the sheet shows it, line by line: a line that starts with "-", "•" or "*" is a point of a list, and the
+     words before its first colon stand out (head); any other line is a paragraph; empty lines only part them. Nothing
+     in the text is read as markup: it is put on the page as text. */
+  function newsParts(text) {
+    const out = [];
+    for (const raw of String(text || '').split('\n')) {
+      const l = raw.trim(); if (!l) continue;
+      const m = l.match(/^[-•*]\s+(.+)$/);
+      if (!m) { out.push({li: false, text: l}); continue; }
+      const c = m[1].indexOf(': ');
+      out.push(c > 0 && c <= 40 ? {li: true, head: m[1].slice(0, c), text: m[1].slice(c + 2).trim()} : {li: true, text: m[1]});
+    }
+    return out;
+  }
   /* Feedback from the app: encrypted to the issuer's feedback key (ECDH P-256 + HKDF + AES-GCM), so it can travel as a
      GitHub issue in a public repository and only the key tool can read it. */
   const FB_INFO = new TextEncoder().encode('GRF-FEEDBACK-1');
@@ -735,7 +783,7 @@ const GRFLicense = (() => {
   const seenTitle = () => SEEN;
   const seenParse = title => String(title || '').trim() === SEEN;
   const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
-  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, seenTitle, seenParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, signNews, verifyNews, newsParts, NEWS_MAX, sealFeedback, openFeedback, fbTitle, fbParse, seenTitle, seenParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -752,6 +800,7 @@ let acc = null, accSha = null, acts = null, actErr = '', nDev = null, nUser = fa
 let fCat = store.get('grf-admin-filter') || 'active', fQ = '';
 let licSha = null, licPublished = null, editing = null;
 let stSha = null, stPublished = null, stPick = 'ok', stScope = 'all', appInfo = null;
+let nwSha = null, nwPublished = null, nwLoaded = false;   /* What's new (news.json): the file's sha, what is published, the box filled once from it */
 let seen = null;   /* license id → [{dev, at, d}]: when each device was last online ("GRF seen" issues) */
 let inboxAt = 0;   /* when the issues (last online, feedback) were last read */
 let fbPriv = null, fbKeyState = '', fbItems = null, fbErr = '', fbF = 'open', repoInfo = null;
@@ -1037,6 +1086,60 @@ async function publishStatus(mode, scope, text) {
     catch (e) { if (e.message !== 'conflict' || i) throw e; await loadStatus(); }
   }
 }
+/* ---- What's new: news.json, signed; the app shows the text once on each device that had the app before it was published ---- */
+async function loadNews() {
+  const f = await getFile('news.json');
+  nwSha = f ? f.sha : null;
+  nwPublished = f ? await GRFLicense.verifyNews(JSON.parse(new TextDecoder().decode(f.bytes)), PUB) : null;
+}
+async function publishNews(text) {
+  const obj = await GRFLicense.signNews(text, kf.key);
+  if (!(await GRFLicense.verifyNews(JSON.parse(JSON.stringify(obj)), PUB))) throw new Error('The text did not pass its own check.');
+  for (let i = 0; i < 2; i++) {
+    try { nwSha = await putFile('news.json', new TextEncoder().encode(JSON.stringify(obj)), nwSha, obj.text ? "What's new: published" : "What's new: removed"); nwPublished = {issued: obj.issued, text: obj.text}; return; }
+    catch (e) { if (e.message !== 'conflict' || i) throw e; await loadNews(); }
+  }
+}
+/* the text as the app's sheet draws it: the same reading of the lines (GRFLicense.newsParts), put on the page as text */
+function newsNodes(text) {
+  const out = []; let ul = null;
+  for (const x of GRFLicense.newsParts(text)) {
+    if (!x.li) { ul = null; out.push(h('p', {}, x.text)); continue; }
+    if (!ul) { ul = h('ul', {}); out.push(ul); }
+    ul.appendChild(x.head ? h('li', {}, h('b', {}, x.head), ': ' + x.text) : h('li', {}, x.text));
+  }
+  return out;
+}
+function renderNews() {
+  const box = $('nwText'); if (!box) return;
+  /* the box holds what is published when the tool has read it; after that it is yours to write in */
+  if (!nwLoaded && log) { nwLoaded = true; if (!box.value && nwPublished && nwPublished.text) box.value = nwPublished.text; }
+  const p = nwPublished, text = box.value.replace(/\r\n?/g, '\n').trim(), same = !!(p && p.text === text);
+  $('nwNow').textContent = p && p.text ? `Published ${stWhen(p.issued)}. Shown once on each device that had the app before then.` : p ? `Nothing is shown: the text was removed ${stWhen(p.issued)}.` : 'Nothing is published yet.';
+  $('nwCount').textContent = `${text.length} of ${GRFLicense.NEWS_MAX} characters.`;
+  const nodes = newsNodes(text);
+  $('nwPrev').replaceChildren(...(nodes.length ? nodes : [h('span', {className: 'none'}, 'Write the text above and it is shown here as in the app.')]));
+  $('nwGo').textContent = p && p.text ? (same ? 'Publish again: show it once more' : 'Publish the new text') : 'Publish';
+  $('nwGo').disabled = !text;
+  $('nwOff').hidden = !(p && p.text);
+  /* a notice that is up can lend its text: it was written for the same readers */
+  $('nwFromF').hidden = !(stPublished && stPublished.mode === 'warn' && stPublished.text && !text);
+}
+$('nwText').addEventListener('input', renderNews);
+$('nwFrom').onclick = () => { $('nwText').value = stPublished.text; renderNews(); $('nwText').focus(); };
+async function sendNews(text) {
+  const el = $('nwMsg'), go = $('nwGo'), off = $('nwOff');
+  go.disabled = off.disabled = true; el.hidden = false; el.className = 'note'; el.textContent = 'Signing and publishing…';
+  try {
+    await publishNews(text);
+    el.className = 'note ok';
+    el.textContent = text ? 'Published. In about a minute, phones pick it up when the app is opened online, or within 10 minutes if it is open, and show it once.' : 'Removed. Phones stop showing it at their next sync.';
+  } catch (e) { el.className = 'note bad'; el.textContent = 'Not published: ' + (e.message || 'GitHub could not be reached.') + ' Tap again.'; }
+  go.disabled = off.disabled = false; renderNews();
+}
+$('nwGo').onclick = () => { const t = $('nwText').value.trim(); if (t) sendNews(t); };
+$('nwOff').onclick = async () => { if (await ask({title: "Remove What's new?", text: 'Phones stop showing the text, also under Settings. What you have written stays in the box here, so you can publish it again.', yes: 'Remove'})) sendNews(''); };
+
 const ST_TEXT = {
   warn: 'The GRF flowcharts have been revised. Check every result against the current Performance Manual until this app is updated.',
   pause: 'The GRF flowcharts have been revised and this version of the app does not have them yet. Use the Performance Manual and the approved performance software.'
@@ -1232,7 +1335,7 @@ async function connectOnce() {
   const had = !!log; busy = true; setFresh('busy'); if (!had) route();
   let ok = true;
   try {
-    await loadLog(); await loadRevoked(); await loadLicenses(); await loadStatus(); await loadAppInfo();
+    await loadLog(); await loadRevoked(); await loadLicenses(); await loadStatus(); await loadNews(); await loadAppInfo();
     stPick = stPublished ? stPublished.mode : 'ok'; stScope = stPublished && stPublished.before ? 'older' : 'all';
     $('stText').value = stPublished && stPublished.text ? stPublished.text : (ST_TEXT[stPick] || '');
     if (!logSha) await saveLog('Create key list');   /* also proves the token may write */
@@ -1599,7 +1702,7 @@ $('cRevoke').onclick = async () => {
 };
 
 /* ---- updates: compare this page with the one published on GitHub (version.json, never cached) ---- */
-const ADMIN_VER = 'c792045b23';
+const ADMIN_VER = '63107cae24';
 $('admVer').textContent = 'Key tool v' + ADMIN_VER;
 async function latestAdmin() {
   const r = await fetch('version.json?t=' + Date.now(), {cache: 'no-store'});
@@ -1719,7 +1822,7 @@ function renderBadges() {
   t.setAttribute('aria-label', mode === 'pause' ? 'paused' : 'notice shown');
   const s = $('tbSet'); s.hidden = !(isReady() && (!acc || issuesOff() || actErr)); s.className = 'badge dot warn'; s.setAttribute('aria-label', 'needs setting up');
 }
-function renderAll() { renderSetup(); renderStatus(); renderFb(); renderLog(); renderOverview(); renderBadges(); }
+function renderAll() { renderSetup(); renderStatus(); renderNews(); renderFb(); renderLog(); renderOverview(); renderBadges(); }
 
 /* ---- sections ---- */
 const TABS = {overview: 'Overview', keys: 'Keys', feedback: 'Feedback', status: 'App status', settings: 'Settings'};

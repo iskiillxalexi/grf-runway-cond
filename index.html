@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A1E23" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem('grf-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
-<script>window.GRF_BUILD=1795342258605;</script>
+<script>window.GRF_BUILD=1795638064789;</script>
 <script>window.GRF_SNOW_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/snowtam.json';window.GRF_SNOW_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/snowtam.json?ref=data';window.GRF_SIG_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/sigmet.json';window.GRF_SIG_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/sigmet.json?ref=data';window.GRF_WX_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/wx/';window.GRF_MET_URL='https://raw.githubusercontent.com/iskiillxalexi/grf-runway-cond/data/opmet/';window.GRF_MET_API='https://api.github.com/repos/iskiillxalexi/grf-runway-cond/contents/opmet/';</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -709,11 +709,15 @@ dialog.licdlg::backdrop { background:rgba(10,12,15,.5); }
 .licdlg .acts .btn { flex:1 1 140px; }
 /* on iPhone every dialog is a sheet from the bottom; its title and its buttons stay in view while the text scrolls */
 dialog.licdlg .hd { position:sticky; top:0; z-index:2; margin:-20px -20px 0; padding:16px 12px 10px 20px; background:var(--surface); border-bottom:1px solid var(--line); }
-#termsDlg .acts, #fbDlg .acts, #sigTextDlg .acts { position:sticky; bottom:0; z-index:2; margin:0 -20px -20px; padding:12px 20px 16px; background:var(--surface); border-top:1px solid var(--line); }
+#termsDlg .acts, #fbDlg .acts, #sigTextDlg .acts, #newsDlg .acts { position:sticky; bottom:0; z-index:2; margin:0 -20px -20px; padding:12px 20px 16px; background:var(--surface); border-top:1px solid var(--line); }
+/* What's new: the issuer's text, as paragraphs and points */
+.nwb { display:grid; gap:12px; font-size:16px; line-height:1.5; overflow-wrap:anywhere; } .nwb p { margin:0; }
+.nwb ul { margin:0; padding:0 0 0 20px; display:grid; gap:9px; } .nwb li { padding-left:2px; } .nwb li::marker { color:var(--brand); } .nwb li b { font-weight:600; }
+html:not([data-news]) #setNews { display:none; }
 @media (max-width:559px) {
   dialog.licdlg { width:100%; max-width:100%; margin:auto 0 0; border-radius:16px 16px 0 0; border-bottom:0; max-height:calc(100dvh - 32px); }
   dialog.licdlg .in { padding-bottom:calc(20px + env(safe-area-inset-bottom, 0px)); }
-  #termsDlg .acts, #fbDlg .acts, #sigTextDlg .acts { margin-bottom:calc(-20px - env(safe-area-inset-bottom, 0px)); padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
+  #termsDlg .acts, #fbDlg .acts, #sigTextDlg .acts, #newsDlg .acts { margin-bottom:calc(-20px - env(safe-area-inset-bottom, 0px)); padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
 }
 /* >>> tz.css */
 /* ---------- Timezones ----------
@@ -1382,6 +1386,15 @@ dialog.tzsheet.rtchart[open] { display:flex; flex-direction:column; }
   </div>
 </dialog>
 
+<!-- What's new: the issuer's text from GRF Keys (news.json), shown once after it is published, and again from Settings -->
+<dialog class="licdlg" id="newsDlg" aria-labelledby="nwTitle">
+  <div class="in">
+    <div class="hd"><h2 id="nwTitle">What's new</h2><button class="ghost x" type="button" id="nwX" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="tm nw"><p class="fine" id="nwWhen"></p><div class="nwb" id="nwBody"></div></div>
+    <div class="acts"><button class="btn fill" type="button" id="nwOk">Got it</button></div>
+  </div>
+</dialog>
+
 <div id="app"></div>
 <section class="stbox" id="stBox" role="status" hidden>
   <svg class="ic p" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>
@@ -1601,6 +1614,36 @@ const GRFLicense = (() => {
     const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, stMsg(obj.issued, obj.mode, obj.before, obj.text));
     return ok ? {issued: obj.issued, mode: obj.mode, before: obj.before, text: obj.text} : null;
   }
+  /* What's new (news.json), written by the issuer in GRF Keys: a text the app shows once, as a sheet, on each device that
+     had the app before the text was published. Signed like the lists above; the newest (by issue time) wins; an empty
+     text takes it away. */
+  const NEWS_MAX = 2000;
+  const nwMsg = (issued, text) => new TextEncoder().encode(`GRF-NEWS-1|${issued}|${text}`);
+  async function signNews(text, privJwk, issuedMs) {
+    const issued = Math.floor(issuedMs ?? Date.now()), t = String(text || '').replace(/\r\n?/g, '\n').trim().slice(0, NEWS_MAX);
+    const sig = new Uint8Array(await subtle.sign({name:'ECDSA', hash:'SHA-256'}, await importPriv(privJwk), nwMsg(issued, t)));
+    return {v:1, issued, text:t, sig: b64u.enc(sig)};
+  }
+  async function verifyNews(obj, pubJwk) {
+    if (!obj || obj.v !== 1 || !Number.isFinite(obj.issued) || typeof obj.text !== 'string' || obj.text.length > NEWS_MAX || typeof obj.sig !== 'string') return null;
+    let sig; try { sig = b64u.dec(obj.sig); } catch (e) { return null; }
+    const ok = await subtle.verify({name:'ECDSA', hash:'SHA-256'}, await importPub(pubJwk), sig, nwMsg(obj.issued, obj.text));
+    return ok ? {issued: obj.issued, text: obj.text} : null;
+  }
+  /* The text as the sheet shows it, line by line: a line that starts with "-", "•" or "*" is a point of a list, and the
+     words before its first colon stand out (head); any other line is a paragraph; empty lines only part them. Nothing
+     in the text is read as markup: it is put on the page as text. */
+  function newsParts(text) {
+    const out = [];
+    for (const raw of String(text || '').split('\n')) {
+      const l = raw.trim(); if (!l) continue;
+      const m = l.match(/^[-•*]\s+(.+)$/);
+      if (!m) { out.push({li: false, text: l}); continue; }
+      const c = m[1].indexOf(': ');
+      out.push(c > 0 && c <= 40 ? {li: true, head: m[1].slice(0, c), text: m[1].slice(c + 2).trim()} : {li: true, text: m[1]});
+    }
+    return out;
+  }
   /* Feedback from the app: encrypted to the issuer's feedback key (ECDH P-256 + HKDF + AES-GCM), so it can travel as a
      GitHub issue in a public repository and only the key tool can read it. */
   const FB_INFO = new TextEncoder().encode('GRF-FEEDBACK-1');
@@ -1639,7 +1682,7 @@ const GRFLicense = (() => {
   const seenTitle = () => SEEN;
   const seenParse = title => String(title || '').trim() === SEEN;
   const ruleFor = (rules, id) => { const r = (rules || []).find(x => x[0] === (id >>> 0)); return r ? {e: r[1], m: r[2]} : null; };
-  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, sealFeedback, openFeedback, fbTitle, fbParse, seenTitle, seenParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
+  return {decode, verify, sign, signRevoked, verifyRevoked, signLicenses, verifyLicenses, signStatus, verifyStatus, signNews, verifyNews, newsParts, NEWS_MAX, sealFeedback, openFeedback, fbTitle, fbParse, seenTitle, seenParse, ruleFor, codeOf, bytesOfCode, dayOf, dateOfDay, actTitle, actParse, actHolders, sealAccess, openAccess};
 })();
 if (typeof module !== 'undefined') module.exports = GRFLicense;
 
@@ -1654,6 +1697,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
   const K_ST = 'grf-status', K_STACK = 'grf-status-ack', K_STCLR = 'grf-status-clear';   /* a notice acknowledged / cleared (its issue time) */
   let stReview = false;   /* the notice opened again from the header symbol */   /* the issuer's app status: notice or paused calculations (status.json) */
   const K_PING = 'grf-seen-report', K_CALC = 'grf-last-calc', PING_EVERY = 30 * 60000, CALC_EVERY = 3 * 60000;   /* last-seen report to the issuer */
+  const K_NEWS = 'grf-news', K_NEWSSEEN = 'grf-news-seen', K_FIRST = 'grf-first-run';   /* what's new: the text, the one seen (its issue time), when this device first had the app */
   const K_TERMS = 'grf-terms', TERMS_V = '5';   /* raise TERMS_V when the terms change: everyone accepts again */
   const SYNC_DAYS = 7, DAY = 86400000;
   const $ = id => document.getElementById(id);
@@ -1715,12 +1759,61 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
         const old = stStored();
         if (S && (!old || S.issued >= old.issued)) store.set(K_ST, JSON.stringify(S));
       } catch (e) {}
-      applyStatus();
+      /* what's new: kept on the device and shown once (applyNews); only a newer signed text takes its place */
+      try {
+        const r4 = await fetch('news.json?t=' + Date.now(), {cache:'no-store', signal: ctl.signal});
+        const N = r4.ok ? await GRFLicense.verifyNews(await r4.json(), PUB) : null;
+        const old = nwStored();
+        if (N && (!old || N.issued >= old.issued)) store.set(K_NEWS, JSON.stringify(N));
+      } catch (e) {}
+      applyStatus(); applyNews();
       store.set(K_SYNC, String(trustedNow()));
       showSync();
       return true;
     } catch (e) { return false; } finally { clearTimeout(timer); }
   }
+  /* ---- What's new: the issuer's text (news.json), shown once as a sheet ----
+     It is for those who had the app before the text was published: a device that gets the app later has nothing new to be
+     told, and can read the text under Settings. So the device keeps when it first had the app. A device that already
+     holds a license, accepted terms or a sync when that is first asked had the app before any text. */
+  function firstRun() {
+    let v = Number(store.get(K_FIRST));
+    if (!v) { v = store.get(K_KEY) || store.get(K_TERMS) || store.get(K_SYNC) ? 1 : trustedNow(); store.set(K_FIRST, String(v)); }
+    return v;
+  }
+  function nwStored() { try { const v = JSON.parse(store.get(K_NEWS) || 'null'); return v && typeof v.text === 'string' && Number.isFinite(v.issued) ? v : null; } catch (e) { return null; } }
+  let nwTimer = 0, nwAuto = false;
+  /* By itself only once the app is open, never over another sheet (it waits for that one to close), never while a field is
+     being typed in (a text can arrive in the middle of work: when the connection comes back), and once for each text. */
+  const nwTyping = () => { const e = document.activeElement; return !!(e && e.matches && e.matches('textarea, select, input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=file]), [contenteditable=""], [contenteditable="true"]')); };
+  function applyNews() {
+    const n = nwStored(), has = !!(n && n.text.trim());
+    document.documentElement.toggleAttribute('data-news', has);          /* the row under Settings is there when there is a text */
+    clearTimeout(nwTimer);
+    if (!has || !started || document.documentElement.classList.contains('locked')) return;
+    if (store.get(K_NEWSSEEN) === String(n.issued) || firstRun() >= n.issued) return;
+    if (document.querySelector('dialog[open]') || nwTyping()) { nwTimer = setTimeout(applyNews, 3000); return; }
+    openNews(true);
+  }
+  function openNews(auto) {
+    const n = nwStored(), d = $('newsDlg'); if (!d || !n || !n.text.trim()) return;
+    nwAuto = !!auto;
+    $('nwWhen').textContent = 'From the issuer of your license · ' + new Date(n.issued).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+    /* the text goes on the page as text: nothing in it is read as markup */
+    const body = $('nwBody'); body.replaceChildren(); let ul = null;
+    for (const x of GRFLicense.newsParts(n.text)) {
+      if (!x.li) { ul = null; const p = document.createElement('p'); p.textContent = x.text; body.appendChild(p); continue; }
+      if (!ul) { ul = document.createElement('ul'); body.appendChild(ul); }
+      const li = document.createElement('li');
+      if (x.head) { const b = document.createElement('b'); b.textContent = x.head; li.append(b, ': ' + x.text); } else li.textContent = x.text;
+      ul.appendChild(li);
+    }
+    if (d.showModal) { if (!d.open) d.showModal(); } else d.setAttribute('open', '');
+    d.scrollTop = 0;
+  }
+  /* however it is closed, it has been shown: it does not come by itself again until a new text is published */
+  function closeNews() { const d = $('newsDlg'), n = nwStored(); if (n) store.set(K_NEWSSEEN, String(n.issued)); if (d) { if (d.open && d.close) d.close(); else d.removeAttribute('open'); } }
+  firstRun();
   function stStored() { try { const v = JSON.parse(store.get(K_ST) || 'null'); return v && typeof v.mode === 'string' ? v : null; } catch (e) { return null; } }
   const when = t => new Date(t).toLocaleString('en-GB', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
   /* a pause hides the inputs and the result; a notice stands above them. "before": only app versions built earlier */
@@ -1941,6 +2034,8 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     if (window.GRFOffline) window.GRFOffline();
     watchCalc();
     showSync(); applyStatus();
+    const fn = $('ftNews'); if (fn) fn.addEventListener('click', () => openNews(false));
+    setTimeout(applyNews, 800);                        /* a moment after the app is on the screen, not in the same instant */
     return true;
   }
   /* the key in use and the days it has left: a row under Settings (marked when it ends soon), the full details in a sheet */
@@ -2169,6 +2264,9 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
     $('tmAccept').addEventListener('click', () => { closeTerms(); if (termsDone) termsDone(true); });
     $('tmDecline').addEventListener('click', () => { closeTerms(); if (termsDone) termsDone(false); });
     $('tmClose').addEventListener('click', closeTerms); $('tmX').addEventListener('click', closeTerms);
+    $('nwOk').addEventListener('click', closeNews); $('nwX').addEventListener('click', closeNews);
+    $('newsDlg').addEventListener('click', e => { if (e.target === $('newsDlg')) closeNews(); });
+    $('newsDlg').addEventListener('close', () => { const n = nwStored(); if (n) store.set(K_NEWSSEEN, String(n.issued)); });   /* Escape too */
     /* the first time it must be accepted: Escape and a tap outside do not close it */
     $('termsDlg').addEventListener('cancel', e => { if (termsMust) e.preventDefault(); });
     $('termsDlg').addEventListener('click', e => { if (e.target === $('termsDlg') && !termsMust) closeTerms(); });
@@ -2229,7 +2327,7 @@ if (typeof module !== 'undefined') module.exports = GRFLicense;
 <script src="ocr-client.js"></script>
 <script>
 (function () {
-  var VER = 'd06f27ee82', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
+  var VER = '13e20bdb48', stored = false, latest = null, reg = null, timer = null, ready = false, force = false;
   /* status line: offline storage, and whether this is the version published on GitHub */
   function render() {
     var el = document.getElementById('offl'); if (!el) return;
